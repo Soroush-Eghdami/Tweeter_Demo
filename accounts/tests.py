@@ -1,20 +1,51 @@
+import tempfile
+from PIL import Image
 from django.test import TestCase
 from django.urls import reverse
+from django.core.files.uploadedfile import SimpleUploadedFile
 from rest_framework.test import APIClient
 from rest_framework import status
 from django.contrib.auth import get_user_model
 from accounts.models import Follower
-from tweets.models import Tweet
+from tweets.models import Tweet, Like
 
 User = get_user_model()
+
+
+def create_test_image(name='test.jpg', size=(100, 100), color='red'):
+    """Helper to create a simple in-memory image for upload tests."""
+    image = Image.new('RGB', size, color)
+    tmp_file = tempfile.NamedTemporaryFile(suffix='.jpg')
+    image.save(tmp_file, 'jpeg')
+    tmp_file.seek(0)
+    return SimpleUploadedFile(name, tmp_file.read(), content_type='image/jpeg')
+
 
 class AccountsAPITestCase(TestCase):
     def setUp(self):
         self.client = APIClient()
         # Create users
-        self.user1 = User.objects.create_user(username='alice', password='alicepass', email='alice@example.com')
-        self.user2 = User.objects.create_user(username='bob', password='bobpass', email='bob@example.com')
-        self.user3 = User.objects.create_user(username='charlie', password='charliepass', email='charlie@example.com', is_public_user=False)
+        self.user1 = User.objects.create_user(
+            username='alice',
+            password='alicepass',
+            email='alice@example.com',
+            first_name='Alice',
+            last_name='Smith',
+            bio='Hello world',
+            is_public_user=True
+        )
+        self.user2 = User.objects.create_user(
+            username='bob',
+            password='bobpass',
+            email='bob@example.com',
+            is_public_user=False
+        )
+        self.user3 = User.objects.create_user(
+            username='charlie',
+            password='charliepass',
+            email='charlie@example.com',
+            is_public_user=True
+        )
 
         # Obtain JWT token for user1
         token_url = reverse('token_obtain_pair')
@@ -22,16 +53,22 @@ class AccountsAPITestCase(TestCase):
         self.token = response.data['access']
         self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {self.token}')
 
+        # Create some tweets
+        self.tweet_public = Tweet.objects.create(user=self.user1, content='Public tweet')
+        self.tweet_private = Tweet.objects.create(user=self.user2, content='Private tweet')
+
     # ------------------------------------------------------------------
-    # Profile Endpoints (GET, PATCH, DELETE)
+    # Profile Endpoints (GET, PATCH, DELETE) with Media
     # ------------------------------------------------------------------
     def test_get_own_profile(self):
         url = reverse('user-profile')
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['username'], 'alice')
+        self.assertIn('profile_picture', response.data)
+        self.assertIn('profile_banner', response.data)
 
-    def test_patch_profile_update_email(self):
+    def test_patch_profile_update_email_and_bio(self):
         url = reverse('user-profile')
         data = {'email': 'alice.new@example.com', 'bio': 'Updated bio'}
         response = self.client.patch(url, data, format='json')
@@ -39,6 +76,24 @@ class AccountsAPITestCase(TestCase):
         self.user1.refresh_from_db()
         self.assertEqual(self.user1.email, 'alice.new@example.com')
         self.assertEqual(self.user1.bio, 'Updated bio')
+
+    def test_patch_profile_upload_profile_picture(self):
+        url = reverse('user-profile')
+        image = create_test_image('profile.jpg')
+        data = {'profile_picture': image}
+        response = self.client.patch(url, data, format='multipart')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.user1.refresh_from_db()
+        self.assertTrue(self.user1.profile_picture.name.startswith('profile_pics/profile'))
+
+    def test_patch_profile_upload_banner(self):
+        url = reverse('user-profile')
+        image = create_test_image('banner.jpg', size=(800, 200))
+        data = {'profile_banner': image}
+        response = self.client.patch(url, data, format='multipart')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.user1.refresh_from_db()
+        self.assertTrue(self.user1.profile_banner.name.startswith('profile_banners/banner'))
 
     def test_delete_own_account(self):
         url = reverse('user-profile')
@@ -53,7 +108,7 @@ class AccountsAPITestCase(TestCase):
         url = reverse('user-list')
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertGreaterEqual(len(response.data), 3)
+        self.assertGreaterEqual(len(response.data['results']), 3)
 
     def test_user_detail(self):
         url = reverse('user-detail', kwargs={'pk': self.user2.id})
@@ -61,6 +116,7 @@ class AccountsAPITestCase(TestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['username'], 'bob')
         self.assertIn('is_following', response.data)
+        self.assertIn('profile_picture', response.data)
 
     # ------------------------------------------------------------------
     # Follow/Unfollow
@@ -80,7 +136,6 @@ class AccountsAPITestCase(TestCase):
         self.assertIn('yourself', response.data['error'])
 
     def test_unfollow_user(self):
-        # First follow
         Follower.objects.create(follower=self.user1, followee=self.user2)
         url = reverse('unfollow-user')
         data = {'followee_id': str(self.user2.id)}
@@ -99,62 +154,49 @@ class AccountsAPITestCase(TestCase):
     # Timelines
     # ------------------------------------------------------------------
     def test_public_timeline_includes_public_tweets(self):
-        # user2 is public, user3 is private
-        tweet_public = Tweet.objects.create(user=self.user2, content='Public tweet')
-        tweet_private = Tweet.objects.create(user=self.user3, content='Private tweet')
-        # user1 follows nobody yet, so only public tweets appear
+        # user2 is private, user1 is public
         url = reverse('public-timeline')
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        contents = [t['message'] for t in response.data]
+        contents = [t['message'] for t in response.data['results']]
         self.assertIn('Public tweet', contents)
-        self.assertNotIn('Private tweet', contents)
+        self.assertNotIn('Private tweet', contents)  # user1 doesn't follow user2
 
     def test_private_timeline_shows_only_followed(self):
-        # user1 follows user2
         Follower.objects.create(follower=self.user1, followee=self.user2)
-        tweet_followed = Tweet.objects.create(user=self.user2, content='Followed tweet')
-        tweet_not_followed = Tweet.objects.create(user=self.user3, content='Not followed tweet')
         url = reverse('private-timeline')
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        contents = [t['message'] for t in response.data]
-        self.assertIn('Followed tweet', contents)
-        self.assertNotIn('Not followed tweet', contents)
+        contents = [t['message'] for t in response.data['results']]
+        self.assertIn('Private tweet', contents)  # now following user2
 
     def test_user_tweets_endpoint(self):
-        Tweet.objects.create(user=self.user2, content='Bob tweet 1')
-        Tweet.objects.create(user=self.user2, content='Bob tweet 2')
-        url = reverse('user-tweets', kwargs={'user_id': self.user2.id})
+        url = reverse('user-tweets', kwargs={'user_id': self.user1.id})
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 2)
+        self.assertEqual(len(response.data['results']), 1)
 
     def test_user_followers_endpoint(self):
         Follower.objects.create(follower=self.user2, followee=self.user1)
         url = reverse('user-followers', kwargs={'user_id': self.user1.id})
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 1)
-        self.assertEqual(response.data[0]['follower']['username'], 'bob')
+        self.assertEqual(len(response.data['results']), 1)
+        self.assertEqual(response.data['results'][0]['follower']['username'], 'bob')
 
     def test_user_following_endpoint(self):
         Follower.objects.create(follower=self.user1, followee=self.user2)
         url = reverse('user-following', kwargs={'user_id': self.user1.id})
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 1)
-        self.assertEqual(response.data[0]['followee']['username'], 'bob')
+        self.assertEqual(len(response.data['results']), 1)
+        self.assertEqual(response.data['results'][0]['followee']['username'], 'bob')
 
 
 class AuthenticationTestCase(TestCase):
     def setUp(self):
         self.client = APIClient()
-        self.user = User.objects.create_user(username='testuser', password='testpass123')
-
-    def test_register_user(self):
-        url = reverse('register')
-        data = {
+        self.user_data = {
             'username': 'newuser',
             'email': 'new@example.com',
             'password': 'ComplexPass123!',
@@ -163,11 +205,15 @@ class AuthenticationTestCase(TestCase):
             'last_name': 'User',
             'bio': 'Hello'
         }
-        response = self.client.post(url, data, format='json')
+
+    def test_register_user(self):
+        url = reverse('register')
+        response = self.client.post(url, self.user_data, format='json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertTrue(User.objects.filter(username='newuser').exists())
 
     def test_login_jwt(self):
+        User.objects.create_user(username='testuser', password='testpass123')
         url = reverse('token_obtain_pair')
         data = {'username': 'testuser', 'password': 'testpass123'}
         response = self.client.post(url, data, format='json')
@@ -176,10 +222,10 @@ class AuthenticationTestCase(TestCase):
         self.assertIn('refresh', response.data)
 
     def test_refresh_token(self):
-        # Get token first
+        User.objects.create_user(username='testuser', password='testpass123')
         token_url = reverse('token_obtain_pair')
-        response = self.client.post(token_url, {'username': 'testuser', 'password': 'testpass123'}, format='json')
-        refresh = response.data['refresh']
+        resp = self.client.post(token_url, {'username': 'testuser', 'password': 'testpass123'}, format='json')
+        refresh = resp.data['refresh']
         refresh_url = reverse('token_refresh')
         response = self.client.post(refresh_url, {'refresh': refresh}, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)

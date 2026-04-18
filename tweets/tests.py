@@ -1,12 +1,23 @@
+import tempfile
+from PIL import Image
 from django.test import TestCase
 from django.urls import reverse
+from django.core.files.uploadedfile import SimpleUploadedFile
 from rest_framework.test import APIClient
 from rest_framework import status
 from django.contrib.auth import get_user_model
-from tweets.models import Tweet, ReTweet
+from tweets.models import Tweet, ReTweet, Like
 from accounts.models import Follower
 
 User = get_user_model()
+
+
+def create_test_image(name='test.jpg', size=(100, 100), color='blue'):
+    image = Image.new('RGB', size, color)
+    tmp_file = tempfile.NamedTemporaryFile(suffix='.jpg')
+    image.save(tmp_file, 'jpeg')
+    tmp_file.seek(0)
+    return SimpleUploadedFile(name, tmp_file.read(), content_type='image/jpeg')
 
 
 class TweetAPITestCase(TestCase):
@@ -27,13 +38,15 @@ class TweetAPITestCase(TestCase):
         self.private_tweet = Tweet.objects.create(user=self.user2, content='Private tweet from user2')
         self.other_public_tweet = Tweet.objects.create(user=self.user3, content='Another public tweet')
 
+    # ------------------------------------------------------------------
+    # Tweet List / Detail
+    # ------------------------------------------------------------------
     def test_list_tweets_shows_only_visible(self):
-        # user1 follows user2 (private) to see their tweet
+        # user1 follows user2 to see their private tweet
         Follower.objects.create(follower=self.user1, followee=self.user2)
         url = reverse('tweet-list')
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        # Pagination: response.data is a dict with 'results'
         results = response.data['results']
         contents = [t['message'] for t in results]
         self.assertIn('Public tweet from user1', contents)
@@ -41,7 +54,6 @@ class TweetAPITestCase(TestCase):
         self.assertIn('Another public tweet', contents)
 
     def test_list_tweets_hides_private_if_not_following(self):
-        # user1 does not follow user2
         url = reverse('tweet-list')
         response = self.client.get(url)
         results = response.data['results']
@@ -56,8 +68,11 @@ class TweetAPITestCase(TestCase):
     def test_tweet_detail_inaccessible_if_private_and_not_following(self):
         url = reverse('tweet-detail', kwargs={'pk': self.private_tweet.pk})
         response = self.client.get(url)
-        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)  # filtered out
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
+    # ------------------------------------------------------------------
+    # Retweet
+    # ------------------------------------------------------------------
     def test_retweet_public_tweet(self):
         url = reverse('retweet', kwargs={'pk': self.public_tweet.pk})
         response = self.client.post(url)
@@ -81,3 +96,56 @@ class TweetAPITestCase(TestCase):
         response = self.client.post(url)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn('not retweeted', response.data['error'])
+
+    # ------------------------------------------------------------------
+    # Like / Unlike
+    # ------------------------------------------------------------------
+    def test_like_tweet(self):
+        url = reverse('like-tweet', kwargs={'pk': self.public_tweet.pk})
+        response = self.client.post(url)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data['message'], 'Liked')
+        self.assertEqual(response.data['like_count'], 1)
+        self.assertTrue(Like.objects.filter(user=self.user1, tweet=self.public_tweet).exists())
+
+    def test_like_tweet_twice_is_idempotent(self):
+        url = reverse('like-tweet', kwargs={'pk': self.public_tweet.pk})
+        self.client.post(url)  # first like
+        response = self.client.post(url)  # second like
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['message'], 'Already liked')
+        self.assertEqual(Like.objects.filter(user=self.user1, tweet=self.public_tweet).count(), 1)
+
+    def test_unlike_tweet(self):
+        Like.objects.create(user=self.user1, tweet=self.public_tweet)
+        url = reverse('unlike-tweet', kwargs={'pk': self.public_tweet.pk})
+        response = self.client.post(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['message'], 'Unliked')
+        self.assertEqual(response.data['like_count'], 0)
+        self.assertFalse(Like.objects.filter(user=self.user1, tweet=self.public_tweet).exists())
+
+    def test_unlike_not_liked_returns_400(self):
+        url = reverse('unlike-tweet', kwargs={'pk': self.public_tweet.pk})
+        response = self.client.post(url)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('not liked', response.data['error'])
+
+    def test_like_count_in_tweet_serializer(self):
+        Like.objects.create(user=self.user1, tweet=self.public_tweet)
+        Like.objects.create(user=self.user3, tweet=self.public_tweet)
+        url = reverse('tweet-detail', kwargs={'pk': self.public_tweet.pk})
+        response = self.client.get(url)
+        self.assertEqual(response.data['like_count'], 2)
+        self.assertTrue(response.data['is_liked'])  # user1 liked it
+
+    # ------------------------------------------------------------------
+    # Tweet with Media
+    # ------------------------------------------------------------------
+    def test_tweet_with_media_upload(self):
+        # Note: You need a tweet creation endpoint to test this fully.
+        # Assuming you'll add POST /tweets/ later.
+        # For now, test via model.
+        image = create_test_image('tweet_media.jpg')
+        tweet = Tweet.objects.create(user=self.user1, content='Media tweet', media=image)
+        self.assertTrue(tweet.media.name.startswith('tweet_media/tweet_media'))
