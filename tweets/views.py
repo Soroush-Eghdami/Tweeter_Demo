@@ -1,0 +1,63 @@
+from rest_framework import generics, permissions, status
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from .models import Tweet, ReTweet
+from .serializers import TweetSerializer, ReTweetSerializer
+from drf_spectacular.utils import extend_schema, OpenApiParameter
+
+
+class TweetListView(generics.ListAPIView):
+    serializer_class = TweetSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        # Return only tweets visible to the user
+        # (We'll use a simple filter that checks visibility; for large scale consider more efficient query)
+        all_tweets = Tweet.objects.select_related('user').prefetch_related('retweet_set')
+        visible_ids = [t.id for t in all_tweets if t.is_visible_to(user)]
+        return Tweet.objects.filter(id__in=visible_ids).order_by('-created_at')
+
+
+class TweetDetailView(generics.RetrieveAPIView):
+    serializer_class = TweetSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        return Tweet.objects.filter(id__in=[t.id for t in Tweet.objects.all() if t.is_visible_to(user)])
+
+
+class RetweetView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    @extend_schema(request=None, responses={201: ReTweetSerializer})
+    def post(self, request, pk):
+        try:
+            tweet = Tweet.objects.get(pk=pk)
+        except Tweet.DoesNotExist:
+            return Response({'error': 'Tweet not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        if not tweet.is_visible_to(request.user):
+            return Response({'error': 'Tweet not accessible'}, status=status.HTTP_403_FORBIDDEN)
+
+        retweet = tweet.retweet(request.user)
+        serializer = ReTweetSerializer(retweet)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
+class UnretweetView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    @extend_schema(request=None, responses={200: {'description': 'Unretweeted successfully'}})
+    def post(self, request, pk):
+        try:
+            tweet = Tweet.objects.get(pk=pk)
+        except Tweet.DoesNotExist:
+            return Response({'error': 'Tweet not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        success = tweet.unretweet(request.user)
+        if success:
+            return Response({'message': 'Unretweeted successfully'})
+        else:
+            return Response({'error': 'You have not retweeted this tweet'}, status=status.HTTP_400_BAD_REQUEST)
