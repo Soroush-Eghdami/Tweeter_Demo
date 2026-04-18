@@ -61,3 +61,38 @@ class UnretweetView(APIView):
             return Response({'message': 'Unretweeted successfully'})
         else:
             return Response({'error': 'You have not retweeted this tweet'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        
+                
+class LikeView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, pk):
+        try:
+            tweet = Tweet.objects.get(pk=pk)
+        except Tweet.DoesNotExist:
+            return Response({'error': 'Tweet not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        if not tweet.is_visible_to(request.user):
+            return Response({'error': 'Tweet not accessible'}, status=status.HTTP_403_FORBIDDEN)
+
+        like, created = tweet.like(request.user)
+        if created:
+            return Response({'message': 'Liked', 'like_count': tweet.get_like_count()}, status=status.HTTP_201_CREATED)
+        else:
+            return Response({'message': 'Already liked', 'like_count': tweet.get_like_count()}, status=status.HTTP_200_OK)
+
+class UnlikeView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, pk):
+        try:
+            tweet = Tweet.objects.get(pk=pk)
+        except Tweet.DoesNotExist:
+            return Response({'error': 'Tweet not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        removed = tweet.unlike(request.user)
+        if removed:
+            return Response({'message': 'Unliked', 'like_count': tweet.get_like_count()}, status=status.HTTP_200_OK)
+        else:
+            return Response({'error': 'You have not liked this tweet'}, status=status.HTTP_400_BAD_REQUEST)

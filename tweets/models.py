@@ -38,6 +38,20 @@ class Tweet(models.Model):
 
     def get_retweet_count(self):
         return ReTweet.objects.filter(original_tweet=self).count()
+    
+    def like(self, user):
+        like, created = Like.objects.get_or_create(user=user, tweet=self)
+        return like, created
+
+    def unlike(self, user):
+        deleted, _ = Like.objects.filter(user=user, tweet=self).delete()
+        return deleted > 0
+
+    def get_like_count(self):
+        return self.likes.count()
+
+    def is_liked_by(self, user):
+        return self.likes.filter(user=user).exists()
 
 
 class ReTweet(models.Model):
@@ -50,3 +64,15 @@ class ReTweet(models.Model):
 
     def __str__(self):
         return f"{self.user.username} retweeted {self.original_tweet.id}"
+    
+
+class Like(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    tweet = models.ForeignKey(Tweet, on_delete=models.CASCADE, related_name='likes')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('user', 'tweet')
+
+    def __str__(self):
+        return f"{self.user.username} likes {self.tweet.id}"

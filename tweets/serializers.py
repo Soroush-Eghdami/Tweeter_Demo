@@ -16,6 +16,8 @@ class TweetSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)
     message = serializers.CharField(source='content', read_only=True)
     retweet_count = serializers.SerializerMethodField()
+    like_count = serializers.SerializerMethodField()
+    is_liked = serializers.SerializerMethodField()
     parent_tweet = serializers.SerializerMethodField()
 
     class Meta:
@@ -25,6 +27,15 @@ class TweetSerializer(serializers.ModelSerializer):
 
     def get_retweet_count(self, obj):
         return obj.get_retweet_count()
+
+    def get_like_count(self, obj):
+        return obj.get_like_count()
+
+    def get_is_liked(self, obj):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            return obj.is_liked_by(request.user)
+        return False
 
     def get_parent_tweet(self, obj):
         if obj.parent_tweet:
