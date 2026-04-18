@@ -7,6 +7,8 @@ class User(AbstractUser):
     custom_id = models.CharField(max_length=6, unique=True, blank=True)
     bio = models.TextField(max_length=200, blank=True)
     is_public_user = models.BooleanField(default=True)
+    profile_picture = models.ImageField(upload_to='profile_pics/', blank=True, null=True)
+    profile_banner = models.ImageField(upload_to='profile_banners/', blank=True, null=True)
 
     @property
     def is_public(self):

@@ -25,12 +25,10 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class UserUpdateSerializer(serializers.ModelSerializer):
-    """Serializer for updating user profile (PATCH)."""
     class Meta:
         model = User
-        fields = ['email', 'first_name', 'last_name', 'bio', 'is_public_user']
-        extra_kwargs = {field: {'required': False} for field in ['email', 'first_name', 'last_name', 'bio', 'is_public_user']}
-
+        fields = ['email', 'first_name', 'last_name', 'bio', 'is_public_user', 'profile_picture', 'profile_banner']
+        extra_kwargs = {field: {'required': False} for field in fields}
 
 class FollowerSerializer(serializers.ModelSerializer):
     follower = UserSerializer(read_only=True)

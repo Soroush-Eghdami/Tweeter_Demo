@@ -8,6 +8,7 @@ def get_user_model():
 class Tweet(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     content = models.TextField(max_length=280)
+    media = models.FileField(upload_to='tweet_media/', blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     parent_tweet = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True)

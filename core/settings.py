@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'rest_framework.authtoken',  # keep if you still need token for some reason, but we'll use JWT
     'rest_framework_simplejwt',
     'drf_spectacular',
+    'drf_spectacular_sidecar',
     # Local apps
     'accounts',
     'tweets',
@@ -78,6 +79,9 @@ SPECTACULAR_SETTINGS = {
     'DESCRIPTION': 'A Twitter-like demo API',
     'VERSION': '1.0.0',
     'SERVE_INCLUDE_SCHEMA': False,
+    'SWAGGER_UI_DIST': 'SIDECAR',  # Tells drf-spectacular to use Sidecar for Swagger
+    'SWAGGER_UI_TEMPLATE': 'SIDECAR',
+    'REDOC_DIST': 'SIDECAR',       # Tells drf-spectacular to use Sidecar for Redoc
 }
 
 MIDDLEWARE = [

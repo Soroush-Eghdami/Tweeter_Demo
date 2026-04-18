@@ -12,6 +12,7 @@ from tweets.serializers import TweetSerializer
 from tweets.models import Tweet
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from drf_spectacular.utils import extend_schema, OpenApiParameter
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 
 User = get_user_model()
 
@@ -35,6 +36,7 @@ class UserProfileView(generics.RetrieveUpdateDestroyAPIView):
     PATCH: Update profile fields (email, name, bio, privacy).
     DELETE: Permanently delete account.
     """
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
     serializer_class = UserSerializer
     permission_classes = [permissions.IsAuthenticated]
 
