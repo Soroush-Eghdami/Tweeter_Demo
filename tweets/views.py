@@ -1,9 +1,12 @@
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from .models import Tweet, ReTweet
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
+from django.db.models import Q
+from .models import Tweet, ReTweet, Like
 from .serializers import TweetSerializer, ReTweetSerializer
-from drf_spectacular.utils import extend_schema, OpenApiParameter
+from accounts.models import Follower
+from drf_spectacular.utils import extend_schema
 
 
 class TweetListView(generics.ListAPIView):
@@ -12,11 +15,10 @@ class TweetListView(generics.ListAPIView):
 
     def get_queryset(self):
         user = self.request.user
-        # Return only tweets visible to the user
-        # (We'll use a simple filter that checks visibility; for large scale consider more efficient query)
-        all_tweets = Tweet.objects.select_related('user').prefetch_related('retweet_set')
-        visible_ids = [t.id for t in all_tweets if t.is_visible_to(user)]
-        return Tweet.objects.filter(id__in=visible_ids).order_by('-created_at')
+        followed = Follower.objects.filter(follower=user).values_list('followee_id', flat=True)
+        return Tweet.objects.filter(
+            Q(user__is_public_user=True) | Q(user_id__in=followed) | Q(user=user)
+        ).select_related('user').prefetch_related('retweet_set', 'likes').order_by('-created_at')
 
 
 class TweetDetailView(generics.RetrieveAPIView):
@@ -25,13 +27,15 @@ class TweetDetailView(generics.RetrieveAPIView):
 
     def get_queryset(self):
         user = self.request.user
-        return Tweet.objects.filter(id__in=[t.id for t in Tweet.objects.all() if t.is_visible_to(user)])
+        followed = Follower.objects.filter(follower=user).values_list('followee_id', flat=True)
+        return Tweet.objects.filter(
+            Q(user__is_public_user=True) | Q(user_id__in=followed) | Q(user=user)
+        ).select_related('user').prefetch_related('retweet_set', 'likes')
 
 
 class RetweetView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
-    @extend_schema(request=None, responses={201: ReTweetSerializer})
     def post(self, request, pk):
         try:
             tweet = Tweet.objects.get(pk=pk)
@@ -49,7 +53,6 @@ class RetweetView(APIView):
 class UnretweetView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
-    @extend_schema(request=None, responses={200: {'description': 'Unretweeted successfully'}})
     def post(self, request, pk):
         try:
             tweet = Tweet.objects.get(pk=pk)
@@ -61,9 +64,8 @@ class UnretweetView(APIView):
             return Response({'message': 'Unretweeted successfully'})
         else:
             return Response({'error': 'You have not retweeted this tweet'}, status=status.HTTP_400_BAD_REQUEST)
-        
-        
-                
+
+
 class LikeView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
@@ -82,6 +84,7 @@ class LikeView(APIView):
         else:
             return Response({'message': 'Already liked', 'like_count': tweet.get_like_count()}, status=status.HTTP_200_OK)
 
+
 class UnlikeView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
@@ -96,3 +99,10 @@ class UnlikeView(APIView):
             return Response({'message': 'Unliked', 'like_count': tweet.get_like_count()}, status=status.HTTP_200_OK)
         else:
             return Response({'error': 'You have not liked this tweet'}, status=status.HTTP_400_BAD_REQUEST)
+
+
+# If you want to support media upload in tweet creation (not yet implemented), add:
+# class TweetCreateView(generics.CreateAPIView):
+#     parser_classes = [MultiPartParser, FormParser, JSONParser]
+#     serializer_class = TweetSerializer
+#     permission_classes = [permissions.IsAuthenticated]

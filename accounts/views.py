@@ -1,6 +1,8 @@
-from rest_framework import generics, permissions, status
+from rest_framework import generics, status, permissions
 from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
+from rest_framework.pagination import PageNumberPagination
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from django.contrib.auth import get_user_model
 from accounts.models import Follower
 from accounts.serializers import (
@@ -12,7 +14,6 @@ from tweets.serializers import TweetSerializer
 from tweets.models import Tweet
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from drf_spectacular.utils import extend_schema, OpenApiParameter
-from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 
 User = get_user_model()
 
@@ -33,11 +34,10 @@ class UserDetailView(generics.RetrieveAPIView):
 class UserProfileView(generics.RetrieveUpdateDestroyAPIView):
     """
     GET: Retrieve authenticated user's profile.
-    PATCH: Update profile fields (email, name, bio, privacy).
+    PATCH: Update profile fields (email, name, bio, privacy, profile_picture, profile_banner).
     DELETE: Permanently delete account.
     """
     parser_classes = [MultiPartParser, FormParser, JSONParser]
-    serializer_class = UserSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def get_object(self):
@@ -102,7 +102,7 @@ class UnfollowUserView(generics.DestroyAPIView):
         return Response({'message': 'Unfollowed successfully'}, status=status.HTTP_200_OK)
 
 
-# Timelines
+# Timelines (using pagination)
 @extend_schema(
     parameters=[
         OpenApiParameter(name='page', type=int, location=OpenApiParameter.QUERY),
@@ -112,11 +112,11 @@ class UnfollowUserView(generics.DestroyAPIView):
 @api_view(['GET'])
 @permission_classes([permissions.IsAuthenticated])
 def public_timeline(request):
-    page = int(request.GET.get('page', 1))
-    page_size = int(request.GET.get('page_size', 10))
-    tweets = TimelineService.get_public_timeline(request.user, page=page, page_size=page_size)
-    serializer = TweetSerializer(tweets, many=True, context={'request': request})
-    return Response(serializer.data)
+    queryset = TimelineService.get_public_timeline_queryset(request.user)
+    paginator = PageNumberPagination()
+    page = paginator.paginate_queryset(queryset, request)
+    serializer = TweetSerializer(page, many=True, context={'request': request})
+    return paginator.get_paginated_response(serializer.data)
 
 
 @extend_schema(
@@ -128,11 +128,11 @@ def public_timeline(request):
 @api_view(['GET'])
 @permission_classes([permissions.IsAuthenticated])
 def private_timeline(request):
-    page = int(request.GET.get('page', 1))
-    page_size = int(request.GET.get('page_size', 10))
-    tweets = TimelineService.get_private_timeline(request.user, page=page, page_size=page_size)
-    serializer = TweetSerializer(tweets, many=True, context={'request': request})
-    return Response(serializer.data)
+    queryset = TimelineService.get_private_timeline_queryset(request.user)
+    paginator = PageNumberPagination()
+    page = paginator.paginate_queryset(queryset, request)
+    serializer = TweetSerializer(page, many=True, context={'request': request})
+    return paginator.get_paginated_response(serializer.data)
 
 
 @extend_schema(
@@ -144,15 +144,16 @@ def private_timeline(request):
 @api_view(['GET'])
 @permission_classes([permissions.IsAuthenticated])
 def user_tweets(request, user_id):
-    page = int(request.GET.get('page', 1))
-    page_size = int(request.GET.get('page_size', 10))
     try:
         user = User.objects.get(id=user_id)
     except User.DoesNotExist:
         return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
-    tweets = TimelineService.get_user_tweets(user, page=page, page_size=page_size)
-    serializer = TweetSerializer(tweets, many=True, context={'request': request})
-    return Response(serializer.data)
+
+    queryset = TimelineService.get_user_tweets_queryset(user)
+    paginator = PageNumberPagination()
+    page = paginator.paginate_queryset(queryset, request)
+    serializer = TweetSerializer(page, many=True, context={'request': request})
+    return paginator.get_paginated_response(serializer.data)
 
 
 @extend_schema(
@@ -164,15 +165,16 @@ def user_tweets(request, user_id):
 @api_view(['GET'])
 @permission_classes([permissions.IsAuthenticated])
 def user_followers(request, user_id):
-    page = int(request.GET.get('page', 1))
-    page_size = int(request.GET.get('page_size', 10))
     try:
         user = User.objects.get(id=user_id)
     except User.DoesNotExist:
         return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
-    followers = TimelineService.get_user_followers(user, page=page, page_size=page_size)
-    serializer = FollowerSerializer(followers, many=True)
-    return Response(serializer.data)
+
+    queryset = TimelineService.get_user_followers_queryset(user)
+    paginator = PageNumberPagination()
+    page = paginator.paginate_queryset(queryset, request)
+    serializer = FollowerSerializer(page, many=True)
+    return paginator.get_paginated_response(serializer.data)
 
 
 @extend_schema(
@@ -184,15 +186,16 @@ def user_followers(request, user_id):
 @api_view(['GET'])
 @permission_classes([permissions.IsAuthenticated])
 def user_following(request, user_id):
-    page = int(request.GET.get('page', 1))
-    page_size = int(request.GET.get('page_size', 10))
     try:
         user = User.objects.get(id=user_id)
     except User.DoesNotExist:
         return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
-    following = TimelineService.get_user_following(user, page=page, page_size=page_size)
-    serializer = FollowerSerializer(following, many=True)
-    return Response(serializer.data)
+
+    queryset = TimelineService.get_user_following_queryset(user)
+    paginator = PageNumberPagination()
+    page = paginator.paginate_queryset(queryset, request)
+    serializer = FollowerSerializer(page, many=True)
+    return paginator.get_paginated_response(serializer.data)
 
 
 # Authentication (JWT)
@@ -200,5 +203,3 @@ class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
     permission_classes = [permissions.AllowAny]
     serializer_class = RegisterSerializer
-
-# We'll use DRF SimpleJWT built-in views for login/token; no need to write custom ones.
