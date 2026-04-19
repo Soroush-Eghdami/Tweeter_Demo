@@ -6,7 +6,7 @@ urlpatterns = [
     # Users
     path('users/', views.UserListView.as_view(), name='user-list'),
     path('users/<uuid:pk>/', views.UserDetailView.as_view(), name='user-detail'),
-    path('profile/', views.UserProfileView.as_view(), name='user-profile'),  # GET/PATCH/DELETE own profile
+    path('profile/', views.UserProfileView.as_view(), name='user-profile'),
 
     # Follow/Unfollow
     path('follow/', views.FollowUserView.as_view(), name='follow-user'),
@@ -19,9 +19,9 @@ urlpatterns = [
     path('users/<uuid:user_id>/followers/', views.user_followers, name='user-followers'),
     path('users/<uuid:user_id>/following/', views.user_following, name='user-following'),
 
-    # Authentication (JWT)
-    path('auth/register/', views.RegisterView.as_view(), name='register'),
-    path('auth/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
-    path('auth/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
-    path('auth/logout/', views.LogoutView.as_view(), name='logout'),
+    # Authentication
+    path('register/', views.RegisterView.as_view(), name='register'),
+    path('login/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path('logout/', views.LogoutView.as_view(), name='logout'),
 ]
