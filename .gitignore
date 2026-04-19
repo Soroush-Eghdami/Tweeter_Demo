@@ -95,6 +95,3 @@ celerybeat.pid
 .cache/
 *.pdf
 *.rar
-must_implement.md
-Tweeter API.yaml
-changes.md
