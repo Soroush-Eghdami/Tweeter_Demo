@@ -230,3 +230,24 @@ class AuthenticationTestCase(TestCase):
         response = self.client.post(refresh_url, {'refresh': refresh}, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn('access', response.data)
+        
+    def test_logout(self):
+        # Register and login
+        User.objects.create_user(username='logoutuser', password='pass123')
+        token_url = reverse('token_obtain_pair')
+        resp = self.client.post(token_url, {'username': 'logoutuser', 'password': 'pass123'}, format='json')
+        refresh = resp.data['refresh']
+        access = resp.data['access']
+    
+        # Authenticate with access token
+        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {access}')
+    
+        # Logout
+        logout_url = reverse('logout')
+        response = self.client.post(logout_url, {'refresh': refresh}, format='json')
+        self.assertEqual(response.status_code, status.HTTP_205_RESET_CONTENT)
+    
+        # Try to refresh the blacklisted token (should fail)
+        refresh_url = reverse('token_refresh')
+        response = self.client.post(refresh_url, {'refresh': refresh}, format='json')
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)

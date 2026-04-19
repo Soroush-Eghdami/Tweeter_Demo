@@ -7,13 +7,14 @@ from django.contrib.auth import get_user_model
 from accounts.models import Follower
 from accounts.serializers import (
     UserSerializer, UserUpdateSerializer, FollowerSerializer,
-    RegisterSerializer
+    RegisterSerializer, LogoutSerializer
 )
 from accounts.services import TimelineService
 from tweets.serializers import TweetSerializer
 from tweets.models import Tweet
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from drf_spectacular.utils import extend_schema, OpenApiParameter
+from rest_framework_simplejwt.tokens import RefreshToken
 
 User = get_user_model()
 
@@ -203,3 +204,20 @@ class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
     permission_classes = [permissions.AllowAny]
     serializer_class = RegisterSerializer
+    
+
+class LogoutView(generics.GenericAPIView):
+    serializer_class = LogoutSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        try:
+            refresh_token = serializer.validated_data['refresh']
+            token = RefreshToken(refresh_token)
+            token.blacklist()
+            return Response({"detail": "Successfully logged out."}, status=status.HTTP_205_RESET_CONTENT)
+        except Exception:
+            return Response({"detail": "Invalid token."}, status=status.HTTP_400_BAD_REQUEST)

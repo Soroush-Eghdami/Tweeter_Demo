@@ -58,6 +58,5 @@ class RegisterSerializer(serializers.ModelSerializer):
         user = User.objects.create_user(**validated_data)
         return user
 
-class LogOutSerializer():
-    pass
-# No separate LoginSerializer needed; JWT handles login via token obtain view
+class LogoutSerializer(serializers.Serializer):
+    refresh = serializers.CharField(required=True, write_only=True)
