@@ -1,3 +1,4 @@
+
 # Tweeter API Documentation
 
 ## Table of Contents
@@ -14,6 +15,7 @@
   - [Register](#register)
   - [Login (Obtain JWT Token)](#login-obtain-jwt-token)
   - [Refresh Token](#refresh-token)
+  - [Logout](#logout)
   - [Using the Token](#using-the-token)
 - [API Endpoints](#api-endpoints)
   - [Base URLs](#base-urls)
@@ -26,11 +28,13 @@
   - [Tweets App](#tweets-app)
     - [Tweet Listing & Detail](#tweet-listing--detail)
     - [Retweet / Unretweet](#retweet--unretweet)
+    - [Like / Unlike](#like--unlike)
 - [Data Models](#data-models)
   - [User](#user)
   - [Follower](#follower)
   - [Tweet](#tweet)
   - [ReTweet](#retweet-model)
+  - [Like](#like-model)
 - [Pagination](#pagination)
 - [Error Responses](#error-responses)
 - [Testing](#testing)
@@ -42,39 +46,43 @@
 
 ## Project Overview
 
-Tweeter is a simplified Twitter-like REST API built with Django and Django REST Framework. It supports user registration, JWT authentication, public/private profiles, following/unfollowing users, creating tweets, retweeting, and timeline generation with visibility rules.
+Tweeter is a simplified Twitter-like REST API built with Django and Django REST Framework. It supports user registration, JWT authentication, public/private profiles, following/unfollowing users, creating tweets, retweeting, liking, and timeline generation with visibility rules.
 
 **Key Features:**
 
-- JWT-based authentication
+- JWT-based authentication with logout (token blacklisting)
 - Public/private user profiles
+- Profile media uploads (profile picture, banner)
 - Follow/unfollow system
-- Tweets and retweets
+- Tweets, retweets, and likes
+- Tweet media attachments
 - Public and private timelines with privacy-aware visibility
 - Paginated API responses
 - Full CRUD for user profile (GET, PATCH, DELETE)
 - Auto-generated OpenAPI documentation (Swagger/ReDoc)
+- Docker support with Python 3.13 and PostgreSQL 16
 
 ---
 
 ## Technology Stack
-```
+
 | Component          | Technology                           |
 | ------------------ | ------------------------------------ |
 | Backend Framework  | Django 6.0+                          |
 | API Framework      | Django REST Framework                |
 | Authentication     | JWT (djangorestframework-simplejwt)  |
-| Database           | SQLite (dev), PostgreSQL (prod)      |
+| Database           | SQLite (dev), PostgreSQL 16 (prod)   |
 | API Documentation  | drf-spectacular (Swagger/ReDoc)      |
 | Containerisation   | Docker & Docker Compose              |
 | Testing            | Django TestCase + DRF APIClient      |
 | WSGI Server        | Gunicorn (production)                |
-```
+
 ---
 
 ## Project Structure
+
 ```
-TweeterDemo/
+Tweeter/
 │
 ├── accounts/
 │     ├── admin.py
@@ -87,27 +95,32 @@ TweeterDemo/
 │     └── views.py
 │
 ├── core/
-│     ├──  asgi.py
-│     ├──  Dockerfile
-│     ├──  settings.py
-│     ├──  urls.py
-│     └──   wsgi.py
+│     ├── asgi.py
+│     ├── Dockerfile
+│     ├── settings.py
+│     ├── urls.py
+│     └── wsgi.py
 │
 ├── tweets/
-│     ├──  admin.py
-│     ├──  apps.py
-│     ├──  models.py
-│     ├──  serializers.py
-│     ├──  tests.py
-│     ├──  urls.py
-│     └──  views.py
-│       
-├──   docker-compose.yml
-├──   DOCUMENTATION.md
-├──   manage.py
-├──   requirements.txt
-└──   Tweeter API.yaml
+│     ├── admin.py
+│     ├── apps.py
+│     ├── models.py
+│     ├── serializers.py
+│     ├── tests.py
+│     ├── urls.py
+│     └── views.py
+│
+├── .env
+├── .gitignore
+├── docker-compose.yml
+├── DOCUMENTATION.md
+├── manage.py
+├── README.md
+├── requirements.txt
+└── Tweeter API.yaml (optional, auto-generated)
 ```
+
+---
 
 ## Getting Started
 
@@ -165,14 +178,14 @@ If you prefer Docker, ensure Docker and Docker Compose are installed.
    docker-compose down
    ```
 
-**Note:** The Docker setup uses PostgreSQL instead of SQLite. Environment variables are already configured in `docker-compose.yml`.
+**Note:** The Docker setup uses PostgreSQL 16 instead of SQLite. Environment variables are already configured in `docker-compose.yml`.
 
 ---
 
 ## Environment Variables
 
 The application uses environment variables for configuration. In development, defaults are provided in `settings.py`. For production or Docker, set the following:
-```
+
 | Variable               | Description                                           | Default (dev)                        |
 | ---------------------- | ----------------------------------------------------- | ------------------------------------ |
 | `SECRET_KEY`           | Django secret key                                     | Insecure fallback key (change it!)   |
@@ -180,7 +193,7 @@ The application uses environment variables for configuration. In development, de
 | `DJANGO_ALLOWED_HOSTS` | Comma-separated list of allowed hosts                 | `localhost,127.0.0.1`                |
 | `DATABASE_URL`         | Database connection string (PostgreSQL format)        | `sqlite:///db.sqlite3`               |
 | `CSRF_TRUSTED_ORIGINS` | Comma-separated trusted origins for CSRF              | `http://localhost:8000,http://127.0.0.1:8000` |
-```
+
 **Example `DATABASE_URL` for PostgreSQL:**
 
 ```
@@ -191,7 +204,7 @@ postgres://username:password@host:port/database_name
 
 ## Authentication
 
-All endpoints except registration and token obtain/refresh require authentication. Include the JWT access token in the `Authorization` header as a Bearer token:
+All endpoints except registration, login, and token refresh require authentication. Include the JWT access token in the `Authorization` header as a Bearer token:
 
 ```
 Authorization: Bearer <your_access_token>
@@ -201,7 +214,7 @@ Authorization: Bearer <your_access_token>
 
 Register a new user account.
 
-- **URL:** `POST /api/accounts/auth/register/`
+- **URL:** `POST /api/accounts/register/`
 - **Permission:** AllowAny
 
 **Request Body:**
@@ -236,7 +249,7 @@ Register a new user account.
 
 ### Login (Obtain JWT Token)
 
-- **URL:** `POST /api/accounts/auth/token/`
+- **URL:** `POST /api/accounts/login/`
 - **Permission:** AllowAny
 
 **Request Body:**
@@ -261,7 +274,7 @@ Register a new user account.
 
 Use the refresh token to obtain a new access token without re-login.
 
-- **URL:** `POST /api/accounts/auth/token/refresh/`
+- **URL:** `POST /api/accounts/refresh/`
 - **Permission:** AllowAny
 
 **Request Body:**
@@ -277,6 +290,29 @@ Use the refresh token to obtain a new access token without re-login.
 ```json
 {
   "access": "new_access_token_here"
+}
+```
+
+### Logout
+
+Invalidate the refresh token (blacklist) so it can no longer be used.
+
+- **URL:** `POST /api/accounts/logout/`
+- **Permission:** Authenticated
+
+**Request Body:**
+
+```json
+{
+  "refresh": "your_refresh_token_here"
+}
+```
+
+**Response (205 Reset Content):**
+
+```json
+{
+  "detail": "Successfully logged out."
 }
 ```
 
@@ -302,12 +338,12 @@ All list endpoints support pagination via `?page=2&page_size=20` query parameter
 ### Accounts App
 
 #### User Management
-```
+
 | Method | Endpoint                         | Description                          |
 | ------ | -------------------------------- | ------------------------------------ |
 | `GET`  | `/api/accounts/users/`           | List all users (paginated)           |
 | `GET`  | `/api/accounts/users/<uuid:pk>/` | Retrieve a specific user's profile   |
-```
+
 **Example `GET /api/accounts/users/` Response (paginated):**
 
 ```json
@@ -325,21 +361,23 @@ All list endpoints support pagination via `?page=2&page_size=20` query parameter
       "bio": "I love tweeting!",
       "is_public": true,
       "is_following": false,
-      "custom_id": "a1b2c3"
+      "custom_id": "a1b2c3",
+      "profile_picture": null,
+      "profile_banner": null
     }
   ]
 }
 ```
 
 #### Profile Management
-```
+
 | Method   | Endpoint                     | Description                                           |
 | -------- | ---------------------------- | ----------------------------------------------------- |
 | `GET`    | `/api/accounts/profile/`     | Get own profile (authenticated user)                  |
-| `PATCH`  | `/api/accounts/profile/`     | Update own profile (email, name, bio, privacy)        |
+| `PATCH`  | `/api/accounts/profile/`     | Update own profile (email, name, bio, privacy, media) |
 | `DELETE` | `/api/accounts/profile/`     | Delete own account (permanent)                        |
-```
-**Example `PATCH /api/accounts/profile/` Request:**
+
+**Example `PATCH /api/accounts/profile/` Request (JSON):**
 
 ```json
 {
@@ -350,7 +388,13 @@ All list endpoints support pagination via `?page=2&page_size=20` query parameter
 }
 ```
 
-**Response (200 OK):** Returns updated user object.
+**Example `PATCH` for file upload (multipart/form-data):**
+
+```bash
+curl -X PATCH "http://127.0.0.1:8000/api/accounts/profile/" \
+  -H "Authorization: Bearer $TOKEN" \
+  -F "profile_picture=@/path/to/image.jpg"
+```
 
 **Allowed fields for PATCH:**
 - `email`
@@ -358,16 +402,18 @@ All list endpoints support pagination via `?page=2&page_size=20` query parameter
 - `last_name`
 - `bio`
 - `is_public_user`
+- `profile_picture`
+- `profile_banner`
 
 *Note: `username` and `password` cannot be changed via this endpoint.*
 
 #### Follow System
-```
+
 | Method   | Endpoint                      | Description                                  |
 | -------- | ----------------------------- | -------------------------------------------- |
 | `POST`   | `/api/accounts/follow/`       | Follow a user (provide `followee_id` in body)|
 | `DELETE` | `/api/accounts/unfollow/`     | Unfollow a user (provide `followee_id` in body) |
-```
+
 **POST `/api/accounts/follow/` Request Body:**
 
 ```json
@@ -407,12 +453,12 @@ All list endpoints support pagination via `?page=2&page_size=20` query parameter
 - `404 Not Found` – user with given ID does not exist.
 
 #### Timelines
-```
+
 | Method | Endpoint                           | Description                                                                 |
 | ------ | ---------------------------------- | --------------------------------------------------------------------------- |
 | `GET`  | `/api/accounts/timeline/public/`   | Public timeline: tweets from public users + followed private users           |
 | `GET`  | `/api/accounts/timeline/private/`  | Private timeline: tweets only from users you follow (regardless of privacy)  |
-```
+
 Both endpoints accept pagination parameters `?page=1&page_size=10`.
 
 **Example Response:**
@@ -436,68 +482,36 @@ Both endpoints accept pagination parameters `?page=1&page_size=10`.
       "created_at": "2026-04-16T10:00:00Z",
       "updated_at": "2026-04-16T10:00:00Z",
       "retweet_count": 3,
-      "parent_tweet": null
+      "like_count": 5,
+      "is_liked": false,
+      "parent_tweet": null,
+      "media": null
     }
   ]
 }
 ```
 
 #### User Relations
-```
+
 | Method | Endpoint                                      | Description                               |
 | ------ | --------------------------------------------- | ----------------------------------------- |
 | `GET`  | `/api/accounts/users/<uuid:user_id>/tweets/`  | List tweets by a specific user            |
 | `GET`  | `/api/accounts/users/<uuid:user_id>/followers/` | List followers of a user                |
 | `GET`  | `/api/accounts/users/<uuid:user_id>/following/` | List users that this user is following  |
-```
+
 All are paginated.
-
-**Example `GET /api/accounts/users/<uuid>/followers/` Response:**
-
-```json
-{
-  "count": 5,
-  "results": [
-    {
-      "follower": {
-        "id": "...",
-        "username": "bob",
-        "email": "bob@example.com",
-        "first_name": "Bob",
-        "last_name": "Johnson",
-        "bio": "Bob's bio",
-        "is_public": true,
-        "is_following": false,
-        "custom_id": "x7y8z9"
-      },
-      "followee": {
-        "id": "...",
-        "username": "alice",
-        "email": "alice@example.com",
-        "first_name": "Alice",
-        "last_name": "Smith",
-        "bio": "Alice's bio",
-        "is_public": true,
-        "is_following": true,
-        "custom_id": "a1b2c3"
-      },
-      "created_at": "2026-04-16T09:00:00Z"
-    }
-  ]
-}
-```
 
 ---
 
 ### Tweets App
 
 #### Tweet Listing & Detail
-```
+
 | Method | Endpoint                  | Description                                            |
 | ------ | ------------------------- | ------------------------------------------------------ |
 | `GET`  | `/api/tweets/`            | List all tweets visible to the authenticated user      |
 | `GET`  | `/api/tweets/<int:pk>/`   | Retrieve a single tweet (404 if not visible)           |
-```
+
 **Visibility Rules:**
 - Public tweets from any user are visible to everyone.
 - Private tweets are visible only to the author and their followers.
@@ -523,46 +537,29 @@ All are paginated.
       "created_at": "2026-04-16T08:00:00Z",
       "updated_at": "2026-04-16T08:00:00Z",
       "retweet_count": 2,
-      "parent_tweet": null
+      "like_count": 10,
+      "is_liked": true,
+      "parent_tweet": null,
+      "media": "/media/tweet_media/image.jpg"
     }
   ]
 }
 ```
 
 #### Retweet / Unretweet
-```
+
 | Method | Endpoint                              | Description                           |
 | ------ | ------------------------------------- | ------------------------------------- |
 | `POST` | `/api/tweets/<int:pk>/retweet/`       | Retweet a tweet (must be visible)     |
 | `POST` | `/api/tweets/<int:pk>/unretweet/`     | Remove your retweet                   |
-```
+
 **POST `/api/tweets/1/retweet/` Response (201 Created):**
 
 ```json
 {
   "id": 5,
-  "user": {
-    "id": "660e8400-e29b-41d4-a716-446655440001",
-    "username": "bob",
-    "email": "bob@example.com",
-    "first_name": "Bob",
-    "last_name": "Johnson"
-  },
-  "original_tweet": {
-    "id": 1,
-    "user": {
-      "id": "550e8400-e29b-41d4-a716-446655440000",
-      "username": "alice",
-      "email": "alice@example.com",
-      "first_name": "Alice",
-      "last_name": "Smith"
-    },
-    "message": "Original tweet",
-    "created_at": "2026-04-16T08:00:00Z",
-    "updated_at": "2026-04-16T08:00:00Z",
-    "retweet_count": 1,
-    "parent_tweet": null
-  },
+  "user": { ... },
+  "original_tweet": { ... },
   "created_at": "2026-04-16T12:30:00Z"
 }
 ```
@@ -580,6 +577,44 @@ All are paginated.
 - `400 Bad Request` – trying to unretweet a tweet you haven't retweeted.
 - `404 Not Found` – tweet doesn't exist.
 
+#### Like / Unlike
+
+| Method | Endpoint                              | Description                           |
+| ------ | ------------------------------------- | ------------------------------------- |
+| `POST` | `/api/tweets/<int:pk>/like/`          | Like a tweet (must be visible)        |
+| `POST` | `/api/tweets/<int:pk>/unlike/`        | Remove your like                      |
+
+**POST `/api/tweets/1/like/` Response (201 Created):**
+
+```json
+{
+  "message": "Liked",
+  "like_count": 1
+}
+```
+
+If already liked (200 OK):
+
+```json
+{
+  "message": "Already liked",
+  "like_count": 1
+}
+```
+
+**POST `/api/tweets/1/unlike/` Response (200 OK):**
+
+```json
+{
+  "message": "Unliked",
+  "like_count": 0
+}
+```
+
+**Errors:**
+- `403 Forbidden` – tweet not visible.
+- `400 Bad Request` – trying to unlike a tweet you haven't liked.
+
 ---
 
 ## Data Models
@@ -587,24 +622,26 @@ All are paginated.
 ### User
 
 Custom user model extending Django's `AbstractUser`.
-```
-| Field            | Type      | Description                                       |
-| ---------------- | --------- | ------------------------------------------------- |
-| `id`             | UUID      | Primary key, auto-generated                       |
-| `username`       | String    | Unique username                                   |
-| `email`          | Email     | User's email address                              |
-| `first_name`     | String    |                                                   |
-| `last_name`      | String    |                                                   |
-| `bio`            | Text      | Max 200 characters, optional                      |
-| `is_public_user` | Boolean   | Default `True`. If `False`, profile/tweets are private |
-| `custom_id`      | String(6) | Auto-generated 6-character unique identifier      |
-| `password`       | (hashed)  |                                                   |
-| `is_active`      | Boolean   |                                                   |
-| `is_staff`       | Boolean   |                                                   |
-| `is_superuser`   | Boolean   |                                                   |
-| `date_joined`    | DateTime  |                                                   |
-| `last_login`     | DateTime  |                                                   |
-```
+
+| Field             | Type      | Description                                       |
+| ----------------- | --------- | ------------------------------------------------- |
+| `id`              | UUID      | Primary key, auto-generated                       |
+| `username`        | String    | Unique username                                   |
+| `email`           | Email     | User's email address                              |
+| `first_name`      | String    |                                                   |
+| `last_name`       | String    |                                                   |
+| `bio`             | Text      | Max 200 characters, optional                      |
+| `is_public_user`  | Boolean   | Default `True`. If `False`, profile/tweets are private |
+| `custom_id`       | String(6) | Auto-generated 6-character unique identifier      |
+| `profile_picture` | ImageField| Uploaded profile picture                          |
+| `profile_banner`  | ImageField| Uploaded profile banner                           |
+| `password`        | (hashed)  |                                                   |
+| `is_active`       | Boolean   |                                                   |
+| `is_staff`        | Boolean   |                                                   |
+| `is_superuser`    | Boolean   |                                                   |
+| `date_joined`     | DateTime  |                                                   |
+| `last_login`      | DateTime  |                                                   |
+
 **Properties:**
 - `is_public` → returns `is_public_user`
 - `is_private` → returns `not is_public_user`
@@ -612,43 +649,59 @@ Custom user model extending Django's `AbstractUser`.
 ### Follower
 
 Represents a follow relationship between two users.
-```
+
 | Field        | Type      | Description                                |
 | ------------ | --------- | ------------------------------------------ |
 | `id`         | AutoField |                                            |
 | `follower`   | FK(User)  | The user who follows                       |
 | `followee`   | FK(User)  | The user being followed                    |
 | `created_at` | DateTime  | Auto-set on creation                       |
-```
+
 **Constraints:** `unique_together = ('follower', 'followee')`
 
 ### Tweet
-```
+
 | Field          | Type          | Description                                |
 | -------------- | ------------- | ------------------------------------------ |
 | `id`           | AutoField     |                                            |
 | `user`         | FK(User)      | Author                                     |
 | `content`      | Text(280)     | Tweet content                              |
+| `media`        | FileField     | Optional attached media                    |
 | `created_at`   | DateTime      | Auto-set on creation                       |
 | `updated_at`   | DateTime      | Auto-updated                               |
 | `parent_tweet` | FK('self')    | For reply functionality (optional)         |
-```
+
 **Methods:**
 - `is_visible_to(user)` – Returns `True` if `user` can see this tweet.
 - `retweet(user)` – Creates a `ReTweet` for the given user.
 - `unretweet(user)` – Deletes the `ReTweet` if exists.
 - `get_retweet_count()` – Returns number of retweets.
+- `like(user)` – Creates a `Like` for the given user.
+- `unlike(user)` – Deletes the `Like` if exists.
+- `get_like_count()` – Returns number of likes.
+- `is_liked_by(user)` – Returns `True` if user liked the tweet.
 
 ### ReTweet Model
-```
+
 | Field            | Type      | Description                               |
 | ---------------- | --------- | ----------------------------------------- |
 | `id`             | AutoField |                                           |
 | `user`           | FK(User)  | User who retweeted                        |
 | `original_tweet` | FK(Tweet) | The tweet being retweeted                 |
 | `created_at`     | DateTime  | Auto-set                                  |
-```
-**Constraints:** `unique_together = ('user', 'original_tweet')` – a user can retweet a tweet only once.
+
+**Constraints:** `unique_together = ('user', 'original_tweet')`
+
+### Like Model
+
+| Field        | Type      | Description                               |
+| ------------ | --------- | ----------------------------------------- |
+| `id`         | AutoField |                                           |
+| `user`       | FK(User)  | User who liked                            |
+| `tweet`      | FK(Tweet) | The tweet being liked                     |
+| `created_at` | DateTime  | Auto-set                                  |
+
+**Constraints:** `unique_together = ('user', 'tweet')`
 
 ---
 
@@ -710,14 +763,14 @@ python manage.py test -v2
 ```
 
 Tests cover:
-- User registration and JWT authentication
-- Profile retrieval, update, deletion
+- User registration and JWT authentication (including logout)
+- Profile retrieval, update, deletion, and media uploads
 - Follow/unfollow logic
 - Timeline generation with privacy rules
-- Tweet visibility and retweet permissions
+- Tweet visibility, retweet, and like permissions
 - Pagination
 
-All 25 tests should pass.
+All 34 tests should pass.
 
 ---
 
@@ -725,29 +778,47 @@ All 25 tests should pass.
 
 Interactive API documentation is automatically generated and available at:
 
-- **Swagger UI:** `http://127.0.0.1:8000/api/accounts/docs/`
-  (Try out endpoints directly in the browser)
-
-- **ReDoc:** `http://127.0.0.1:8000/api/accounts/redoc/`
-
-- **OpenAPI Schema (JSON):** `http://127.0.0.1:8000/api/accounts/schema/`
-
-*Note: If you moved docs to `/api/docs/` in main urls, adjust the URLs accordingly.*
+- **Swagger UI:** `http://127.0.0.1:8000/api/docs/`
+- **ReDoc:** `http://127.0.0.1:8000/api/redoc/`
+- **OpenAPI Schema (JSON/YAML):** `http://127.0.0.1:8000/api/schema/`
 
 ---
 
 ## Deployment Considerations
 
 - Set `DEBUG=False` and a strong `SECRET_KEY` in production.
-- Use a production-ready database like PostgreSQL (as configured in Docker).
+- Use a production-ready database like PostgreSQL 16 (as configured in Docker).
 - Collect static files with `python manage.py collectstatic`.
 - Serve static/media files via a reverse proxy (Nginx) or cloud storage.
 - Enable HTTPS and set `SECURE_SSL_REDIRECT=True`.
-- For Docker deployments, consider using an `.env` file for secrets instead of hardcoding in `docker-compose.yml`.
+- For Docker deployments, use an `.env` file for secrets instead of hardcoding in `docker-compose.yml`.
 
 ---
 
 ## Changelog
+
+### [1.1.0] - 2026-04-19
+
+**Added**
+- Logout endpoint with token blacklisting
+- Like/unlike functionality for tweets
+- Profile media uploads (profile picture, profile banner)
+- Tweet media attachments
+- Updated Docker images to Python 3.13 and PostgreSQL 16
+
+**Changed**
+- URL paths simplified (register, login, logout, refresh at `/api/accounts/`)
+- API documentation moved to `/api/docs/`, `/api/redoc/`, `/api/schema/`
+- Pagination now fully DRF-integrated with proper paginated responses
+
+**Fixed**
+- Timeline and user‑relation views now return proper paginated responses
+- Admin panel now displays profile media fields
+- Visibility logic optimised with database‑level filtering
+
+**Updated**
+- Test suite expanded to 34 tests covering new features
+- Documentation updated to reflect all changes
 
 ### [1.0.0] - 2026-04-16
 
