@@ -44,7 +44,6 @@ class TweetSerializer(serializers.ModelSerializer):
 
 
 class CreateTweetSerializer(serializers.ModelSerializer):
-    """Serializer for creating a new tweet."""
     class Meta:
         model = Tweet
         fields = ['content', 'media', 'parent_tweet']
@@ -55,8 +54,8 @@ class CreateTweetSerializer(serializers.ModelSerializer):
         }
 
     def create(self, validated_data):
-        user = self.context['request'].user
-        return Tweet.objects.create(user=user, **validated_data)
+        # The user is set via serializer.save(user=request.user) in the view
+        return Tweet.objects.create(**validated_data)
 
 
 class ReTweetSerializer(serializers.ModelSerializer):

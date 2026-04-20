@@ -188,5 +188,6 @@ class TweetAPITestCase(TestCase):
         tweet = Tweet.objects.create(user=self.user2, content='Cannot delete')
         url = reverse('tweet-detail', kwargs={'pk': tweet.pk})
         response = self.client.delete(url)
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        # Private tweet not visible -> 404
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
         self.assertTrue(Tweet.objects.filter(pk=tweet.pk).exists())

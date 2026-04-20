@@ -10,10 +10,6 @@ from drf_spectacular.utils import extend_schema
 
 
 class TweetListView(generics.ListCreateAPIView):
-    """
-    GET: List visible tweets.
-    POST: Create a new tweet.
-    """
     permission_classes = [permissions.IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser, JSONParser]
 
@@ -30,7 +26,16 @@ class TweetListView(generics.ListCreateAPIView):
         ).select_related('user').prefetch_related('retweet_set', 'likes').order_by('-created_at')
 
     def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
+        return serializer.save(user=self.request.user)
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        instance = self.perform_create(serializer)
+        # Use TweetSerializer for the response
+        output_serializer = TweetSerializer(instance, context={'request': request})
+        headers = self.get_success_headers(output_serializer.data)
+        return Response(output_serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
 
 class TweetDetailView(generics.RetrieveDestroyAPIView):
