@@ -6,10 +6,14 @@ from django.db.models import Q
 from .models import Tweet, ReTweet, Like
 from .serializers import TweetSerializer, CreateTweetSerializer, ReTweetSerializer
 from accounts.models import Follower
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.utils import extend_schema, OpenApiResponse, OpenApiParameter
 
 
 class TweetListView(generics.ListCreateAPIView):
+    """
+    GET: List all visible tweets (paginated).
+    POST: Create a new tweet with optional media.
+    """
     permission_classes = [permissions.IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser, JSONParser]
 
@@ -28,11 +32,35 @@ class TweetListView(generics.ListCreateAPIView):
     def perform_create(self, serializer):
         return serializer.save(user=self.request.user)
 
+    @extend_schema(
+        summary="List tweets",
+        description="Returns a paginated list of tweets visible to the authenticated user.",
+        parameters=[
+            OpenApiParameter(name='page', type=int, location=OpenApiParameter.QUERY, description='Page number'),
+            OpenApiParameter(name='page_size', type=int, location=OpenApiParameter.QUERY, description='Items per page'),
+        ],
+        tags=["tweets"]
+    )
+    def get(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)
+
+    @extend_schema(
+        summary="Create tweet",
+        description="Create a new tweet. Supports multipart/form-data for media upload.",
+        request=CreateTweetSerializer,
+        responses={
+            201: TweetSerializer,
+            400: OpenApiResponse(description='Invalid input'),
+        },
+        tags=["tweets"]
+    )
+    def post(self, request, *args, **kwargs):
+        return super().post(request, *args, **kwargs)
+
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         instance = self.perform_create(serializer)
-        # Use TweetSerializer for the response
         output_serializer = TweetSerializer(instance, context={'request': request})
         headers = self.get_success_headers(output_serializer.data)
         return Response(output_serializer.data, status=status.HTTP_201_CREATED, headers=headers)
@@ -40,7 +68,7 @@ class TweetListView(generics.ListCreateAPIView):
 
 class TweetDetailView(generics.RetrieveDestroyAPIView):
     """
-    GET: Retrieve a tweet.
+    GET: Retrieve a single tweet.
     DELETE: Delete own tweet.
     """
     serializer_class = TweetSerializer
@@ -53,6 +81,27 @@ class TweetDetailView(generics.RetrieveDestroyAPIView):
             Q(user__is_public_user=True) | Q(user_id__in=followed) | Q(user=user)
         ).select_related('user').prefetch_related('retweet_set', 'likes')
 
+    @extend_schema(
+        summary="Get tweet details",
+        description="Retrieve a single tweet by ID. Returns 404 if not visible or not found.",
+        tags=["tweets"]
+    )
+    def get(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)
+
+    @extend_schema(
+        summary="Delete tweet",
+        description="Delete own tweet. Returns 204 on success.",
+        responses={
+            204: OpenApiResponse(description='Tweet deleted successfully'),
+            403: OpenApiResponse(description='You can only delete your own tweets'),
+            404: OpenApiResponse(description='Tweet not found'),
+        },
+        tags=["tweets"]
+    )
+    def delete(self, request, *args, **kwargs):
+        return super().delete(request, *args, **kwargs)
+
     def perform_destroy(self, instance):
         if instance.user != self.request.user:
             return Response({'error': 'You can only delete your own tweets.'}, status=status.HTTP_403_FORBIDDEN)
@@ -62,6 +111,17 @@ class TweetDetailView(generics.RetrieveDestroyAPIView):
 class RetweetView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
+    @extend_schema(
+        summary="Retweet",
+        description="Retweet a tweet. The original tweet must be visible to the authenticated user.",
+        request=None,
+        responses={
+            201: ReTweetSerializer,
+            403: OpenApiResponse(description='Tweet not accessible'),
+            404: OpenApiResponse(description='Tweet not found'),
+        },
+        tags=["tweets"]
+    )
     def post(self, request, pk):
         try:
             tweet = Tweet.objects.get(pk=pk)
@@ -79,6 +139,17 @@ class RetweetView(APIView):
 class UnretweetView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
+    @extend_schema(
+        summary="Unretweet",
+        description="Remove a retweet.",
+        request=None,
+        responses={
+            200: OpenApiResponse(description='Unretweeted successfully'),
+            400: OpenApiResponse(description='You have not retweeted this tweet'),
+            404: OpenApiResponse(description='Tweet not found'),
+        },
+        tags=["tweets"]
+    )
     def post(self, request, pk):
         try:
             tweet = Tweet.objects.get(pk=pk)
@@ -95,6 +166,18 @@ class UnretweetView(APIView):
 class LikeView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
+    @extend_schema(
+        summary="Like tweet",
+        description="Like a tweet. If already liked, returns 200.",
+        request=None,
+        responses={
+            201: OpenApiResponse(description='Liked'),
+            200: OpenApiResponse(description='Already liked'),
+            403: OpenApiResponse(description='Tweet not accessible'),
+            404: OpenApiResponse(description='Tweet not found'),
+        },
+        tags=["tweets"]
+    )
     def post(self, request, pk):
         try:
             tweet = Tweet.objects.get(pk=pk)
@@ -114,6 +197,17 @@ class LikeView(APIView):
 class UnlikeView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
+    @extend_schema(
+        summary="Unlike tweet",
+        description="Remove a like from a tweet.",
+        request=None,
+        responses={
+            200: OpenApiResponse(description='Unliked'),
+            400: OpenApiResponse(description='You have not liked this tweet'),
+            404: OpenApiResponse(description='Tweet not found'),
+        },
+        tags=["tweets"]
+    )
     def post(self, request, pk):
         try:
             tweet = Tweet.objects.get(pk=pk)

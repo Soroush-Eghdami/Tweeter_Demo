@@ -13,17 +13,27 @@ from accounts.services import TimelineService
 from tweets.serializers import TweetSerializer
 from tweets.models import Tweet
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
-from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework_simplejwt.tokens import RefreshToken
+from drf_spectacular.utils import extend_schema, OpenApiResponse, OpenApiParameter
 
 User = get_user_model()
 
 
+# ------------------------------------------------------------------
 # User CRUD
+# ------------------------------------------------------------------
 class UserListView(generics.ListAPIView):
     queryset = User.objects.all().order_by('-date_joined')
     serializer_class = UserSerializer
     permission_classes = [permissions.IsAuthenticated]
+
+    @extend_schema(
+        summary="List all users",
+        description="Returns a paginated list of all users.",
+        tags=["users"]
+    )
+    def get(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)
 
 
 class UserDetailView(generics.RetrieveAPIView):
@@ -31,13 +41,19 @@ class UserDetailView(generics.RetrieveAPIView):
     serializer_class = UserSerializer
     permission_classes = [permissions.IsAuthenticated]
 
+    @extend_schema(
+        summary="Get user details",
+        description="Retrieve a specific user's profile by UUID.",
+        tags=["users"]
+    )
+    def get(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)
 
+
+# ------------------------------------------------------------------
+# Profile Management
+# ------------------------------------------------------------------
 class UserProfileView(generics.RetrieveUpdateDestroyAPIView):
-    """
-    GET: Retrieve authenticated user's profile.
-    PATCH: Update profile fields (email, name, bio, privacy, profile_picture, profile_banner).
-    DELETE: Permanently delete account.
-    """
     parser_classes = [MultiPartParser, FormParser, JSONParser]
     permission_classes = [permissions.IsAuthenticated]
 
@@ -49,16 +65,62 @@ class UserProfileView(generics.RetrieveUpdateDestroyAPIView):
             return UserUpdateSerializer
         return UserSerializer
 
+    @extend_schema(
+        summary="Get own profile",
+        description="Returns the authenticated user's profile.",
+        tags=["profile"]
+    )
+    def get(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)
+
+    @extend_schema(
+        summary="Update profile",
+        description="Update own profile fields (email, name, bio, privacy, profile picture, banner).",
+        tags=["profile"]
+    )
+    def patch(self, request, *args, **kwargs):
+        return super().patch(request, *args, **kwargs)
+
+    @extend_schema(
+        summary="Delete account",
+        description="Permanently delete the authenticated user's account.",
+        tags=["profile"]
+    )
+    def delete(self, request, *args, **kwargs):
+        return super().delete(request, *args, **kwargs)
+
     def destroy(self, request, *args, **kwargs):
         user = self.get_object()
         user.delete()
         return Response({"detail": "Account deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
 
 
+# ------------------------------------------------------------------
 # Follow/Unfollow
+# ------------------------------------------------------------------
 class FollowUserView(generics.CreateAPIView):
     serializer_class = FollowerSerializer
     permission_classes = [permissions.IsAuthenticated]
+
+    @extend_schema(
+        summary="Follow a user",
+        description="Follow a user by providing their UUID in the request body.",
+        request={
+            'application/json': {
+                'type': 'object',
+                'properties': {'followee_id': {'type': 'string', 'format': 'uuid'}},
+                'required': ['followee_id']
+            }
+        },
+        responses={
+            201: FollowerSerializer,
+            400: OpenApiResponse(description="Bad request (e.g., follow self or already following)"),
+            404: OpenApiResponse(description="User not found")
+        },
+        tags=["follow"]
+    )
+    def post(self, request, *args, **kwargs):
+        return super().post(request, *args, **kwargs)
 
     def create(self, request, *args, **kwargs):
         follower = request.user
@@ -85,6 +147,26 @@ class FollowUserView(generics.CreateAPIView):
 class UnfollowUserView(generics.DestroyAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
+    @extend_schema(
+        summary="Unfollow a user",
+        description="Unfollow a user by providing their UUID in the request body.",
+        request={
+            'application/json': {
+                'type': 'object',
+                'properties': {'followee_id': {'type': 'string', 'format': 'uuid'}},
+                'required': ['followee_id']
+            }
+        },
+        responses={
+            200: OpenApiResponse(description="Unfollowed successfully"),
+            400: OpenApiResponse(description="Bad request (e.g., not following)"),
+            404: OpenApiResponse(description="User not found")
+        },
+        tags=["follow"]
+    )
+    def delete(self, request, *args, **kwargs):
+        return super().delete(request, *args, **kwargs)
+
     def destroy(self, request, *args, **kwargs):
         follower = request.user
         followee_id = request.data.get('followee_id')
@@ -103,12 +185,17 @@ class UnfollowUserView(generics.DestroyAPIView):
         return Response({'message': 'Unfollowed successfully'}, status=status.HTTP_200_OK)
 
 
-# Timelines (using pagination)
+# ------------------------------------------------------------------
+# Timelines
+# ------------------------------------------------------------------
 @extend_schema(
     parameters=[
-        OpenApiParameter(name='page', type=int, location=OpenApiParameter.QUERY),
-        OpenApiParameter(name='page_size', type=int, location=OpenApiParameter.QUERY),
-    ]
+        OpenApiParameter(name='page', type=int, location=OpenApiParameter.QUERY, description='Page number'),
+        OpenApiParameter(name='page_size', type=int, location=OpenApiParameter.QUERY, description='Items per page'),
+    ],
+    summary="Public timeline",
+    description="Returns a paginated list of tweets visible to the authenticated user (public tweets + tweets from followed private users).",
+    tags=["timelines"]
 )
 @api_view(['GET'])
 @permission_classes([permissions.IsAuthenticated])
@@ -122,9 +209,12 @@ def public_timeline(request):
 
 @extend_schema(
     parameters=[
-        OpenApiParameter(name='page', type=int, location=OpenApiParameter.QUERY),
-        OpenApiParameter(name='page_size', type=int, location=OpenApiParameter.QUERY),
-    ]
+        OpenApiParameter(name='page', type=int, location=OpenApiParameter.QUERY, description='Page number'),
+        OpenApiParameter(name='page_size', type=int, location=OpenApiParameter.QUERY, description='Items per page'),
+    ],
+    summary="Private timeline",
+    description="Returns a paginated list of tweets only from users the authenticated user follows.",
+    tags=["timelines"]
 )
 @api_view(['GET'])
 @permission_classes([permissions.IsAuthenticated])
@@ -138,9 +228,13 @@ def private_timeline(request):
 
 @extend_schema(
     parameters=[
-        OpenApiParameter(name='page', type=int, location=OpenApiParameter.QUERY),
-        OpenApiParameter(name='page_size', type=int, location=OpenApiParameter.QUERY),
-    ]
+        OpenApiParameter(name='page', type=int, location=OpenApiParameter.QUERY, description='Page number'),
+        OpenApiParameter(name='page_size', type=int, location=OpenApiParameter.QUERY, description='Items per page'),
+        OpenApiParameter(name='user_id', type=str, location=OpenApiParameter.PATH, description='UUID of the user'),
+    ],
+    summary="User tweets",
+    description="Returns a paginated list of tweets by a specific user.",
+    tags=["users"]
 )
 @api_view(['GET'])
 @permission_classes([permissions.IsAuthenticated])
@@ -159,9 +253,13 @@ def user_tweets(request, user_id):
 
 @extend_schema(
     parameters=[
-        OpenApiParameter(name='page', type=int, location=OpenApiParameter.QUERY),
-        OpenApiParameter(name='page_size', type=int, location=OpenApiParameter.QUERY),
-    ]
+        OpenApiParameter(name='page', type=int, location=OpenApiParameter.QUERY, description='Page number'),
+        OpenApiParameter(name='page_size', type=int, location=OpenApiParameter.QUERY, description='Items per page'),
+        OpenApiParameter(name='user_id', type=str, location=OpenApiParameter.PATH, description='UUID of the user'),
+    ],
+    summary="User followers",
+    description="Returns a paginated list of followers of a specific user.",
+    tags=["users"]
 )
 @api_view(['GET'])
 @permission_classes([permissions.IsAuthenticated])
@@ -180,9 +278,13 @@ def user_followers(request, user_id):
 
 @extend_schema(
     parameters=[
-        OpenApiParameter(name='page', type=int, location=OpenApiParameter.QUERY),
-        OpenApiParameter(name='page_size', type=int, location=OpenApiParameter.QUERY),
-    ]
+        OpenApiParameter(name='page', type=int, location=OpenApiParameter.QUERY, description='Page number'),
+        OpenApiParameter(name='page_size', type=int, location=OpenApiParameter.QUERY, description='Items per page'),
+        OpenApiParameter(name='user_id', type=str, location=OpenApiParameter.PATH, description='UUID of the user'),
+    ],
+    summary="User following",
+    description="Returns a paginated list of users that a specific user is following.",
+    tags=["users"]
 )
 @api_view(['GET'])
 @permission_classes([permissions.IsAuthenticated])
@@ -199,17 +301,80 @@ def user_following(request, user_id):
     return paginator.get_paginated_response(serializer.data)
 
 
+# ------------------------------------------------------------------
 # Authentication (JWT)
+# ------------------------------------------------------------------
 class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
     permission_classes = [permissions.AllowAny]
     serializer_class = RegisterSerializer
-    
+
+    @extend_schema(
+        summary="Register new user",
+        description="Create a new user account.",
+        tags=["authentication"]
+    )
+    def post(self, request, *args, **kwargs):
+        return super().post(request, *args, **kwargs)
+
+
+# Decorate the JWT views to improve documentation
+class CustomTokenObtainPairView(TokenObtainPairView):
+    @extend_schema(
+        summary="Login (obtain JWT tokens)",
+        description="Authenticate with username and password to receive access and refresh tokens.",
+        tags=["authentication"],
+        responses={
+            200: {
+                'type': 'object',
+                'properties': {
+                    'access': {'type': 'string', 'description': 'JWT access token'},
+                    'refresh': {'type': 'string', 'description': 'JWT refresh token'},
+                }
+            }
+        }
+    )
+    def post(self, request, *args, **kwargs):
+        return super().post(request, *args, **kwargs)
+
+
+class CustomTokenRefreshView(TokenRefreshView):
+    @extend_schema(
+        summary="Refresh access token",
+        description="Obtain a new access token using a valid refresh token.",
+        tags=["authentication"],
+        request={
+            'application/json': {
+                'type': 'object',
+                'properties': {'refresh': {'type': 'string'}},
+                'required': ['refresh']
+            }
+        },
+        responses={
+            200: {
+                'type': 'object',
+                'properties': {'access': {'type': 'string'}}
+            }
+        }
+    )
+    def post(self, request, *args, **kwargs):
+        return super().post(request, *args, **kwargs)
+
 
 class LogoutView(generics.GenericAPIView):
     serializer_class = LogoutSerializer
     permission_classes = [permissions.IsAuthenticated]
 
+    @extend_schema(
+        summary="Logout",
+        description="Blacklist the provided refresh token. The access token will remain valid until its expiry.",
+        tags=["authentication"],
+        request=LogoutSerializer,
+        responses={
+            205: OpenApiResponse(description="Successfully logged out"),
+            400: OpenApiResponse(description="Invalid token"),
+        }
+    )
     def post(self, request):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
