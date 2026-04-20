@@ -1,0 +1,318 @@
+{
+  "info": {
+    "name": "Tweeter API",
+    "_postman_id": "9c1f0c2a-1111-2222-3333-abcdef123456",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://127.0.0.1:8000" },
+    { "key": "token", "value": "" },
+    { "key": "refresh", "value": "" },
+    { "key": "user_uuid", "value": "USER_UUID" },
+    { "key": "tweet_id", "value": "1" }
+  ],
+  "item": [
+
+    {
+      "name": "1. Register a new user",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{base_url}}/api/accounts/register/",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"testuser\",\n  \"email\": \"test@example.com\",\n  \"password\": \"SecurePass123!\",\n  \"password2\": \"SecurePass123!\",\n  \"first_name\": \"Test\",\n  \"last_name\": \"User\",\n  \"bio\": \"Hello world\"\n}"
+        }
+      }
+    },
+
+    {
+      "name": "2. Login",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{base_url}}/api/accounts/login/",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"username\":\"testuser\",\"password\":\"SecurePass123!\"}"
+        }
+      }
+    },
+
+    {
+      "name": "3. Refresh access token",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{base_url}}/api/accounts/refresh/",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"refresh\":\"{{refresh}}\"}"
+        }
+      }
+    },
+
+    {
+      "name": "4. Get own profile",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "url": "{{base_url}}/api/accounts/profile/"
+      }
+    },
+
+    {
+      "name": "5. Update profile",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"email\":\"new@example.com\",\"bio\":\"Updated bio\"}"
+        },
+        "url": "{{base_url}}/api/accounts/profile/"
+      }
+    },
+
+    {
+      "name": "6. Upload profile picture",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            { "key": "profile_picture", "type": "file", "src": "" }
+          ]
+        },
+        "url": "{{base_url}}/api/accounts/profile/"
+      }
+    },
+
+    {
+      "name": "7. Upload profile banner",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            { "key": "profile_banner", "type": "file", "src": "" }
+          ]
+        },
+        "url": "{{base_url}}/api/accounts/profile/"
+      }
+    },
+
+    {
+      "name": "8. Delete own account",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "url": "{{base_url}}/api/accounts/profile/"
+      }
+    },
+
+    {
+      "name": "9. Logout",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"refresh\":\"{{refresh}}\"}"
+        },
+        "url": "{{base_url}}/api/accounts/logout/"
+      }
+    },
+
+    {
+      "name": "10. List users",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+        "url": "{{base_url}}/api/accounts/users/"
+      }
+    },
+
+    {
+      "name": "11. Get user by UUID",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+        "url": "{{base_url}}/api/accounts/users/{{user_uuid}}/"
+      }
+    },
+
+    {
+      "name": "12. Follow user",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"followee_id\":\"{{user_uuid}}\"}"
+        },
+        "url": "{{base_url}}/api/accounts/follow/"
+      }
+    },
+
+    {
+      "name": "13. Unfollow user",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"followee_id\":\"{{user_uuid}}\"}"
+        },
+        "url": "{{base_url}}/api/accounts/unfollow/"
+      }
+    },
+
+    {
+      "name": "14. Public timeline",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+        "url": "{{base_url}}/api/accounts/timeline/public/?page=1&page_size=10"
+      }
+    },
+
+    {
+      "name": "15. Private timeline",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+        "url": "{{base_url}}/api/accounts/timeline/private/?page=1&page_size=10"
+      }
+    },
+
+    {
+      "name": "16. User tweets",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+        "url": "{{base_url}}/api/accounts/users/{{user_uuid}}/tweets/"
+      }
+    },
+
+    {
+      "name": "17. Followers",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+        "url": "{{base_url}}/api/accounts/users/{{user_uuid}}/followers/"
+      }
+    },
+
+    {
+      "name": "18. Following",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+        "url": "{{base_url}}/api/accounts/users/{{user_uuid}}/following/"
+      }
+    },
+
+    {
+      "name": "19. List tweets",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+        "url": "{{base_url}}/api/tweets/?page=1&page_size=10"
+      }
+    },
+
+    {
+      "name": "20. Get tweet",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+        "url": "{{base_url}}/api/tweets/{{tweet_id}}/"
+      }
+    },
+
+    {
+      "name": "21. Like tweet",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+        "url": "{{base_url}}/api/tweets/{{tweet_id}}/like/"
+      }
+    },
+
+    {
+      "name": "22. Unlike tweet",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+        "url": "{{base_url}}/api/tweets/{{tweet_id}}/unlike/"
+      }
+    },
+
+    {
+      "name": "23. Retweet",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+        "url": "{{base_url}}/api/tweets/{{tweet_id}}/retweet/"
+      }
+    },
+
+    {
+      "name": "24. Unretweet",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+        "url": "{{base_url}}/api/tweets/{{tweet_id}}/unretweet/"
+      }
+    },
+
+    {
+      "name": "Example - formatted profile",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+        "url": "{{base_url}}/api/accounts/profile/"
+      }
+    },
+
+    {
+      "name": "Example - follow with variable",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"followee_id\":\"550e8400-e29b-41d4-a716-446655440000\"}"
+        },
+        "url": "{{base_url}}/api/accounts/follow/"
+      }
+    }
+
+  ]
+}
