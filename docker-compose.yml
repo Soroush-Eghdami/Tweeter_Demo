@@ -19,8 +19,8 @@ services:
 
   web:
     build:
-      context: .
-      dockerfile: ./core/Dockerfile
+      context: ./backend
+      dockerfile: Dockerfile
     container_name: tweeter_web
     restart: unless-stopped
     command: >
@@ -28,7 +28,7 @@ services:
              python manage.py collectstatic --noinput &&
              gunicorn --bind 0.0.0.0:8000 core.wsgi:application"
     volumes:
-      - .:/app
+      - ./backend:/app
       - static_volume:/app/staticfiles
       - media_volume:/app/media
     ports:
