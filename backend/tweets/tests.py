@@ -149,3 +149,44 @@ class TweetAPITestCase(TestCase):
         image = create_test_image('tweet_media.jpg')
         tweet = Tweet.objects.create(user=self.user1, content='Media tweet', media=image)
         self.assertTrue(tweet.media.name.startswith('tweet_media/tweet_media'))
+        
+    # ------------------------------------------------------------------
+    # Tweet new API for create and delete
+    # ------------------------------------------------------------------
+
+    def test_create_tweet(self):
+        url = reverse('tweet-list')
+        data = {'content': 'A new tweet!'}
+        response = self.client.post(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(Tweet.objects.count(), 4)  # 3 from setUp + 1 new
+        self.assertEqual(response.data['message'], 'A new tweet!')
+
+    def test_create_tweet_with_media(self):
+        url = reverse('tweet-list')
+        image = create_test_image('tweet.jpg')
+        data = {'content': 'Media tweet', 'media': image}
+        response = self.client.post(url, data, format='multipart')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertTrue(Tweet.objects.get(id=response.data['id']).media.name.startswith('tweet_media/'))
+
+    def test_create_tweet_unauthenticated(self):
+        self.client.credentials()  # remove token
+        url = reverse('tweet-list')
+        data = {'content': 'Unauthorized tweet'}
+        response = self.client.post(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_delete_own_tweet(self):
+        tweet = Tweet.objects.create(user=self.user1, content='Delete me')
+        url = reverse('tweet-detail', kwargs={'pk': tweet.pk})
+        response = self.client.delete(url)
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertFalse(Tweet.objects.filter(pk=tweet.pk).exists())
+
+    def test_delete_others_tweet_fails(self):
+        tweet = Tweet.objects.create(user=self.user2, content='Cannot delete')
+        url = reverse('tweet-detail', kwargs={'pk': tweet.pk})
+        response = self.client.delete(url)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertTrue(Tweet.objects.filter(pk=tweet.pk).exists())

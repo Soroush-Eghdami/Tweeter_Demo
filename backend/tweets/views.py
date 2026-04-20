@@ -4,14 +4,23 @@ from rest_framework.views import APIView
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from django.db.models import Q
 from .models import Tweet, ReTweet, Like
-from .serializers import TweetSerializer, ReTweetSerializer
+from .serializers import TweetSerializer, CreateTweetSerializer, ReTweetSerializer
 from accounts.models import Follower
 from drf_spectacular.utils import extend_schema
 
 
-class TweetListView(generics.ListAPIView):
-    serializer_class = TweetSerializer
+class TweetListView(generics.ListCreateAPIView):
+    """
+    GET: List visible tweets.
+    POST: Create a new tweet.
+    """
     permission_classes = [permissions.IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
+
+    def get_serializer_class(self):
+        if self.request.method == 'POST':
+            return CreateTweetSerializer
+        return TweetSerializer
 
     def get_queryset(self):
         user = self.request.user
@@ -20,8 +29,15 @@ class TweetListView(generics.ListAPIView):
             Q(user__is_public_user=True) | Q(user_id__in=followed) | Q(user=user)
         ).select_related('user').prefetch_related('retweet_set', 'likes').order_by('-created_at')
 
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
 
-class TweetDetailView(generics.RetrieveAPIView):
+
+class TweetDetailView(generics.RetrieveDestroyAPIView):
+    """
+    GET: Retrieve a tweet.
+    DELETE: Delete own tweet.
+    """
     serializer_class = TweetSerializer
     permission_classes = [permissions.IsAuthenticated]
 
@@ -31,6 +47,11 @@ class TweetDetailView(generics.RetrieveAPIView):
         return Tweet.objects.filter(
             Q(user__is_public_user=True) | Q(user_id__in=followed) | Q(user=user)
         ).select_related('user').prefetch_related('retweet_set', 'likes')
+
+    def perform_destroy(self, instance):
+        if instance.user != self.request.user:
+            return Response({'error': 'You can only delete your own tweets.'}, status=status.HTTP_403_FORBIDDEN)
+        instance.delete()
 
 
 class RetweetView(APIView):
@@ -99,10 +120,3 @@ class UnlikeView(APIView):
             return Response({'message': 'Unliked', 'like_count': tweet.get_like_count()}, status=status.HTTP_200_OK)
         else:
             return Response({'error': 'You have not liked this tweet'}, status=status.HTTP_400_BAD_REQUEST)
-
-
-# If you want to support media upload in tweet creation (not yet implemented), add:
-# class TweetCreateView(generics.CreateAPIView):
-#     parser_classes = [MultiPartParser, FormParser, JSONParser]
-#     serializer_class = TweetSerializer
-#     permission_classes = [permissions.IsAuthenticated]
