@@ -41,7 +41,6 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     # Third-party
     'rest_framework',
-    'rest_framework.authtoken',  # keep if you still need token for some reason, but we'll use JWT
     'rest_framework_simplejwt',
     'drf_spectacular',
     'drf_spectacular_sidecar',
@@ -54,8 +53,6 @@ INSTALLED_APPS = [
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework_simplejwt.authentication.JWTAuthentication',
-        # Optional: keep token auth as fallback
-        # 'rest_framework.authentication.TokenAuthentication',
     ],
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
@@ -80,9 +77,9 @@ SPECTACULAR_SETTINGS = {
     'DESCRIPTION': 'A Twitter-like demo API',
     'VERSION': '1.0.0',
     'SERVE_INCLUDE_SCHEMA': False,
-    'SWAGGER_UI_DIST': 'SIDECAR',  # Tells drf-spectacular to use Sidecar for Swagger
+    'SWAGGER_UI_DIST': 'SIDECAR',
     'SWAGGER_UI_TEMPLATE': 'SIDECAR',
-    'REDOC_DIST': 'SIDECAR',       # Tells drf-spectacular to use Sidecar for Redoc
+    'REDOC_DIST': 'SIDECAR',
 }
 
 MIDDLEWARE = [
@@ -128,6 +125,14 @@ DATABASES = {
 }
 
 
+# Password hashers – Argon2 as primary
+PASSWORD_HASHERS = [
+    'django.contrib.auth.hashers.Argon2PasswordHasher',
+    'django.contrib.auth.hashers.PBKDF2PasswordHasher',
+    'django.contrib.auth.hashers.PBKDF2SHA1PasswordHasher',
+    'django.contrib.auth.hashers.BCryptSHA256PasswordHasher',
+]
+
 # Password validation
 # https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators
 
@@ -164,7 +169,7 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'  
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'

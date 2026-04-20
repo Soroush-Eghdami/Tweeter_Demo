@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from .models import User, Follower
+from .models import User, Follower, PasswordHistory
 
 
 class CustomUserAdmin(UserAdmin):
@@ -37,3 +37,12 @@ class FollowerAdmin(admin.ModelAdmin):
     
     def get_queryset(self, request):
         return super().get_queryset(request).select_related('follower', 'followee')
+    
+
+
+@admin.register(PasswordHistory)
+class PasswordHistoryAdmin(admin.ModelAdmin):
+    list_display = ('user', 'created_at')
+    list_filter = ('user', 'created_at')
+    search_fields = ('user__username',)
+    readonly_fields = ('user', 'password_hash', 'created_at')

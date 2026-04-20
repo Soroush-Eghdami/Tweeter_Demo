@@ -36,3 +36,16 @@ class Follower(models.Model):
 
     def __str__(self):
         return f"{self.follower.username} follows {self.followee.username}"
+    
+
+class PasswordHistory(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='password_history')
+    password_hash = models.CharField(max_length=255)  # Store the hashed password
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name_plural = 'Password histories'
+
+    def __str__(self):
+        return f"{self.user.username} - {self.created_at}"

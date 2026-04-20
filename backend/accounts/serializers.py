@@ -1,8 +1,10 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
-from accounts.models import Follower
+from accounts.models import Follower,PasswordHistory 
 from tweets.models import Tweet, ReTweet
+from django.core.exceptions import ValidationError
+from django.contrib.auth.hashers import check_password
 
 User = get_user_model()
 
@@ -27,8 +29,17 @@ class UserSerializer(serializers.ModelSerializer):
 class UserUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['email', 'first_name', 'last_name', 'bio', 'is_public_user', 'profile_picture', 'profile_banner']
+        fields = ['username', 'email', 'first_name', 'last_name', 'bio', 'is_public_user', 'profile_picture', 'profile_banner']
         extra_kwargs = {field: {'required': False} for field in fields}
+
+    def validate_username(self, value):
+        user = self.context['request'].user
+        if User.objects.exclude(pk=user.pk).filter(username=value).exists():
+            raise serializers.ValidationError("This username is already taken.")
+        # Optional: custom username rules (e.g., no spaces)
+        if ' ' in value:
+            raise serializers.ValidationError("Username cannot contain spaces.")
+        return value
 
 class FollowerSerializer(serializers.ModelSerializer):
     follower = UserSerializer(read_only=True)
@@ -60,3 +71,39 @@ class RegisterSerializer(serializers.ModelSerializer):
 
 class LogoutSerializer(serializers.Serializer):
     refresh = serializers.CharField(required=True, write_only=True)
+    
+    
+class PasswordChangeSerializer(serializers.Serializer):
+    old_password = serializers.CharField(write_only=True, required=True)
+    new_password = serializers.CharField(write_only=True, required=True, validators=[validate_password])
+    confirm_new_password = serializers.CharField(write_only=True, required=True)
+
+    def validate(self, attrs):
+        if attrs['new_password'] != attrs['confirm_new_password']:
+            raise serializers.ValidationError({"confirm_new_password": "Passwords do not match."})
+        return attrs
+
+    def validate_old_password(self, value):
+        user = self.context['request'].user
+        if not user.check_password(value):
+            raise serializers.ValidationError("Old password is incorrect.")
+        return value
+
+    def validate_new_password(self, value):
+        user = self.context['request'].user
+        # Check against password history
+        password_history = PasswordHistory.objects.filter(user=user).order_by('-created_at')[:5]
+        for entry in password_history:
+            if check_password(value, entry.password_hash):
+                raise serializers.ValidationError("You have used this password recently. Please choose a different one.")
+        return value
+
+    def save(self, **kwargs):
+        user = self.context['request'].user
+        new_password = self.validated_data['new_password']
+        # Store old password hash in history before changing
+        PasswordHistory.objects.create(user=user, password_hash=user.password)
+        # Set new password
+        user.set_password(new_password)
+        user.save()
+        return user
