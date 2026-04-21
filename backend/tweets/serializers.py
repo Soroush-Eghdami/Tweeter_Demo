@@ -44,6 +44,7 @@ class TweetSerializer(serializers.ModelSerializer):
 
 
 class CreateTweetSerializer(serializers.ModelSerializer):
+    """Serializer for creating a new tweet."""
     class Meta:
         model = Tweet
         fields = ['content', 'media', 'parent_tweet']
@@ -52,6 +53,15 @@ class CreateTweetSerializer(serializers.ModelSerializer):
             'media': {'required': False},
             'parent_tweet': {'required': False}
         }
+
+    def validate_parent_tweet(self, value):
+        if value is None:
+            return value
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            if not value.is_visible_to(request.user):
+                raise serializers.ValidationError("You cannot reply to a tweet that is not visible to you.")
+        return value
 
     def create(self, validated_data):
         # The user is set via serializer.save(user=request.user) in the view
