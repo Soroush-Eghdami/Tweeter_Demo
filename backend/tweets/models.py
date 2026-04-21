@@ -3,11 +3,6 @@ from django.conf import settings
 from django.apps import apps
 
 
-class SoftDeleteManager(models.Manager):
-    def get_queryset(self):
-        return super().get_queryset().filter(is_deleted=False)
-
-
 class Tweet(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, db_index=True)
     content = models.TextField(max_length=280)
@@ -15,10 +10,6 @@ class Tweet(models.Model):
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
     updated_at = models.DateTimeField(auto_now=True)
     parent_tweet = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, db_index=True)
-    is_deleted = models.BooleanField(default=False, db_index=True)
-
-    objects = SoftDeleteManager()
-    all_objects = models.Manager()
 
     def __str__(self):
         return f"{self.user.username}: {self.content[:50]}"
@@ -61,16 +52,6 @@ class Tweet(models.Model):
 
     def is_liked_by(self, user):
         return self.likes.filter(user=user).exists()
-
-    def delete(self, *args, **kwargs):
-        """Soft delete: mark as deleted and clean up."""
-        self.is_deleted = True
-        # Orphan replies
-        Tweet.objects.filter(parent_tweet=self).update(parent_tweet=None)
-        # Hard delete retweets and likes
-        self.retweet_set.all().delete()
-        self.likes.all().delete()
-        self.save(update_fields=['is_deleted'])
 
 
 class ReTweet(models.Model):
