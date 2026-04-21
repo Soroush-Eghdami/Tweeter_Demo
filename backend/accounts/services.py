@@ -1,4 +1,3 @@
-from django.db import transaction
 from django.db.models import Prefetch, Q
 from tweets.models import Tweet, ReTweet
 from accounts.models import User, Follower
@@ -14,20 +13,13 @@ class TimelineService:
         Return a queryset of tweets for the public timeline.
         Includes tweets from public users and private users the current user follows.
         """
-        followed_user_ids = list(
-            Follower.objects.filter(follower=user).values_list('followee_id', flat=True)
-        )
-        # Include own tweets as well
-        visible_user_ids = followed_user_ids + [user.id]
+        followed_user_ids = Follower.objects.filter(follower=user).values_list('followee_id', flat=True)
+        visible_user_ids = list(followed_user_ids) + [user.id]
 
         return Tweet.objects.filter(
             Q(user__is_public_user=True) | Q(user_id__in=visible_user_ids)
         ).select_related('user').prefetch_related(
-            Prefetch(
-                'retweet_set',
-                queryset=ReTweet.objects.select_related('user'),
-                to_attr='prefetched_retweets'
-            )
+            Prefetch('retweet_set', queryset=ReTweet.objects.select_related('user'))
         ).order_by('-created_at')
 
     @staticmethod
@@ -35,17 +27,11 @@ class TimelineService:
         """
         Return a queryset of tweets from users the current user follows.
         """
-        followed_user_ids = list(
-            Follower.objects.filter(follower=user).values_list('followee_id', flat=True)
-        )
+        followed_user_ids = Follower.objects.filter(follower=user).values_list('followee_id', flat=True)
         return Tweet.objects.filter(
             user_id__in=followed_user_ids
         ).select_related('user').prefetch_related(
-            Prefetch(
-                'retweet_set',
-                queryset=ReTweet.objects.select_related('user'),
-                to_attr='prefetched_retweets'
-            )
+            Prefetch('retweet_set', queryset=ReTweet.objects.select_related('user'))
         ).order_by('-created_at')
 
     @staticmethod
@@ -56,11 +42,7 @@ class TimelineService:
         return Tweet.objects.filter(
             user=user
         ).select_related('user').prefetch_related(
-            Prefetch(
-                'retweet_set',
-                queryset=ReTweet.objects.select_related('user'),
-                to_attr='prefetched_retweets'
-            )
+            Prefetch('retweet_set', queryset=ReTweet.objects.select_related('user'))
         ).order_by('-created_at')
 
     @staticmethod
