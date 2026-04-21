@@ -3,7 +3,7 @@
 # ==============================================
 # Instructions:
 # 1. Replace placeholders like YOUR_ACCESS_TOKEN, YOUR_REFRESH_TOKEN,
-#    USER_UUID, and file paths with actual values.
+#    USER_UUID, TWEET_ID, and file paths with actual values.
 # 2. Run these commands in PowerShell (use curl.exe, not curl alias).
 # 3. For file uploads, ensure the file exists at the specified path.
 # ==============================================
@@ -50,27 +50,38 @@ curl.exe -X POST "$BASE_URL/api/accounts/refresh/" `
 curl.exe -X GET "$BASE_URL/api/accounts/profile/" `
   -H "Authorization: Bearer $TOKEN"
 
-# 5. Update profile (PATCH - JSON)
+# 5. Update profile (PATCH - JSON) including username
 curl.exe -X PATCH "$BASE_URL/api/accounts/profile/" `
   -H "Authorization: Bearer $TOKEN" `
   -H "Content-Type: application/json" `
-  -d '{"email":"new@example.com","bio":"Updated bio"}'
+  -d '{"username":"newusername","email":"new@example.com","bio":"Updated bio"}'
 
-# 6. Upload profile picture (multipart/form-data)
+# 6. Change password
+$passwordBody = @{
+    old_password = "SecurePass123!"
+    new_password = "NewSecurePass456!"
+    confirm_new_password = "NewSecurePass456!"
+} | ConvertTo-Json
+curl.exe -X POST "$BASE_URL/api/accounts/profile/change-password/" `
+  -H "Authorization: Bearer $TOKEN" `
+  -H "Content-Type: application/json" `
+  -d $passwordBody
+
+# 7. Upload profile picture (multipart/form-data)
 curl.exe -X PATCH "$BASE_URL/api/accounts/profile/" `
   -H "Authorization: Bearer $TOKEN" `
   -F "profile_picture=@C:\Users\YourName\Pictures\profile.jpg"
 
-# 7. Upload profile banner
+# 8. Upload profile banner
 curl.exe -X PATCH "$BASE_URL/api/accounts/profile/" `
   -H "Authorization: Bearer $TOKEN" `
   -F "profile_banner=@C:\Users\YourName\Pictures\banner.jpg"
 
-# 8. Delete own account
+# 9. Delete own account
 curl.exe -X DELETE "$BASE_URL/api/accounts/profile/" `
   -H "Authorization: Bearer $TOKEN"
 
-# 9. Logout (blacklist refresh token)
+# 10. Logout (blacklist refresh token)
 curl.exe -X POST "$BASE_URL/api/accounts/logout/" `
   -H "Authorization: Bearer $TOKEN" `
   -H "Content-Type: application/json" `
@@ -80,11 +91,11 @@ curl.exe -X POST "$BASE_URL/api/accounts/logout/" `
 # USERS LIST & DETAIL
 # ==============================================
 
-# 10. List all users (paginated)
+# 11. List all users (paginated)
 curl.exe -X GET "$BASE_URL/api/accounts/users/" `
   -H "Authorization: Bearer $TOKEN"
 
-# 11. Get specific user by UUID (replace USER_UUID)
+# 12. Get specific user by UUID (replace USER_UUID)
 curl.exe -X GET "$BASE_URL/api/accounts/users/USER_UUID/" `
   -H "Authorization: Bearer $TOKEN"
 
@@ -92,13 +103,13 @@ curl.exe -X GET "$BASE_URL/api/accounts/users/USER_UUID/" `
 # FOLLOW SYSTEM
 # ==============================================
 
-# 12. Follow a user (replace USER_UUID)
+# 13. Follow a user (replace USER_UUID)
 curl.exe -X POST "$BASE_URL/api/accounts/follow/" `
   -H "Authorization: Bearer $TOKEN" `
   -H "Content-Type: application/json" `
   -d '{"followee_id":"USER_UUID"}'
 
-# 13. Unfollow a user
+# 14. Unfollow a user
 curl.exe -X DELETE "$BASE_URL/api/accounts/unfollow/" `
   -H "Authorization: Bearer $TOKEN" `
   -H "Content-Type: application/json" `
@@ -108,11 +119,11 @@ curl.exe -X DELETE "$BASE_URL/api/accounts/unfollow/" `
 # TIMELINES
 # ==============================================
 
-# 14. Public timeline (paginated)
+# 15. Public timeline (paginated)
 curl.exe -X GET "$BASE_URL/api/accounts/timeline/public/?page=1&page_size=10" `
   -H "Authorization: Bearer $TOKEN"
 
-# 15. Private timeline (only followed users)
+# 16. Private timeline (only followed users)
 curl.exe -X GET "$BASE_URL/api/accounts/timeline/private/?page=1&page_size=10" `
   -H "Authorization: Bearer $TOKEN"
 
@@ -120,15 +131,15 @@ curl.exe -X GET "$BASE_URL/api/accounts/timeline/private/?page=1&page_size=10" `
 # USER RELATIONS
 # ==============================================
 
-# 16. Get tweets by a specific user (replace USER_UUID)
+# 17. Get tweets by a specific user (replace USER_UUID)
 curl.exe -X GET "$BASE_URL/api/accounts/users/USER_UUID/tweets/" `
   -H "Authorization: Bearer $TOKEN"
 
-# 17. Get followers of a user
+# 18. Get followers of a user
 curl.exe -X GET "$BASE_URL/api/accounts/users/USER_UUID/followers/" `
   -H "Authorization: Bearer $TOKEN"
 
-# 18. Get users followed by a user
+# 19. Get users followed by a user
 curl.exe -X GET "$BASE_URL/api/accounts/users/USER_UUID/following/" `
   -H "Authorization: Bearer $TOKEN"
 
@@ -136,27 +147,51 @@ curl.exe -X GET "$BASE_URL/api/accounts/users/USER_UUID/following/" `
 # TWEETS
 # ==============================================
 
-# 19. List all visible tweets (paginated)
+# 20. List all visible tweets (paginated)
 curl.exe -X GET "$BASE_URL/api/tweets/?page=1&page_size=10" `
   -H "Authorization: Bearer $TOKEN"
 
-# 20. Get single tweet by ID (replace 1 with actual tweet ID)
+# 21. Get single tweet by ID (replace 1 with actual tweet ID)
 curl.exe -X GET "$BASE_URL/api/tweets/1/" `
   -H "Authorization: Bearer $TOKEN"
 
-# 21. Like a tweet
+# 22. Create a simple text tweet
+$tweetBody = @{ content = "Hello, Tweeter!" } | ConvertTo-Json
+curl.exe -X POST "$BASE_URL/api/tweets/" `
+  -H "Authorization: Bearer $TOKEN" `
+  -H "Content-Type: application/json" `
+  -d $tweetBody
+
+# 23. Create a tweet with media
+curl.exe -X POST "$BASE_URL/api/tweets/" `
+  -H "Authorization: Bearer $TOKEN" `
+  -F "content=Check out this photo!" `
+  -F "media=@C:\Users\YourName\Pictures\tweet_image.jpg"
+
+# 24. Create a reply tweet (replace 1 with parent tweet ID)
+$replyBody = @{ content = "Great point!"; parent_tweet = 1 } | ConvertTo-Json
+curl.exe -X POST "$BASE_URL/api/tweets/" `
+  -H "Authorization: Bearer $TOKEN" `
+  -H "Content-Type: application/json" `
+  -d $replyBody
+
+# 25. Delete own tweet (replace 1 with tweet ID)
+curl.exe -X DELETE "$BASE_URL/api/tweets/1/" `
+  -H "Authorization: Bearer $TOKEN"
+
+# 26. Like a tweet
 curl.exe -X POST "$BASE_URL/api/tweets/1/like/" `
   -H "Authorization: Bearer $TOKEN"
 
-# 22. Unlike a tweet
+# 27. Unlike a tweet
 curl.exe -X POST "$BASE_URL/api/tweets/1/unlike/" `
   -H "Authorization: Bearer $TOKEN"
 
-# 23. Retweet a tweet
+# 28. Retweet a tweet
 curl.exe -X POST "$BASE_URL/api/tweets/1/retweet/" `
   -H "Authorization: Bearer $TOKEN"
 
-# 24. Unretweet a tweet
+# 29. Unretweet a tweet
 curl.exe -X POST "$BASE_URL/api/tweets/1/unretweet/" `
   -H "Authorization: Bearer $TOKEN"
 
