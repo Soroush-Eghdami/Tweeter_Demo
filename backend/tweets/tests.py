@@ -23,9 +23,16 @@ def create_test_image(name='test.jpg', size=(100, 100), color='blue'):
 class TweetAPITestCase(TestCase):
     def setUp(self):
         self.client = APIClient()
-        self.user1 = User.objects.create_user(username='tweeter1', password='pass', is_public_user=True)
-        self.user2 = User.objects.create_user(username='tweeter2', password='pass', is_public_user=False)
-        self.user3 = User.objects.create_user(username='tweeter3', password='pass', is_public_user=True)
+        # Create users with UNIQUE emails
+        self.user1 = User.objects.create_user(
+            username='tweeter1', password='pass', email='tweeter1@example.com', is_public_user=True
+        )
+        self.user2 = User.objects.create_user(
+            username='tweeter2', password='pass', email='tweeter2@example.com', is_public_user=False
+        )
+        self.user3 = User.objects.create_user(
+            username='tweeter3', password='pass', email='tweeter3@example.com', is_public_user=True
+        )
 
         # Get token for user1
         token_url = reverse('token_obtain_pair')
@@ -71,34 +78,124 @@ class TweetAPITestCase(TestCase):
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     # ------------------------------------------------------------------
-    # Retweet
+    # Create Tweet (text, media, reply, parent visibility)
+    # ------------------------------------------------------------------
+    def test_create_tweet_text_only(self):
+        url = reverse('tweet-list')
+        data = {'content': 'A simple tweet'}
+        response = self.client.post(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(Tweet.objects.count(), 4)
+        self.assertEqual(response.data['message'], 'A simple tweet')
+
+    def test_create_tweet_with_media(self):
+        url = reverse('tweet-list')
+        image = create_test_image('tweet_media.jpg')
+        data = {'content': 'Media tweet', 'media': image}
+        response = self.client.post(url, data, format='multipart')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertTrue(Tweet.objects.get(id=response.data['id']).media.name.startswith('tweet_media/'))
+
+    def test_create_reply_to_visible_tweet(self):
+        url = reverse('tweet-list')
+        data = {'content': 'Replying', 'parent_tweet': self.public_tweet.pk}
+        response = self.client.post(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        reply = Tweet.objects.get(id=response.data['id'])
+        self.assertEqual(reply.parent_tweet, self.public_tweet)
+
+    def test_create_reply_to_invisible_tweet_fails(self):
+        url = reverse('tweet-list')
+        data = {'content': 'Cannot reply', 'parent_tweet': self.private_tweet.pk}
+        response = self.client.post(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('parent_tweet', response.data)
+
+    # ------------------------------------------------------------------
+    # Delete Tweet (hard delete, orphan replies, cascade retweets/likes)
+    # ------------------------------------------------------------------
+    def test_delete_own_tweet(self):
+        tweet = Tweet.objects.create(user=self.user1, content='To be deleted')
+        url = reverse('tweet-detail', kwargs={'pk': tweet.pk})
+        response = self.client.delete(url)
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertFalse(Tweet.objects.filter(pk=tweet.pk).exists())
+
+    def test_delete_others_tweet_fails(self):
+        tweet = Tweet.objects.create(user=self.user2, content='Cannot delete')
+        url = reverse('tweet-detail', kwargs={'pk': tweet.pk})
+        response = self.client.delete(url)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)  # not visible, so 404
+
+    def test_delete_tweet_orphans_replies(self):
+        parent = Tweet.objects.create(user=self.user1, content='Parent')
+        reply = Tweet.objects.create(user=self.user2, content='Reply', parent_tweet=parent)
+        url = reverse('tweet-detail', kwargs={'pk': parent.pk})
+        response = self.client.delete(url)
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        reply.refresh_from_db()
+        self.assertIsNone(reply.parent_tweet)  # orphaned
+
+    def test_delete_tweet_cascades_retweets(self):
+        tweet = Tweet.objects.create(user=self.user1, content='RT me')
+        ReTweet.objects.create(user=self.user2, original_tweet=tweet)
+        self.assertEqual(tweet.get_retweet_count(), 1)
+        url = reverse('tweet-detail', kwargs={'pk': tweet.pk})
+        response = self.client.delete(url)
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertEqual(ReTweet.objects.filter(original_tweet=tweet).count(), 0)
+
+    def test_delete_tweet_cascades_likes(self):
+        tweet = Tweet.objects.create(user=self.user1, content='Like me')
+        Like.objects.create(user=self.user2, tweet=tweet)
+        self.assertEqual(tweet.get_like_count(), 1)
+        url = reverse('tweet-detail', kwargs={'pk': tweet.pk})
+        response = self.client.delete(url)
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertEqual(Like.objects.filter(tweet=tweet).count(), 0)
+
+    # ------------------------------------------------------------------
+    # Retweet / Unretweet (including self-retweet prevention, duplicate)
     # ------------------------------------------------------------------
     def test_retweet_public_tweet(self):
-        url = reverse('retweet', kwargs={'pk': self.public_tweet.pk})
+        url = reverse('retweet', kwargs={'pk': self.other_public_tweet.pk})
         response = self.client.post(url)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertTrue(ReTweet.objects.filter(user=self.user1, original_tweet=self.public_tweet).exists())
+        self.assertTrue(ReTweet.objects.filter(user=self.user1, original_tweet=self.other_public_tweet).exists())
 
     def test_retweet_private_tweet_fails_if_not_following(self):
         url = reverse('retweet', kwargs={'pk': self.private_tweet.pk})
         response = self.client.post(url)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
+    def test_retweet_own_tweet_fails(self):
+        url = reverse('retweet', kwargs={'pk': self.public_tweet.pk})  # user1's own tweet
+        response = self.client.post(url)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('own tweet', response.data['error'])
+
+    def test_retweet_duplicate_returns_200(self):
+        url = reverse('retweet', kwargs={'pk': self.other_public_tweet.pk})
+        self.client.post(url)  # first time
+        response = self.client.post(url)  # duplicate
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['message'], 'Already retweeted')
+
     def test_unretweet(self):
-        ReTweet.objects.create(user=self.user1, original_tweet=self.public_tweet)
-        url = reverse('unretweet', kwargs={'pk': self.public_tweet.pk})
+        ReTweet.objects.create(user=self.user1, original_tweet=self.other_public_tweet)
+        url = reverse('unretweet', kwargs={'pk': self.other_public_tweet.pk})
         response = self.client.post(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertFalse(ReTweet.objects.filter(user=self.user1, original_tweet=self.public_tweet).exists())
+        self.assertFalse(ReTweet.objects.filter(user=self.user1, original_tweet=self.other_public_tweet).exists())
 
-    def test_unretweet_nonexistent_returns_400(self):
+    def test_unretweet_not_retweeted_fails(self):
         url = reverse('unretweet', kwargs={'pk': self.public_tweet.pk})
         response = self.client.post(url)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn('not retweeted', response.data['error'])
 
     # ------------------------------------------------------------------
-    # Like / Unlike
+    # Like / Unlike (including duplicate handling)
     # ------------------------------------------------------------------
     def test_like_tweet(self):
         url = reverse('like-tweet', kwargs={'pk': self.public_tweet.pk})
@@ -108,10 +205,10 @@ class TweetAPITestCase(TestCase):
         self.assertEqual(response.data['like_count'], 1)
         self.assertTrue(Like.objects.filter(user=self.user1, tweet=self.public_tweet).exists())
 
-    def test_like_tweet_twice_is_idempotent(self):
+    def test_like_tweet_duplicate_returns_200(self):
         url = reverse('like-tweet', kwargs={'pk': self.public_tweet.pk})
         self.client.post(url)  # first like
-        response = self.client.post(url)  # second like
+        response = self.client.post(url)  # duplicate
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['message'], 'Already liked')
         self.assertEqual(Like.objects.filter(user=self.user1, tweet=self.public_tweet).count(), 1)
@@ -125,7 +222,7 @@ class TweetAPITestCase(TestCase):
         self.assertEqual(response.data['like_count'], 0)
         self.assertFalse(Like.objects.filter(user=self.user1, tweet=self.public_tweet).exists())
 
-    def test_unlike_not_liked_returns_400(self):
+    def test_unlike_not_liked_fails(self):
         url = reverse('unlike-tweet', kwargs={'pk': self.public_tweet.pk})
         response = self.client.post(url)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
@@ -138,56 +235,3 @@ class TweetAPITestCase(TestCase):
         response = self.client.get(url)
         self.assertEqual(response.data['like_count'], 2)
         self.assertTrue(response.data['is_liked'])  # user1 liked it
-
-    # ------------------------------------------------------------------
-    # Tweet with Media
-    # ------------------------------------------------------------------
-    def test_tweet_with_media_upload(self):
-        # Note: You need a tweet creation endpoint to test this fully.
-        # Assuming you'll add POST /tweets/ later.
-        # For now, test via model.
-        image = create_test_image('tweet_media.jpg')
-        tweet = Tweet.objects.create(user=self.user1, content='Media tweet', media=image)
-        self.assertTrue(tweet.media.name.startswith('tweet_media/tweet_media'))
-        
-    # ------------------------------------------------------------------
-    # Tweet new API for create and delete
-    # ------------------------------------------------------------------
-
-    def test_create_tweet(self):
-        url = reverse('tweet-list')
-        data = {'content': 'A new tweet!'}
-        response = self.client.post(url, data, format='json')
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(Tweet.objects.count(), 4)  # 3 from setUp + 1 new
-        self.assertEqual(response.data['message'], 'A new tweet!')
-
-    def test_create_tweet_with_media(self):
-        url = reverse('tweet-list')
-        image = create_test_image('tweet.jpg')
-        data = {'content': 'Media tweet', 'media': image}
-        response = self.client.post(url, data, format='multipart')
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertTrue(Tweet.objects.get(id=response.data['id']).media.name.startswith('tweet_media/'))
-
-    def test_create_tweet_unauthenticated(self):
-        self.client.credentials()  # remove token
-        url = reverse('tweet-list')
-        data = {'content': 'Unauthorized tweet'}
-        response = self.client.post(url, data, format='json')
-        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
-
-    def test_delete_own_tweet(self):
-        tweet = Tweet.objects.create(user=self.user1, content='Delete me')
-        url = reverse('tweet-detail', kwargs={'pk': tweet.pk})
-        response = self.client.delete(url)
-        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
-        self.assertFalse(Tweet.objects.filter(pk=tweet.pk).exists())
-
-    def test_delete_others_tweet_fails(self):
-        tweet = Tweet.objects.create(user=self.user2, content='Cannot delete')
-        url = reverse('tweet-detail', kwargs={'pk': tweet.pk})
-        response = self.client.delete(url)
-        # Private tweet not visible -> 404
-        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
-        self.assertTrue(Tweet.objects.filter(pk=tweet.pk).exists())

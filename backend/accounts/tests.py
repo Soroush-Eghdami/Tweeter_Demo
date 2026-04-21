@@ -6,7 +6,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from rest_framework.test import APIClient
 from rest_framework import status
 from django.contrib.auth import get_user_model
-from accounts.models import Follower
+from accounts.models import Follower, PasswordHistory
 from tweets.models import Tweet, Like
 
 User = get_user_model()
@@ -24,7 +24,7 @@ def create_test_image(name='test.jpg', size=(100, 100), color='red'):
 class AccountsAPITestCase(TestCase):
     def setUp(self):
         self.client = APIClient()
-        # Create users
+        # Create users with UNIQUE emails
         self.user1 = User.objects.create_user(
             username='alice',
             password='alicepass',
@@ -54,11 +54,59 @@ class AccountsAPITestCase(TestCase):
         self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {self.token}')
 
         # Create some tweets
-        self.tweet_public = Tweet.objects.create(user=self.user1, content='Public tweet')
-        self.tweet_private = Tweet.objects.create(user=self.user2, content='Private tweet')
+        self.tweet_public = Tweet.objects.create(user=self.user1, content='Public tweet from alice')
+        self.tweet_private = Tweet.objects.create(user=self.user2, content='Private tweet from bob')
 
     # ------------------------------------------------------------------
-    # Profile Endpoints (GET, PATCH, DELETE) with Media
+    # Authentication (Register, Login, Logout, Refresh)
+    # ------------------------------------------------------------------
+    def test_register_user(self):
+        url = reverse('register')
+        data = {
+            'username': 'newuser',
+            'email': 'new@example.com',
+            'password': 'ComplexPass123!',
+            'password2': 'ComplexPass123!',
+            'first_name': 'New',
+            'last_name': 'User',
+            'bio': 'Hello'
+        }
+        response = self.client.post(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertTrue(User.objects.filter(username='newuser').exists())
+
+    def test_login_jwt(self):
+        url = reverse('token_obtain_pair')
+        data = {'username': 'alice', 'password': 'alicepass'}
+        response = self.client.post(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn('access', response.data)
+        self.assertIn('refresh', response.data)
+
+    def test_refresh_token(self):
+        token_url = reverse('token_obtain_pair')
+        resp = self.client.post(token_url, {'username': 'alice', 'password': 'alicepass'}, format='json')
+        refresh = resp.data['refresh']
+        refresh_url = reverse('token_refresh')
+        response = self.client.post(refresh_url, {'refresh': refresh}, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn('access', response.data)
+
+    def test_logout(self):
+        token_url = reverse('token_obtain_pair')
+        resp = self.client.post(token_url, {'username': 'alice', 'password': 'alicepass'}, format='json')
+        refresh = resp.data['refresh']
+        logout_url = reverse('logout')
+        response = self.client.post(logout_url, {'refresh': refresh}, format='json')
+        self.assertEqual(response.status_code, status.HTTP_205_RESET_CONTENT)
+
+        # Try to use the blacklisted refresh token
+        refresh_url = reverse('token_refresh')
+        response = self.client.post(refresh_url, {'refresh': refresh}, format='json')
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    # ------------------------------------------------------------------
+    # Profile Endpoints (GET, PATCH, DELETE) with Media & Username Update
     # ------------------------------------------------------------------
     def test_get_own_profile(self):
         url = reverse('user-profile')
@@ -67,6 +115,7 @@ class AccountsAPITestCase(TestCase):
         self.assertEqual(response.data['username'], 'alice')
         self.assertIn('profile_picture', response.data)
         self.assertIn('profile_banner', response.data)
+        self.assertIn('is_following', response.data)
 
     def test_patch_profile_update_email_and_bio(self):
         url = reverse('user-profile')
@@ -76,6 +125,28 @@ class AccountsAPITestCase(TestCase):
         self.user1.refresh_from_db()
         self.assertEqual(self.user1.email, 'alice.new@example.com')
         self.assertEqual(self.user1.bio, 'Updated bio')
+
+    def test_patch_profile_update_username(self):
+        url = reverse('user-profile')
+        data = {'username': 'alice_new'}
+        response = self.client.patch(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.user1.refresh_from_db()
+        self.assertEqual(self.user1.username, 'alice_new')
+
+    def test_patch_profile_username_already_taken(self):
+        url = reverse('user-profile')
+        data = {'username': 'bob'}  # user2 already has this
+        response = self.client.patch(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('username', response.data)
+
+    def test_patch_profile_username_with_spaces(self):
+        url = reverse('user-profile')
+        data = {'username': 'alice new'}
+        response = self.client.patch(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('username', response.data)
 
     def test_patch_profile_upload_profile_picture(self):
         url = reverse('user-profile')
@@ -100,6 +171,63 @@ class AccountsAPITestCase(TestCase):
         response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         self.assertFalse(User.objects.filter(username='alice').exists())
+
+    # ------------------------------------------------------------------
+    # Password Change with History
+    # ------------------------------------------------------------------
+    def test_change_password_success(self):
+        url = reverse('password-change')
+        data = {
+            'old_password': 'alicepass',
+            'new_password': 'NewSecurePass456!',
+            'confirm_new_password': 'NewSecurePass456!'
+        }
+        response = self.client.post(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.user1.refresh_from_db()
+        self.assertTrue(self.user1.check_password('NewSecurePass456!'))
+        self.assertEqual(PasswordHistory.objects.filter(user=self.user1).count(), 1)
+
+    def test_change_password_wrong_old_password(self):
+        url = reverse('password-change')
+        data = {
+            'old_password': 'wrongpass',
+            'new_password': 'NewSecurePass456!',
+            'confirm_new_password': 'NewSecurePass456!'
+        }
+        response = self.client.post(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('old_password', response.data)
+
+    def test_change_password_mismatch(self):
+        url = reverse('password-change')
+        data = {
+            'old_password': 'alicepass',
+            'new_password': 'NewSecurePass456!',
+            'confirm_new_password': 'DifferentPass!'
+        }
+        response = self.client.post(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('confirm_new_password', response.data)
+
+    def test_change_password_reuse_old(self):
+        # Change password once
+        url = reverse('password-change')
+        data = {
+            'old_password': 'alicepass',
+            'new_password': 'NewSecurePass456!',
+            'confirm_new_password': 'NewSecurePass456!'
+        }
+        self.client.post(url, data, format='json')
+        # Try to reuse the old password
+        data = {
+            'old_password': 'NewSecurePass456!',
+            'new_password': 'alicepass',
+            'confirm_new_password': 'alicepass'
+        }
+        response = self.client.post(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('new_password', response.data)
 
     # ------------------------------------------------------------------
     # User List/Detail
@@ -154,13 +282,19 @@ class AccountsAPITestCase(TestCase):
     # Timelines
     # ------------------------------------------------------------------
     def test_public_timeline_includes_public_tweets(self):
-        # user2 is private, user1 is public
         url = reverse('public-timeline')
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         contents = [t['message'] for t in response.data['results']]
-        self.assertIn('Public tweet', contents)
-        self.assertNotIn('Private tweet', contents)  # user1 doesn't follow user2
+        self.assertIn('Public tweet from alice', contents)
+        self.assertNotIn('Private tweet from bob', contents)  # user1 doesn't follow user2
+
+    def test_public_timeline_includes_followed_private_tweets(self):
+        Follower.objects.create(follower=self.user1, followee=self.user2)
+        url = reverse('public-timeline')
+        response = self.client.get(url)
+        contents = [t['message'] for t in response.data['results']]
+        self.assertIn('Private tweet from bob', contents)  # now following
 
     def test_private_timeline_shows_only_followed(self):
         Follower.objects.create(follower=self.user1, followee=self.user2)
@@ -168,7 +302,9 @@ class AccountsAPITestCase(TestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         contents = [t['message'] for t in response.data['results']]
-        self.assertIn('Private tweet', contents)  # now following user2
+        self.assertIn('Private tweet from bob', contents)  # followed user
+        # Own tweets should NOT appear in private timeline (unless self-following)
+        self.assertNotIn('Public tweet from alice', contents)
 
     def test_user_tweets_endpoint(self):
         url = reverse('user-tweets', kwargs={'user_id': self.user1.id})
@@ -191,63 +327,3 @@ class AccountsAPITestCase(TestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data['results']), 1)
         self.assertEqual(response.data['results'][0]['followee']['username'], 'bob')
-
-
-class AuthenticationTestCase(TestCase):
-    def setUp(self):
-        self.client = APIClient()
-        self.user_data = {
-            'username': 'newuser',
-            'email': 'new@example.com',
-            'password': 'ComplexPass123!',
-            'password2': 'ComplexPass123!',
-            'first_name': 'New',
-            'last_name': 'User',
-            'bio': 'Hello'
-        }
-
-    def test_register_user(self):
-        url = reverse('register')
-        response = self.client.post(url, self.user_data, format='json')
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertTrue(User.objects.filter(username='newuser').exists())
-
-    def test_login_jwt(self):
-        User.objects.create_user(username='testuser', password='testpass123')
-        url = reverse('token_obtain_pair')
-        data = {'username': 'testuser', 'password': 'testpass123'}
-        response = self.client.post(url, data, format='json')
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertIn('access', response.data)
-        self.assertIn('refresh', response.data)
-
-    def test_refresh_token(self):
-        User.objects.create_user(username='testuser', password='testpass123')
-        token_url = reverse('token_obtain_pair')
-        resp = self.client.post(token_url, {'username': 'testuser', 'password': 'testpass123'}, format='json')
-        refresh = resp.data['refresh']
-        refresh_url = reverse('token_refresh')
-        response = self.client.post(refresh_url, {'refresh': refresh}, format='json')
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertIn('access', response.data)
-        
-    def test_logout(self):
-        # Register and login
-        User.objects.create_user(username='logoutuser', password='pass123')
-        token_url = reverse('token_obtain_pair')
-        resp = self.client.post(token_url, {'username': 'logoutuser', 'password': 'pass123'}, format='json')
-        refresh = resp.data['refresh']
-        access = resp.data['access']
-    
-        # Authenticate with access token
-        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {access}')
-    
-        # Logout
-        logout_url = reverse('logout')
-        response = self.client.post(logout_url, {'refresh': refresh}, format='json')
-        self.assertEqual(response.status_code, status.HTTP_205_RESET_CONTENT)
-    
-        # Try to refresh the blacklisted token (should fail)
-        refresh_url = reverse('token_refresh')
-        response = self.client.post(refresh_url, {'refresh': refresh}, format='json')
-        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
