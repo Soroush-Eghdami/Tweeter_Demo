@@ -29,13 +29,12 @@ class Tweet(models.Model):
         retweet, created = ReTweet.objects.get_or_create(user=user, original_tweet=self)
         return retweet
 
-    def unretweet(self, user):
-        try:
-            retweet = ReTweet.objects.get(user=user, original_tweet=self)
-            retweet.delete()
-            return True
-        except ReTweet.DoesNotExist:
-            return False
+    def retweet(self, user):
+        # Prevent self‑retweet
+        if self.user == user:
+            raise ValueError("You cannot retweet your own tweet.")
+        retweet, created = ReTweet.objects.get_or_create(user=user, original_tweet=self)
+        return retweet, created
 
     def get_retweet_count(self):
         return ReTweet.objects.filter(original_tweet=self).count()
@@ -62,7 +61,7 @@ class ReTweet(models.Model):
 
     class Meta:
         unique_together = ('user', 'original_tweet')
-    
+
     def __str__(self):
         return f"{self.user.username} retweeted {self.original_tweet.id}"
 
