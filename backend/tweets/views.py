@@ -117,6 +117,7 @@ class RetweetView(APIView):
         request=None,
         responses={
             201: ReTweetSerializer,
+            400: OpenApiResponse(description='Cannot retweet own tweet'),
             403: OpenApiResponse(description='Tweet not accessible'),
             404: OpenApiResponse(description='Tweet not found'),
         },
@@ -131,7 +132,11 @@ class RetweetView(APIView):
         if not tweet.is_visible_to(request.user):
             return Response({'error': 'Tweet not accessible'}, status=status.HTTP_403_FORBIDDEN)
 
-        retweet = tweet.retweet(request.user)
+        try:
+            retweet = tweet.retweet(request.user)
+        except ValueError as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
         serializer = ReTweetSerializer(retweet)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 

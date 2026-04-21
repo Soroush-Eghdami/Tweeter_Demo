@@ -23,6 +23,9 @@ class Tweet(models.Model):
         return Follower.objects.filter(follower=user, followee=self.user).exists()
 
     def retweet(self, user):
+        # Prevent self‑retweet
+        if self.user == user:
+            raise ValueError("You cannot retweet your own tweet.")
         retweet, created = ReTweet.objects.get_or_create(user=user, original_tweet=self)
         return retweet
 
@@ -59,7 +62,7 @@ class ReTweet(models.Model):
 
     class Meta:
         unique_together = ('user', 'original_tweet')
-
+    
     def __str__(self):
         return f"{self.user.username} retweeted {self.original_tweet.id}"
 
