@@ -9,7 +9,7 @@ WORKDIR /app
 RUN echo "https://mirror.arvancloud.ir/alpine/v3.23/main" > /etc/apk/repositories \
     && echo "https://mirror.arvancloud.ir/alpine/v3.23/community" >> /etc/apk/repositories
 
-# Install system dependencies (including those for Pillow)
+# Install system dependencies
 RUN apk update && apk add --no-cache \
     gcc \
     musl-dev \
@@ -26,12 +26,17 @@ RUN apk update && apk add --no-cache \
     harfbuzz-dev \
     fribidi-dev
 
-# Copy requirements and install Python packages using your PyPI mirror
+# Copy requirements first (for better caching)
 COPY requirements.txt /app/
-RUN pip install --upgrade pip \
-    && pip install --no-cache-dir -i https://mirror-pypi.runflare.com/simple -r requirements.txt
 
-# Copy project files (ensure .dockerignore is present to keep context small)
+# Use a reliable Iranian PyPI mirror
+# CHANGE THIS LINE TO A WORKING MIRROR
+ARG PYPI_MIRROR=https://mirror-pypi.runflare.com/simple
+
+# Install Python dependencies
+RUN pip install --no-cache-dir -i ${PYPI_MIRROR} -r requirements.txt
+
+# Copy the rest of the project
 COPY . /app/
 
 # Create non-root user
