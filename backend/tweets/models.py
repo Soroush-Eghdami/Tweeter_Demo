@@ -2,16 +2,14 @@ from django.db import models
 from django.conf import settings
 from django.apps import apps
 
-def get_user_model():
-    return apps.get_model(settings.AUTH_USER_MODEL)
 
 class Tweet(models.Model):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, db_index=True)
     content = models.TextField(max_length=280)
     media = models.FileField(upload_to='tweet_media/', blank=True, null=True)
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
     updated_at = models.DateTimeField(auto_now=True)
-    parent_tweet = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True)
+    parent_tweet = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, db_index=True)
 
     def __str__(self):
         return f"{self.user.username}: {self.content[:50]}"
@@ -38,7 +36,7 @@ class Tweet(models.Model):
 
     def get_retweet_count(self):
         return ReTweet.objects.filter(original_tweet=self).count()
-    
+
     def like(self, user):
         like, created = Like.objects.get_or_create(user=user, tweet=self)
         return like, created
@@ -55,21 +53,21 @@ class Tweet(models.Model):
 
 
 class ReTweet(models.Model):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    original_tweet = models.ForeignKey(Tweet, on_delete=models.CASCADE)
-    created_at = models.DateTimeField(auto_now_add=True)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, db_index=True)
+    original_tweet = models.ForeignKey(Tweet, on_delete=models.CASCADE, db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
 
     class Meta:
         unique_together = ('user', 'original_tweet')
 
     def __str__(self):
         return f"{self.user.username} retweeted {self.original_tweet.id}"
-    
+
 
 class Like(models.Model):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    tweet = models.ForeignKey(Tweet, on_delete=models.CASCADE, related_name='likes')
-    created_at = models.DateTimeField(auto_now_add=True)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, db_index=True)
+    tweet = models.ForeignKey(Tweet, on_delete=models.CASCADE, related_name='likes', db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
 
     class Meta:
         unique_together = ('user', 'tweet')

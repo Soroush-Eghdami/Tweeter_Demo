@@ -3,6 +3,7 @@ from django.conf import settings
 from django.contrib.auth.models import AbstractUser
 import uuid
 
+
 class User(AbstractUser):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     custom_id = models.CharField(max_length=6, unique=True, blank=True)
@@ -27,22 +28,28 @@ class User(AbstractUser):
     def __str__(self):
         return f"{self.username} | {self.custom_id}"
 
+    # Override email field to add index (already unique, index helps lookups)
+    # Django's AbstractUser already has email, so we redefine it only to add db_index=True.
+    # This is safe because we keep the same field type.
+    email = models.EmailField(unique=True, db_index=True)
+
+
 class Follower(models.Model):
-    follower = models.ForeignKey(User, related_name="following", on_delete=models.CASCADE)
-    followee = models.ForeignKey(User, related_name="followers", on_delete=models.CASCADE)
-    created_at = models.DateTimeField(auto_now_add=True)
+    follower = models.ForeignKey(User, related_name="following", on_delete=models.CASCADE, db_index=True)
+    followee = models.ForeignKey(User, related_name="followers", on_delete=models.CASCADE, db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
 
     class Meta:
         unique_together = ('follower', 'followee')
 
     def __str__(self):
         return f"{self.follower.username} follows {self.followee.username}"
-    
+
 
 class PasswordHistory(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='password_history')
-    password_hash = models.CharField(max_length=255)  # Store the hashed password
-    created_at = models.DateTimeField(auto_now_add=True)
+    password_hash = models.CharField(max_length=255)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
 
     class Meta:
         ordering = ['-created_at']
