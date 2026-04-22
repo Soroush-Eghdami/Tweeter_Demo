@@ -139,14 +139,14 @@ class AccountsAPITestCase(TestCase):
         data = {'username': 'bob'}  # user2 already has this
         response = self.client.patch(url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn('username', response.data)
+        self.assertIn('username', response.data['detail'])
 
     def test_patch_profile_username_with_spaces(self):
         url = reverse('user-profile')
         data = {'username': 'alice new'}
         response = self.client.patch(url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn('username', response.data)
+        self.assertIn('username', response.data['detail'])
 
     def test_patch_profile_upload_profile_picture(self):
         url = reverse('user-profile')
@@ -197,7 +197,7 @@ class AccountsAPITestCase(TestCase):
         }
         response = self.client.post(url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn('old_password', response.data)
+        self.assertIn('old_password', response.data['detail'])
 
     def test_change_password_mismatch(self):
         url = reverse('password-change')
@@ -208,7 +208,7 @@ class AccountsAPITestCase(TestCase):
         }
         response = self.client.post(url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn('confirm_new_password', response.data)
+        self.assertIn('confirm_new_password', response.data['detail'])
 
     def test_change_password_reuse_old(self):
         # Change password once
@@ -227,7 +227,7 @@ class AccountsAPITestCase(TestCase):
         }
         response = self.client.post(url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn('new_password', response.data)
+        self.assertIn('new_password', response.data['detail'])
 
     # ------------------------------------------------------------------
     # User List/Detail

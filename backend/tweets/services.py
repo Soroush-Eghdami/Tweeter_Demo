@@ -79,9 +79,12 @@ class TweetService:
 
     @staticmethod
     def get_visible_tweets_queryset(user: User) -> QuerySet[Tweet]:
-        """Return a queryset of tweets visible to the user."""
+        """Return a queryset of tweets visible to the user with optimized queries."""
         Follower = apps.get_model('accounts', 'Follower')
         followed = Follower.objects.filter(follower=user).values_list('followee_id', flat=True)
         return Tweet.objects.filter(
             Q(user__is_public_user=True) | Q(user_id__in=followed) | Q(user=user)
-        ).select_related('user').prefetch_related('retweet_set', 'likes').order_by('-created_at')
+        ).select_related('user', 'parent_tweet__user').prefetch_related(
+            'retweet_set__user',
+            'likes__user'
+        ).order_by('-created_at')
