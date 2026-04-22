@@ -2,6 +2,7 @@ from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from .models import Tweet, ReTweet
 from accounts.serializers import UserSerializer
+from .services import TweetService
 
 User = get_user_model()
 
@@ -19,19 +20,19 @@ class TweetSerializer(serializers.ModelSerializer):
         fields = '__all__'
         read_only_fields = ['id', 'user', 'created_at', 'updated_at']
 
-    def get_retweet_count(self, obj):
-        return obj.get_retweet_count()
+    def get_retweet_count(self, obj: Tweet) -> int:
+        return TweetService.get_retweet_count(obj)
 
-    def get_like_count(self, obj):
-        return obj.get_like_count()
+    def get_like_count(self, obj: Tweet) -> int:
+        return TweetService.get_like_count(obj)
 
-    def get_is_liked(self, obj):
+    def get_is_liked(self, obj: Tweet) -> bool:
         request = self.context.get('request')
         if request and request.user.is_authenticated:
-            return obj.is_liked_by(request.user)
+            return TweetService.is_liked_by(obj, request.user)
         return False
 
-    def get_parent_tweet(self, obj):
+    def get_parent_tweet(self, obj: Tweet) -> int | None:
         if obj.parent_tweet:
             return obj.parent_tweet.id
         return None
@@ -48,17 +49,16 @@ class CreateTweetSerializer(serializers.ModelSerializer):
             'parent_tweet': {'required': False}
         }
 
-    def validate_parent_tweet(self, value):
+    def validate_parent_tweet(self, value: Tweet | None) -> Tweet | None:
         if value is None:
             return value
         request = self.context.get('request')
         if request and request.user.is_authenticated:
-            if not value.is_visible_to(request.user):
+            if not TweetService.is_visible_to(value, request.user):
                 raise serializers.ValidationError("You cannot reply to a tweet that is not visible to you.")
         return value
 
-    def create(self, validated_data):
-        # The user is set via serializer.save(user=request.user) in the view
+    def create(self, validated_data: dict) -> Tweet:
         return Tweet.objects.create(**validated_data)
 
 

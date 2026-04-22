@@ -1,6 +1,5 @@
 from django.db import models
 from django.conf import settings
-from django.apps import apps
 
 
 class Tweet(models.Model):
@@ -13,45 +12,6 @@ class Tweet(models.Model):
 
     def __str__(self):
         return f"{self.user.username}: {self.content[:50]}"
-
-    def is_visible_to(self, user):
-        if self.user == user:
-            return True
-        if self.user.is_public_user:
-            return True
-        Follower = apps.get_model('accounts', 'Follower')
-        return Follower.objects.filter(follower=user, followee=self.user).exists()
-
-    def retweet(self, user):
-        if self.user == user:
-            raise ValueError("You cannot retweet your own tweet.")
-        retweet, created = ReTweet.objects.get_or_create(user=user, original_tweet=self)
-        return retweet, created
-
-    def unretweet(self, user):
-        try:
-            retweet = ReTweet.objects.get(user=user, original_tweet=self)
-            retweet.delete()
-            return True
-        except ReTweet.DoesNotExist:
-            return False
-
-    def get_retweet_count(self):
-        return ReTweet.objects.filter(original_tweet=self).count()
-
-    def like(self, user):
-        like, created = Like.objects.get_or_create(user=user, tweet=self)
-        return like, created
-
-    def unlike(self, user):
-        deleted, _ = Like.objects.filter(user=user, tweet=self).delete()
-        return deleted > 0
-
-    def get_like_count(self):
-        return self.likes.count()
-
-    def is_liked_by(self, user):
-        return self.likes.filter(user=user).exists()
 
 
 class ReTweet(models.Model):

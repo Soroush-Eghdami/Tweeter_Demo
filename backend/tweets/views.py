@@ -7,13 +7,10 @@ from .models import Tweet, ReTweet, Like
 from .serializers import TweetSerializer, CreateTweetSerializer, ReTweetSerializer
 from accounts.models import Follower
 from drf_spectacular.utils import extend_schema, OpenApiResponse, OpenApiParameter
+from .services import TweetService
 
 
 class TweetListView(generics.ListCreateAPIView):
-    """
-    GET: List all visible tweets (paginated).
-    POST: Create a new tweet with optional media.
-    """
     permission_classes = [permissions.IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser, JSONParser]
 
@@ -23,11 +20,7 @@ class TweetListView(generics.ListCreateAPIView):
         return TweetSerializer
 
     def get_queryset(self):
-        user = self.request.user
-        followed = Follower.objects.filter(follower=user).values_list('followee_id', flat=True)
-        return Tweet.objects.filter(
-            Q(user__is_public_user=True) | Q(user_id__in=followed) | Q(user=user)
-        ).select_related('user').prefetch_related('retweet_set', 'likes').order_by('-created_at')
+        return TweetService.get_visible_tweets_queryset(self.request.user)
 
     def perform_create(self, serializer):
         return serializer.save(user=self.request.user)
@@ -67,19 +60,11 @@ class TweetListView(generics.ListCreateAPIView):
 
 
 class TweetDetailView(generics.RetrieveDestroyAPIView):
-    """
-    GET: Retrieve a single tweet.
-    DELETE: Delete own tweet.
-    """
     serializer_class = TweetSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        user = self.request.user
-        followed = Follower.objects.filter(follower=user).values_list('followee_id', flat=True)
-        return Tweet.objects.filter(
-            Q(user__is_public_user=True) | Q(user_id__in=followed) | Q(user=user)
-        ).select_related('user').prefetch_related('retweet_set', 'likes')
+        return TweetService.get_visible_tweets_queryset(self.request.user)
 
     @extend_schema(
         summary="Get tweet details",
@@ -105,7 +90,7 @@ class TweetDetailView(generics.RetrieveDestroyAPIView):
     def perform_destroy(self, instance):
         if instance.user != self.request.user:
             return Response({'error': 'You can only delete your own tweets.'}, status=status.HTTP_403_FORBIDDEN)
-        instance.delete()
+        TweetService.delete_tweet(instance)
 
 
 class RetweetView(APIView):
@@ -130,11 +115,11 @@ class RetweetView(APIView):
         except Tweet.DoesNotExist:
             return Response({'error': 'Tweet not found'}, status=status.HTTP_404_NOT_FOUND)
 
-        if not tweet.is_visible_to(request.user):
+        if not TweetService.is_visible_to(tweet, request.user):
             return Response({'error': 'Tweet not accessible'}, status=status.HTTP_403_FORBIDDEN)
 
         try:
-            retweet, created = tweet.retweet(request.user)
+            retweet, created = TweetService.retweet(tweet, request.user)
         except ValueError as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -168,7 +153,7 @@ class UnretweetView(APIView):
         except Tweet.DoesNotExist:
             return Response({'error': 'Tweet not found'}, status=status.HTTP_404_NOT_FOUND)
 
-        success = tweet.unretweet(request.user)
+        success = TweetService.unretweet(tweet, request.user)
         if success:
             return Response({'message': 'Unretweeted successfully'})
         else:
@@ -196,14 +181,14 @@ class LikeView(APIView):
         except Tweet.DoesNotExist:
             return Response({'error': 'Tweet not found'}, status=status.HTTP_404_NOT_FOUND)
 
-        if not tweet.is_visible_to(request.user):
+        if not TweetService.is_visible_to(tweet, request.user):
             return Response({'error': 'Tweet not accessible'}, status=status.HTTP_403_FORBIDDEN)
 
-        like, created = tweet.like(request.user)
+        like, created = TweetService.like(tweet, request.user)
         if created:
-            return Response({'message': 'Liked', 'like_count': tweet.get_like_count()}, status=status.HTTP_201_CREATED)
+            return Response({'message': 'Liked', 'like_count': TweetService.get_like_count(tweet)}, status=status.HTTP_201_CREATED)
         else:
-            return Response({'message': 'Already liked', 'like_count': tweet.get_like_count()}, status=status.HTTP_200_OK)
+            return Response({'message': 'Already liked', 'like_count': TweetService.get_like_count(tweet)}, status=status.HTTP_200_OK)
 
 
 class UnlikeView(APIView):
@@ -226,8 +211,8 @@ class UnlikeView(APIView):
         except Tweet.DoesNotExist:
             return Response({'error': 'Tweet not found'}, status=status.HTTP_404_NOT_FOUND)
 
-        removed = tweet.unlike(request.user)
+        removed = TweetService.unlike(tweet, request.user)
         if removed:
-            return Response({'message': 'Unliked', 'like_count': tweet.get_like_count()}, status=status.HTTP_200_OK)
+            return Response({'message': 'Unliked', 'like_count': TweetService.get_like_count(tweet)}, status=status.HTTP_200_OK)
         else:
             return Response({'error': 'You have not liked this tweet'}, status=status.HTTP_400_BAD_REQUEST)

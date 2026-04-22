@@ -9,7 +9,7 @@ from accounts.serializers import (
     UserSerializer, UserUpdateSerializer, FollowerSerializer,
     RegisterSerializer, LogoutSerializer
 )
-from accounts.services import TimelineService
+from accounts.services import TimelineService, UserService
 from tweets.serializers import TweetSerializer
 from tweets.models import Tweet
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
@@ -92,7 +92,7 @@ class UserProfileView(generics.RetrieveUpdateDestroyAPIView):
 
     def destroy(self, request, *args, **kwargs):
         user = self.get_object()
-        user.delete()
+        UserService.delete_account(user)
         return Response({"detail": "Account deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
 
 
@@ -134,10 +134,11 @@ class FollowUserView(generics.CreateAPIView):
         except User.DoesNotExist:
             return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
 
-        if follower == followee:
-            return Response({'error': 'You cannot follow yourself'}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            follower_obj, created = UserService.follow(follower, followee)
+        except ValueError as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-        follower_obj, created = Follower.objects.get_or_create(follower=follower, followee=followee)
         if not created:
             return Response({'error': 'You are already following this user'}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -179,7 +180,7 @@ class UnfollowUserView(generics.DestroyAPIView):
         except User.DoesNotExist:
             return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
 
-        deleted, _ = Follower.objects.filter(follower=follower, followee=followee).delete()
+        deleted = UserService.unfollow(follower, followee)
         if not deleted:
             return Response({'error': 'You are not following this user'}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -319,7 +320,6 @@ class RegisterView(generics.CreateAPIView):
         return super().post(request, *args, **kwargs)
 
 
-# Decorate the JWT views to improve documentation
 class CustomTokenObtainPairView(TokenObtainPairView):
     @extend_schema(
         summary="Login (obtain JWT tokens)",
@@ -388,7 +388,7 @@ class LogoutView(generics.GenericAPIView):
         except Exception:
             return Response({"detail": "Invalid token."}, status=status.HTTP_400_BAD_REQUEST)
 
-        
+
 class PasswordChangeView(generics.GenericAPIView):
     serializer_class = PasswordChangeSerializer
     permission_classes = [permissions.IsAuthenticated]
@@ -401,5 +401,12 @@ class PasswordChangeView(generics.GenericAPIView):
     def post(self, request):
         serializer = self.get_serializer(data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
-        serializer.save()
+        try:
+            UserService.change_password(
+                request.user,
+                serializer.validated_data['old_password'],
+                serializer.validated_data['new_password']
+            )
+        except ValueError as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
         return Response({"detail": "Password changed successfully."}, status=status.HTTP_200_OK)
