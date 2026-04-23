@@ -78,7 +78,8 @@ class CreateTweetSerializer(serializers.ModelSerializer):
     def create(self, validated_data: dict) -> Tweet:
         try:
             tweet = Tweet(**validated_data)
-            tweet.full_clean()
+            # Validate reply constraints using service layer
+            TweetService.validate_reply(tweet)
             tweet.save()
             return tweet
         except ValidationError as e:

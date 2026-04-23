@@ -280,23 +280,23 @@ class TweetAPITestCase(TestCase):
         current.save()
 
         # Create MAX_REPLY_DEPTH replies (depth = MAX_REPLY_DEPTH)
-        for i in range(Tweet.MAX_REPLY_DEPTH):
+        for i in range(TweetService.MAX_REPLY_DEPTH):
             current = Tweet(user=self.user1, content=f'Reply {i}', parent_tweet=current)
             current.save()
 
         # The last reply should have depth == MAX_REPLY_DEPTH
-        self.assertEqual(current._get_reply_depth(), Tweet.MAX_REPLY_DEPTH)
+        self.assertEqual(TweetService.get_reply_depth(current), TweetService.MAX_REPLY_DEPTH)
 
         # One more reply should exceed and fail
         too_deep = Tweet(user=self.user1, content='Too deep', parent_tweet=current)
         with self.assertRaises(ValidationError):
-            too_deep.full_clean()
+            TweetService.validate_reply(too_deep)
 
     def test_reply_depth_validation_via_api(self):
         """Verify that API rejects tweets exceeding max depth."""
         parent = self.public_tweet
         # Build chain up to MAX_REPLY_DEPTH via API
-        for i in range(Tweet.MAX_REPLY_DEPTH):
+        for i in range(TweetService.MAX_REPLY_DEPTH):
             url = reverse('tweet-list')
             data = {'content': f'Reply {i}', 'parent_tweet': parent.pk}
             response = self.client.post(url, data, format='json')
@@ -320,7 +320,7 @@ class TweetAPITestCase(TestCase):
         # Try to make tweet_a reply to tweet_b (would create circle)
         tweet_a.parent_tweet = tweet_b
         with self.assertRaises(ValidationError):
-            tweet_a.full_clean()
+            TweetService.validate_reply(tweet_a)
 
     def test_self_reply_prevented(self):
         """Verify that a tweet cannot reply to itself."""
@@ -328,7 +328,7 @@ class TweetAPITestCase(TestCase):
         tweet.save()
         tweet.parent_tweet = tweet
         with self.assertRaises(ValidationError):
-            tweet.full_clean()
+            TweetService.validate_reply(tweet)
 
     # ------------------------------------------------------------------
     # Error Handling Consistency Tests
