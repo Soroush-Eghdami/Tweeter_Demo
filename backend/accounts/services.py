@@ -2,6 +2,7 @@ from django.db.models import QuerySet, Prefetch, Q
 from django.db import transaction
 from django.contrib.auth.hashers import check_password
 from typing import Tuple
+import uuid
 
 from tweets.models import Tweet, ReTweet
 from accounts.models import User, Follower, PasswordHistory
@@ -49,6 +50,23 @@ class TimelineService:
 
 
 class UserService:
+    """Service class for user-related business logic."""
+
+    @staticmethod
+    def generate_custom_id() -> str:
+        """Generate a unique 6-character custom ID."""
+        return str(uuid.uuid4()).replace('-', '')[:6]
+
+    @staticmethod
+    def ensure_custom_id(user: User) -> str:
+        """
+        Ensure user has a custom_id. Generates one if not present.
+        Returns the custom_id.
+        """
+        if not user.custom_id:
+            user.custom_id = UserService.generate_custom_id()
+        return user.custom_id
+
     @staticmethod
     def follow(follower: User, followee: User) -> Tuple[Follower, bool]:
         if follower == followee:

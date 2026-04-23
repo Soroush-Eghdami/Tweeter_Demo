@@ -1,7 +1,8 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
-from accounts.models import Follower,PasswordHistory 
+from accounts.models import Follower,PasswordHistory
+from accounts.services import UserService
 from tweets.models import Tweet, ReTweet
 from django.core.exceptions import ValidationError
 from django.contrib.auth.hashers import check_password
@@ -67,6 +68,8 @@ class RegisterSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         validated_data.pop('password2')
         user = User.objects.create_user(**validated_data)
+        UserService.ensure_custom_id(user)
+        user.save()
         return user
 
 class LogoutSerializer(serializers.Serializer):
