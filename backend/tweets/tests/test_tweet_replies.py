@@ -6,7 +6,7 @@ from rest_framework.test import APIClient
 from rest_framework import status
 from django.contrib.auth import get_user_model
 from tweets.models import Tweet
-from tweets.services import TweetService
+from tweets.reply_service import ReplyService
 
 User = get_user_model()
 
@@ -32,20 +32,20 @@ class TweetReplyDepthLimitTestCase(TestCase):
         current = Tweet(user=self.user1, content='Root tweet')
         current.save()
 
-        for i in range(TweetService.MAX_REPLY_DEPTH):
+        for i in range(ReplyService.MAX_REPLY_DEPTH):
             current = Tweet(user=self.user1, content=f'Reply {i}', parent_tweet=current)
             current.save()
 
-        self.assertEqual(TweetService.get_reply_depth(current), TweetService.MAX_REPLY_DEPTH)
+        self.assertEqual(ReplyService.get_reply_depth(current), ReplyService.MAX_REPLY_DEPTH)
 
         too_deep = Tweet(user=self.user1, content='Too deep', parent_tweet=current)
         with self.assertRaises(ValidationError):
-            TweetService.validate_reply(too_deep)
+            ReplyService.validate_reply(too_deep)
 
     def test_reply_depth_validation_via_api(self):
         """Verify that API rejects tweets exceeding max depth."""
         parent = self.public_tweet
-        for i in range(TweetService.MAX_REPLY_DEPTH):
+        for i in range(ReplyService.MAX_REPLY_DEPTH):
             url = reverse('tweet-list')
             data = {'content': f'Reply {i}', 'parent_tweet': parent.pk}
             response = self.client.post(url, data, format='json')
@@ -76,7 +76,7 @@ class TweetCircularReferenceTestCase(TestCase):
 
         tweet_a.parent_tweet = tweet_b
         with self.assertRaises(ValidationError):
-            TweetService.validate_reply(tweet_a)
+            ReplyService.validate_reply(tweet_a)
 
     def test_self_reply_prevented(self):
         """Verify that a tweet cannot reply to itself."""
@@ -84,7 +84,7 @@ class TweetCircularReferenceTestCase(TestCase):
         tweet.save()
         tweet.parent_tweet = tweet
         with self.assertRaises(ValidationError):
-            TweetService.validate_reply(tweet)
+            ReplyService.validate_reply(tweet)
 
 
 class TweetReplyHierarchyTestCase(TestCase):

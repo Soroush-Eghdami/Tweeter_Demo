@@ -2,6 +2,7 @@
 from typing import Tuple
 from .models import Tweet, ReTweet, Like
 from accounts.models import User
+from django.db import transaction
 
 
 class TweetEngagementService:
@@ -80,3 +81,10 @@ class TweetEngagementService:
     def is_liked_by(tweet: Tweet, user: User) -> bool:
         """Check if a tweet is liked by a user."""
         return tweet.likes.filter(user=user).exists()
+    
+    @staticmethod
+    def delete_tweet(tweet: Tweet) -> None:
+        """Hard delete a tweet. Replies are orphaned, retweets/likes cascade‑deleted."""
+        with transaction.atomic():
+            Tweet.objects.filter(parent_tweet=tweet).update(parent_tweet=None)
+            tweet.delete()
