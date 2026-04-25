@@ -2,6 +2,7 @@ from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
 from accounts.models import Follower, PasswordHistory
+from accounts.services import UserService
 from tweets.models import Tweet, ReTweet
 from django.core.exceptions import ValidationError
 from django.contrib.auth.hashers import check_password
@@ -33,12 +34,11 @@ class UserUpdateSerializer(serializers.ModelSerializer):
         extra_kwargs = {field: {'required': False} for field in fields}
 
     def validate_username(self, value):
-        user = self.context['request'].user
-        if User.objects.exclude(pk=user.pk).filter(username=value).exists():
-            raise serializers.ValidationError("This username is already taken.")
-        # Optional: custom username rules (e.g., no spaces)
-        if ' ' in value:
-            raise serializers.ValidationError("Username cannot contain spaces.")
+        try:
+            user = self.context['request'].user
+            UserService.validate_username(value, exclude_user_id=user.id)
+        except ValueError as e:
+            raise serializers.ValidationError(str(e))
         return value
 
 class FollowerSerializer(serializers.ModelSerializer):
@@ -100,10 +100,7 @@ class PasswordChangeSerializer(serializers.Serializer):
 
     def save(self, **kwargs):
         user = self.context['request'].user
+        old_password = self.validated_data['old_password']
         new_password = self.validated_data['new_password']
-        # Store old password hash in history before changing
-        PasswordHistory.objects.create(user=user, password_hash=user.password)
-        # Set new password
-        user.set_password(new_password)
-        user.save()
+        UserService.change_password(user, old_password, new_password)
         return user

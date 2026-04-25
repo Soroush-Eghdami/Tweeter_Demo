@@ -68,6 +68,20 @@ class UserService:
         return user.custom_id
 
     @staticmethod
+    def validate_username(username: str, exclude_user_id: str = None) -> None:
+        """
+        Validate username is unique and follows rules.
+        Raises ValueError if validation fails.
+        """
+        query = User.objects.filter(username=username)
+        if exclude_user_id:
+            query = query.exclude(id=exclude_user_id)
+        if query.exists():
+            raise ValueError("This username is already taken.")
+        if ' ' in username:
+            raise ValueError("Username cannot contain spaces.")
+
+    @staticmethod
     def follow(follower: User, followee: User) -> Tuple[Follower, bool]:
         if follower == followee:
             raise ValueError("You cannot follow yourself.")
