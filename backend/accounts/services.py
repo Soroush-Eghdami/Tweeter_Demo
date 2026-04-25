@@ -111,3 +111,16 @@ class UserService:
     @staticmethod
     def delete_account(user: User) -> None:
         user.delete()
+        
+    @staticmethod
+    def update_profile(user, **data):
+        if 'username' in data:
+            username = data['username']
+            if User.objects.exclude(pk=user.pk).filter(username=username).exists():
+                raise ValueError("Username already taken.")
+            if ' ' in username:
+                raise ValueError("Username cannot contain spaces.")
+        for field, value in data.items():
+            setattr(user, field, value)
+        user.save()
+        return user

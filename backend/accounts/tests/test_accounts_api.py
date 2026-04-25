@@ -22,6 +22,8 @@ def create_test_image(name='test.jpg', size=(100, 100), color='red'):
 
 
 class AccountsAPITestCase(TestCase):
+    """Integration tests for accounts API endpoints."""
+
     def setUp(self):
         self.client = APIClient()
         # Create users with UNIQUE emails
