@@ -10,15 +10,35 @@ from django.contrib.auth.hashers import check_password
 User = get_user_model()
 
 
+# =====================================================================
+# User Output Serializers
+# =====================================================================
+
+class UserLiteSerializer(serializers.ModelSerializer):
+    """Lightweight user representation for nested use (e.g., in Follower)."""
+    is_public = serializers.ReadOnlyField()
+
+    class Meta:
+        model = User
+        fields = ['id', 'username', 'custom_id', 'is_public', 'profile_picture']
+        read_only_fields = fields
+
+
 class UserSerializer(serializers.ModelSerializer):
+    """Full user output serializer for detail/list views."""
     is_following = serializers.SerializerMethodField()
     is_public = serializers.ReadOnlyField()
 
     class Meta:
         model = User
-        fields = '__all__'
-        read_only_fields = ['id', 'custom_id', 'is_superuser', 'is_staff', 'is_active', 'date_joined', 'last_login']
-        extra_kwargs = {'password': {'write_only': True}}
+        fields = [
+            'id', 'username', 'email', 'first_name', 'last_name', 'custom_id',
+            'bio', 'is_public_user', 'is_public', 'is_following',
+            'profile_picture', 'profile_banner', 'date_joined'
+        ]
+        read_only_fields = [
+            'id', 'custom_id', 'date_joined', 'is_public', 'is_following'
+        ]
 
     def get_is_following(self, obj):
         request = self.context.get('request')
@@ -27,7 +47,13 @@ class UserSerializer(serializers.ModelSerializer):
         return False
 
 
+# =====================================================================
+# User Input Serializers
+# =====================================================================
+
 class UserUpdateSerializer(serializers.ModelSerializer):
+    """Input serializer for user profile updates."""
+    
     class Meta:
         model = User
         fields = ['username', 'email', 'first_name', 'last_name', 'bio', 'is_public_user', 'profile_picture', 'profile_banner']
@@ -41,17 +67,9 @@ class UserUpdateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(str(e))
         return value
 
-class FollowerSerializer(serializers.ModelSerializer):
-    follower = UserSerializer(read_only=True)
-    followee = UserSerializer(read_only=True)
-
-    class Meta:
-        model = Follower
-        fields = '__all__'
-        read_only_fields = ['id', 'created_at']
-
 
 class RegisterSerializer(serializers.ModelSerializer):
+    """Input serializer for user registration."""
     password = serializers.CharField(write_only=True, required=True, validators=[validate_password])
     password2 = serializers.CharField(write_only=True, required=True)
 
@@ -69,11 +87,9 @@ class RegisterSerializer(serializers.ModelSerializer):
         user = User.objects.create_user(**validated_data)
         return user
 
-class LogoutSerializer(serializers.Serializer):
-    refresh = serializers.CharField(required=True, write_only=True)
-    
-    
+
 class PasswordChangeSerializer(serializers.Serializer):
+    """Input serializer for password change."""
     old_password = serializers.CharField(write_only=True, required=True)
     new_password = serializers.CharField(write_only=True, required=True, validators=[validate_password])
     confirm_new_password = serializers.CharField(write_only=True, required=True)
@@ -104,3 +120,23 @@ class PasswordChangeSerializer(serializers.Serializer):
         new_password = self.validated_data['new_password']
         UserService.change_password(user, old_password, new_password)
         return user
+
+
+class LogoutSerializer(serializers.Serializer):
+    """Input serializer for logout."""
+    refresh = serializers.CharField(required=True, write_only=True)
+
+
+# =====================================================================
+# Follower Serializers
+# =====================================================================
+
+class FollowerSerializer(serializers.ModelSerializer):
+    """Follower relationship output serializer."""
+    follower = UserLiteSerializer(read_only=True)
+    followee = UserLiteSerializer(read_only=True)
+
+    class Meta:
+        model = Follower
+        fields = ['id', 'follower', 'followee', 'created_at']
+        read_only_fields = fields

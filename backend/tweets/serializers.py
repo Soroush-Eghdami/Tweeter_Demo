@@ -2,14 +2,19 @@ from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from .models import Tweet, ReTweet
-from accounts.serializers import UserSerializer
+from accounts.serializers import UserLiteSerializer, UserSerializer
 from .services import TweetService
 
 User = get_user_model()
 
 
+# =====================================================================
+# Tweet Output Serializers
+# =====================================================================
+
 class TweetSerializer(serializers.ModelSerializer):
-    user = UserSerializer(read_only=True)
+    """Full tweet output serializer with engagement counts and metadata."""
+    user = UserLiteSerializer(read_only=True)
     message = serializers.CharField(source='content', read_only=True)
     retweet_count = serializers.SerializerMethodField()
     like_count = serializers.SerializerMethodField()
@@ -18,8 +23,12 @@ class TweetSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Tweet
-        fields = '__all__'
-        read_only_fields = ['id', 'user', 'created_at', 'updated_at']
+        fields = [
+            'id', 'user', 'content', 'message', 'media', 'parent_tweet',
+            'retweet_count', 'like_count', 'is_liked',
+            'created_at', 'updated_at'
+        ]
+        read_only_fields = fields
 
     def get_retweet_count(self, obj: Tweet) -> int:
         return TweetService.get_retweet_count(obj)
@@ -45,18 +54,19 @@ class TweetSerializer(serializers.ModelSerializer):
             'user': {
                 'id': parent.user.id,
                 'username': parent.user.username,
-                'email': parent.user.email,
-                'first_name': parent.user.first_name,
-                'last_name': parent.user.last_name,
-                'profile_picture': parent.user.profile_picture.url if parent.user.profile_picture else None,
-                'profile_banner': parent.user.profile_banner.url if parent.user.profile_banner else None,
+                'custom_id': parent.user.custom_id,
             },
             'created_at': parent.created_at,
         }
 
 
+# =====================================================================
+# Tweet Input Serializers
+# =====================================================================
+
 class CreateTweetSerializer(serializers.ModelSerializer):
-    """Serializer for creating a new tweet."""
+    """Input serializer for creating a new tweet."""
+    
     class Meta:
         model = Tweet
         fields = ['content', 'media', 'parent_tweet']
@@ -91,11 +101,18 @@ class CreateTweetSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError(str(e))
 
 
+# =====================================================================
+# ReTweet Serializers
+# =====================================================================
+
 class ReTweetSerializer(serializers.ModelSerializer):
-    user = UserSerializer(read_only=True)
+    """ReTweet output serializer."""
+    user = UserLiteSerializer(read_only=True)
     original_tweet = TweetSerializer(read_only=True)
 
     class Meta:
         model = ReTweet
-        fields = '__all__'
+        fields = ['id', 'user', 'original_tweet', 'created_at']
+        read_only_fields = fields
+
         read_only_fields = ['id', 'user', 'created_at']
