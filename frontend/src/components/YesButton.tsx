@@ -1,7 +1,7 @@
 import Yes from "../assets/icons/yes-check.svg";
 
 interface WarningPopUpPropType {
-  setIsOpenPopUp: (arg0: boolean) => void;  //soal daram
+  setIsOpenPopUp: (arg0: boolean) => void;  
 }
 
 const YesButton = ({setIsOpenPopUp} : WarningPopUpPropType) => {
