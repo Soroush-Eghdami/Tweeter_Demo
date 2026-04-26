@@ -5,9 +5,9 @@ from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from django.core.exceptions import ValidationError
 from .models import Tweet, ReTweet, Like
 from .serializers import TweetSerializer, CreateTweetSerializer, ReTweetSerializer
-from .engagement_service import TweetEngagementService
-from .visibility_service import TweetVisibilityService
-from .reply_service import ReplyService
+from .services.engagement import TweetEngagementService
+from .services.visibility import TweetVisibilityService
+from .services.reply import ReplyService
 from drf_spectacular.utils import extend_schema, OpenApiResponse, OpenApiParameter
 
 

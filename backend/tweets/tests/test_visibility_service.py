@@ -1,6 +1,6 @@
 from django.test import TestCase
 from unittest.mock import patch, MagicMock
-from tweets.visibility_service import TweetVisibilityService
+from tweets.services.visibility import TweetVisibilityService
 from tweets.models import Tweet
 
 class TestTweetVisibilityService(TestCase):
@@ -19,7 +19,7 @@ class TestTweetVisibilityService(TestCase):
         result = TweetVisibilityService.is_visible_to(tweet, user)
         self.assertTrue(result)
 
-    @patch('tweets.visibility_service.apps.get_model')
+    @patch('tweets.services.visibility.apps.get_model')
     def test_private_tweet_visible_to_follower(self, mock_get_model):
         user = MagicMock()
         tweet = MagicMock()
@@ -32,7 +32,7 @@ class TestTweetVisibilityService(TestCase):
         result = TweetVisibilityService.is_visible_to(tweet, user)
         self.assertTrue(result)
 
-    @patch('tweets.visibility_service.apps.get_model')
+    @patch('tweets.services.visibility.apps.get_model')
     def test_private_tweet_not_visible_to_nonfollower(self, mock_get_model):
         user = MagicMock()
         tweet = MagicMock()

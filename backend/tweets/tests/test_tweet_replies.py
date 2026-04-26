@@ -6,7 +6,7 @@ from rest_framework.test import APIClient
 from rest_framework import status
 from django.contrib.auth import get_user_model
 from tweets.models import Tweet
-from tweets.reply_service import ReplyService
+from tweets.services.reply import ReplyService
 
 User = get_user_model()
 

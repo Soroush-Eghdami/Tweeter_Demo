@@ -166,7 +166,7 @@ class TweetDeleteAPITestCase(TestCase):
         self.assertIsNone(reply.parent_tweet)
 
     def test_delete_tweet_cascades_retweets(self):
-        from tweets.engagement_service import TweetEngagementService
+        from tweets.services.engagement import TweetEngagementService
         tweet = Tweet.objects.create(user=self.user1, content='RT me')
         ReTweet.objects.create(user=self.user2, original_tweet=tweet)
         self.assertEqual(TweetEngagementService.get_retweet_count(tweet), 1)
@@ -176,7 +176,7 @@ class TweetDeleteAPITestCase(TestCase):
         self.assertEqual(ReTweet.objects.filter(original_tweet=tweet).count(), 0)
 
     def test_delete_tweet_cascades_likes(self):
-        from tweets.engagement_service import TweetEngagementService
+        from tweets.services.engagement import TweetEngagementService
         tweet = Tweet.objects.create(user=self.user1, content='Like me')
         Like.objects.create(user=self.user2, tweet=tweet)
         self.assertEqual(TweetEngagementService.get_like_count(tweet), 1)

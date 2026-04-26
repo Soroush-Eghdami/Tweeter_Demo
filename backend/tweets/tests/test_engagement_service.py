@@ -1,6 +1,6 @@
 from django.test import TestCase
 from unittest.mock import patch, MagicMock
-from tweets.engagement_service import TweetEngagementService
+from tweets.services.engagement import TweetEngagementService
 from tweets.models import ReTweet, Like
 
 class TestTweetEngagementService(TestCase):

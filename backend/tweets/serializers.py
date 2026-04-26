@@ -2,8 +2,8 @@ from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from .models import Tweet, ReTweet
 from accounts.serializers import UserLiteSerializer
-from .engagement_service import TweetEngagementService
-from .visibility_service import TweetVisibilityService
+from .services.engagement import TweetEngagementService
+from .services.visibility import TweetVisibilityService
 
 User = get_user_model()
 

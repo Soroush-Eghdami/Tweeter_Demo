@@ -1,6 +1,6 @@
 from django.test import TestCase
 from unittest.mock import MagicMock
-from tweets.reply_service import ReplyService
+from tweets.services.reply import ReplyService
 from django.core.exceptions import ValidationError
 
 class TestReplyService(TestCase):
@@ -19,7 +19,7 @@ class TestReplyService(TestCase):
             parent = new_parent
         tweet = MagicMock()
         tweet.parent_tweet = parent
-        with self.assertRaises(ValidationError):   # Changed from ValueError
+        with self.assertRaises(ValidationError):
             ReplyService.validate_reply(tweet)
             
     def test_circular_reference_detected(self):
@@ -29,5 +29,5 @@ class TestReplyService(TestCase):
         parent.parent_tweet = tweet
         tweet.parent_tweet = parent
         tweet.id = 10
-        with self.assertRaises(ValidationError):   # Changed from ValueError
+        with self.assertRaises(ValidationError):
             ReplyService.validate_reply(tweet)

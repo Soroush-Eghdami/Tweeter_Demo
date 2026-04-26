@@ -7,7 +7,7 @@ from rest_framework.test import APIClient
 from rest_framework import status
 from django.contrib.auth import get_user_model
 from tweets.models import Tweet, ReTweet, Like
-from tweets.engagement_service import TweetEngagementService
+from tweets.services.engagement import TweetEngagementService
 
 User = get_user_model()
 
