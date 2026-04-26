@@ -9,6 +9,7 @@ from .services.engagement import TweetEngagementService
 from .services.visibility import TweetVisibilityService
 from .services.reply import ReplyService
 from drf_spectacular.utils import extend_schema, OpenApiResponse, OpenApiParameter
+from .selectors import get_visible_tweets, get_tweet_detail
 
 
 class TweetListView(generics.ListCreateAPIView):
@@ -21,7 +22,7 @@ class TweetListView(generics.ListCreateAPIView):
         return TweetSerializer
 
     def get_queryset(self):
-        return TweetVisibilityService.get_visible_tweets_queryset(self.request.user)
+        return get_visible_tweets(self.request.user)
 
     def perform_create(self, serializer):
         tweet = serializer.save(user=self.request.user)
@@ -78,7 +79,7 @@ class TweetDetailView(generics.RetrieveDestroyAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        return TweetVisibilityService.get_visible_tweets_queryset(self.request.user)
+        return get_visible_tweets(self.request.user)
 
     @extend_schema(
         summary="Get tweet details",
