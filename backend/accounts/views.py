@@ -32,7 +32,8 @@ class UserListView(generics.ListAPIView):
     @extend_schema(
         summary="List all users",
         description="Returns a paginated list of all users.",
-        tags=["users"]
+        tags=["users"],
+        responses={200: UserSerializer(many=True)},
     )
     def get(self, request, *args, **kwargs):
         return super().get(request, *args, **kwargs)
@@ -46,7 +47,8 @@ class UserDetailView(generics.RetrieveAPIView):
     @extend_schema(
         summary="Get user details",
         description="Retrieve a specific user's profile by UUID.",
-        tags=["users"]
+        tags=["users"],
+        responses={200: UserSerializer},
     )
     def get(self, request, *args, **kwargs):
         return super().get(request, *args, **kwargs)
@@ -70,7 +72,8 @@ class UserProfileView(generics.RetrieveUpdateDestroyAPIView):
     @extend_schema(
         summary="Get own profile",
         description="Returns the authenticated user's profile.",
-        tags=["profile"]
+        tags=["profile"],
+        responses={200: UserSerializer},
     )
     def get(self, request, *args, **kwargs):
         return super().get(request, *args, **kwargs)
@@ -78,7 +81,8 @@ class UserProfileView(generics.RetrieveUpdateDestroyAPIView):
     @extend_schema(
         summary="Update profile",
         description="Update own profile fields (email, name, bio, privacy, profile picture, banner).",
-        tags=["profile"]
+        tags=["profile"],
+        responses={200: UserSerializer},
     )
     def patch(self, request, *args, **kwargs):
         return super().patch(request, *args, **kwargs)
@@ -86,13 +90,13 @@ class UserProfileView(generics.RetrieveUpdateDestroyAPIView):
     @extend_schema(
         summary="Delete account",
         description="Permanently delete the authenticated user's account.",
-        tags=["profile"]
+        tags=["profile"],
+        responses={204: OpenApiResponse(description="Account deleted")},
     )
     def delete(self, request, *args, **kwargs):
         return super().delete(request, *args, **kwargs)
 
     def perform_update(self, serializer):
-        """Use UserService to update profile instead of serializer.save()."""
         return UserService.update_profile(self.request.user, **serializer.validated_data)
 
     def destroy(self, request, *args, **kwargs):
@@ -134,7 +138,7 @@ class FollowUserView(generics.CreateAPIView):
         if not followee_id:
             return Response({'error': 'followee_id is required'}, status=status.HTTP_400_BAD_REQUEST)
 
-        followee = get_user_by_id(followee_id)   # selector
+        followee = get_user_by_id(followee_id)
 
         try:
             follower_obj, created = UserService.follow(follower, followee)
@@ -177,7 +181,7 @@ class UnfollowUserView(generics.DestroyAPIView):
         if not followee_id:
             return Response({'error': 'followee_id is required'}, status=status.HTTP_400_BAD_REQUEST)
 
-        followee = get_user_by_id(followee_id)   # selector
+        followee = get_user_by_id(followee_id)
 
         deleted = UserService.unfollow(follower, followee)
         if not deleted:
@@ -196,7 +200,8 @@ class UnfollowUserView(generics.DestroyAPIView):
     ],
     summary="Public timeline",
     description="Returns a paginated list of tweets visible to the authenticated user (public tweets + tweets from followed private users).",
-    tags=["timelines"]
+    tags=["timelines"],
+    responses={200: TweetSerializer(many=True)},
 )
 @api_view(['GET'])
 @permission_classes([permissions.IsAuthenticated])
@@ -215,7 +220,8 @@ def public_timeline(request):
     ],
     summary="Private timeline",
     description="Returns a paginated list of tweets only from users the authenticated user follows.",
-    tags=["timelines"]
+    tags=["timelines"],
+    responses={200: TweetSerializer(many=True)},
 )
 @api_view(['GET'])
 @permission_classes([permissions.IsAuthenticated])
@@ -235,12 +241,13 @@ def private_timeline(request):
     ],
     summary="User tweets",
     description="Returns a paginated list of tweets by a specific user.",
-    tags=["users"]
+    tags=["users"],
+    responses={200: TweetSerializer(many=True)},
 )
 @api_view(['GET'])
 @permission_classes([permissions.IsAuthenticated])
 def user_tweets(request, user_id):
-    user = get_user_by_id(user_id)      # selector
+    user = get_user_by_id(user_id)
     queryset = TimelineService.get_user_tweets_queryset(user)
     paginator = PageNumberPagination()
     page = paginator.paginate_queryset(queryset, request)
@@ -256,12 +263,13 @@ def user_tweets(request, user_id):
     ],
     summary="User followers",
     description="Returns a paginated list of followers of a specific user.",
-    tags=["users"]
+    tags=["users"],
+    responses={200: FollowerSerializer(many=True)},
 )
 @api_view(['GET'])
 @permission_classes([permissions.IsAuthenticated])
 def user_followers(request, user_id):
-    user = get_user_by_id(user_id)      # selector
+    user = get_user_by_id(user_id)
     queryset = TimelineService.get_user_followers_queryset(user)
     paginator = PageNumberPagination()
     page = paginator.paginate_queryset(queryset, request)
@@ -277,12 +285,13 @@ def user_followers(request, user_id):
     ],
     summary="User following",
     description="Returns a paginated list of users that a specific user is following.",
-    tags=["users"]
+    tags=["users"],
+    responses={200: FollowerSerializer(many=True)},
 )
 @api_view(['GET'])
 @permission_classes([permissions.IsAuthenticated])
 def user_following(request, user_id):
-    user = get_user_by_id(user_id)      # selector
+    user = get_user_by_id(user_id)
     queryset = TimelineService.get_user_following_queryset(user)
     paginator = PageNumberPagination()
     page = paginator.paginate_queryset(queryset, request)
@@ -299,13 +308,13 @@ class RegisterView(generics.CreateAPIView):
     serializer_class = RegisterSerializer
 
     def perform_create(self, serializer):
-        """Delegate user creation to UserService."""
         return UserService.create_user(**serializer.validated_data)
 
     @extend_schema(
         summary="Register new user",
         description="Create a new user account.",
-        tags=["authentication"]
+        tags=["authentication"],
+        responses={201: UserSerializer},
     )
     def post(self, request, *args, **kwargs):
         return super().post(request, *args, **kwargs)
@@ -387,7 +396,8 @@ class PasswordChangeView(generics.GenericAPIView):
     @extend_schema(
         summary="Change password",
         description="Change the authenticated user's password. Requires old password and ensures new password meets complexity requirements and hasn't been used recently.",
-        tags=["profile"]
+        tags=["profile"],
+        responses={200: OpenApiResponse(description="Password changed successfully")},
     )
     def post(self, request):
         serializer = self.get_serializer(data=request.data, context={'request': request})
