@@ -14,3 +14,8 @@ def get_tweet_detail(pk: int, user) -> Tweet:
     """Fetch a single tweet if visible, otherwise raise Http404."""
     qs = get_visible_tweets(user)
     return get_object_or_404(qs, pk=pk)
+
+
+def get_tweet_by_id(pk: int) -> Tweet:
+    """Fetch a tweet by ID without visibility check. Raise 404 if not found."""
+    return get_object_or_404(Tweet, pk=pk)

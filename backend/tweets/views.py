@@ -8,8 +8,8 @@ from .serializers import TweetSerializer, CreateTweetSerializer, ReTweetSerializ
 from .services.engagement import TweetEngagementService
 from .services.visibility import TweetVisibilityService
 from .services.reply import ReplyService
+from .selectors import get_visible_tweets, get_tweet_by_id
 from drf_spectacular.utils import extend_schema, OpenApiResponse, OpenApiParameter
-from .selectors import get_visible_tweets, get_tweet_detail
 
 
 class TweetListView(generics.ListCreateAPIView):
@@ -25,19 +25,13 @@ class TweetListView(generics.ListCreateAPIView):
         return get_visible_tweets(self.request.user)
 
     def perform_create(self, serializer):
-        tweet = serializer.save(user=self.request.user)
-        # Parent visibility check
-        if tweet.parent_tweet and not TweetVisibilityService.is_visible_to(tweet.parent_tweet, self.request.user):
-            tweet.delete()
-            raise serializers.ValidationError(
-                {"parent_tweet": "You cannot reply to a tweet that is not visible to you."}
-            )
-        # Reply depth / circular reference validation
         try:
-            ReplyService.validate_reply(tweet)
-        except ValidationError as e:
-            tweet.delete()
-            raise serializers.ValidationError(e.messages) from e
+            tweet = TweetEngagementService.create_tweet(
+                user=self.request.user,
+                **serializer.validated_data
+            )
+        except ValueError as e:
+            raise serializers.ValidationError({"error": str(e)}) from e
         return tweet
 
     @extend_schema(
@@ -68,7 +62,7 @@ class TweetListView(generics.ListCreateAPIView):
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        instance = self.perform_create(serializer)   # now returns the saved tweet
+        instance = self.perform_create(serializer)
         output_serializer = TweetSerializer(instance, context={'request': request})
         headers = self.get_success_headers(output_serializer.data)
         return Response(output_serializer.data, status=status.HTTP_201_CREATED, headers=headers)
@@ -125,10 +119,7 @@ class RetweetView(APIView):
         tags=["tweets"]
     )
     def post(self, request, pk):
-        try:
-            tweet = Tweet.objects.get(pk=pk)
-        except Tweet.DoesNotExist:
-            return Response({'error': 'Tweet not found'}, status=status.HTTP_404_NOT_FOUND)
+        tweet = get_tweet_by_id(pk)      # selector
 
         if not TweetVisibilityService.is_visible_to(tweet, request.user):
             return Response({'error': 'Tweet not accessible'}, status=status.HTTP_403_FORBIDDEN)
@@ -163,11 +154,7 @@ class UnretweetView(APIView):
         tags=["tweets"]
     )
     def post(self, request, pk):
-        try:
-            tweet = Tweet.objects.get(pk=pk)
-        except Tweet.DoesNotExist:
-            return Response({'error': 'Tweet not found'}, status=status.HTTP_404_NOT_FOUND)
-
+        tweet = get_tweet_by_id(pk)      # selector
         success = TweetEngagementService.unretweet(tweet, request.user)
         if success:
             return Response({'message': 'Unretweeted successfully'})
@@ -191,10 +178,7 @@ class LikeView(APIView):
         tags=["tweets"]
     )
     def post(self, request, pk):
-        try:
-            tweet = Tweet.objects.get(pk=pk)
-        except Tweet.DoesNotExist:
-            return Response({'error': 'Tweet not found'}, status=status.HTTP_404_NOT_FOUND)
+        tweet = get_tweet_by_id(pk)      # selector
 
         if not TweetVisibilityService.is_visible_to(tweet, request.user):
             return Response({'error': 'Tweet not accessible'}, status=status.HTTP_403_FORBIDDEN)
@@ -221,11 +205,7 @@ class UnlikeView(APIView):
         tags=["tweets"]
     )
     def post(self, request, pk):
-        try:
-            tweet = Tweet.objects.get(pk=pk)
-        except Tweet.DoesNotExist:
-            return Response({'error': 'Tweet not found'}, status=status.HTTP_404_NOT_FOUND)
-
+        tweet = get_tweet_by_id(pk)      # selector
         removed = TweetEngagementService.unlike(tweet, request.user)
         if removed:
             return Response({'message': 'Unliked', 'like_count': TweetEngagementService.get_like_count(tweet)}, status=status.HTTP_200_OK)

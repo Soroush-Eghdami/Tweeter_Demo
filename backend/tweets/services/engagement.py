@@ -88,3 +88,22 @@ class TweetEngagementService:
         with transaction.atomic():
             Tweet.objects.filter(parent_tweet=tweet).update(parent_tweet=None)
             tweet.delete()
+    
+    @staticmethod
+    def create_tweet(user, content, media=None, parent_tweet=None):
+        """Create a tweet with validation."""
+        from tweets.services.visibility import TweetVisibilityService
+        from tweets.services.reply import ReplyService
+        from django.core.exceptions import ValidationError
+    
+        if parent_tweet and not TweetVisibilityService.is_visible_to(parent_tweet, user):
+            raise ValueError("You cannot reply to a tweet that is not visible to you.")
+    
+        tweet = Tweet(user=user, content=content, media=media, parent_tweet=parent_tweet)
+        try:
+            ReplyService.validate_reply(tweet)
+        except ValidationError as e:
+            raise ValueError(str(e.messages)) from e
+    
+        tweet.save()
+        return tweet

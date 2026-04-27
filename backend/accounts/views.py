@@ -10,6 +10,7 @@ from accounts.serializers import (
     RegisterSerializer, LogoutSerializer
 )
 from accounts.services import TimelineService, UserService
+from accounts.selectors import get_user_by_id
 from tweets.serializers import TweetSerializer
 from tweets.models import Tweet
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
@@ -129,10 +130,7 @@ class FollowUserView(generics.CreateAPIView):
         if not followee_id:
             return Response({'error': 'followee_id is required'}, status=status.HTTP_400_BAD_REQUEST)
 
-        try:
-            followee = User.objects.get(id=followee_id)
-        except User.DoesNotExist:
-            return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+        followee = get_user_by_id(followee_id)   # selector
 
         try:
             follower_obj, created = UserService.follow(follower, followee)
@@ -175,10 +173,7 @@ class UnfollowUserView(generics.DestroyAPIView):
         if not followee_id:
             return Response({'error': 'followee_id is required'}, status=status.HTTP_400_BAD_REQUEST)
 
-        try:
-            followee = User.objects.get(id=followee_id)
-        except User.DoesNotExist:
-            return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+        followee = get_user_by_id(followee_id)   # selector
 
         deleted = UserService.unfollow(follower, followee)
         if not deleted:
@@ -241,11 +236,7 @@ def private_timeline(request):
 @api_view(['GET'])
 @permission_classes([permissions.IsAuthenticated])
 def user_tweets(request, user_id):
-    try:
-        user = User.objects.get(id=user_id)
-    except User.DoesNotExist:
-        return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
-
+    user = get_user_by_id(user_id)      # selector
     queryset = TimelineService.get_user_tweets_queryset(user)
     paginator = PageNumberPagination()
     page = paginator.paginate_queryset(queryset, request)
@@ -266,11 +257,7 @@ def user_tweets(request, user_id):
 @api_view(['GET'])
 @permission_classes([permissions.IsAuthenticated])
 def user_followers(request, user_id):
-    try:
-        user = User.objects.get(id=user_id)
-    except User.DoesNotExist:
-        return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
-
+    user = get_user_by_id(user_id)      # selector
     queryset = TimelineService.get_user_followers_queryset(user)
     paginator = PageNumberPagination()
     page = paginator.paginate_queryset(queryset, request)
@@ -291,11 +278,7 @@ def user_followers(request, user_id):
 @api_view(['GET'])
 @permission_classes([permissions.IsAuthenticated])
 def user_following(request, user_id):
-    try:
-        user = User.objects.get(id=user_id)
-    except User.DoesNotExist:
-        return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
-
+    user = get_user_by_id(user_id)      # selector
     queryset = TimelineService.get_user_following_queryset(user)
     paginator = PageNumberPagination()
     page = paginator.paginate_queryset(queryset, request)
