@@ -43,7 +43,6 @@ class TweetSerializer(serializers.ModelSerializer):
         return False
 
     def get_parent_tweet(self, obj: Tweet) -> dict | None:
-        """Return a lightweight representation of the parent tweet."""
         if obj.parent_tweet_id is None:
             return None
         parent = obj.parent_tweet
@@ -64,21 +63,29 @@ class TweetSerializer(serializers.ModelSerializer):
 # =====================================================================
 
 class CreateTweetSerializer(serializers.ModelSerializer):
+    # Explicit fields to control what Swagger UI shows
     media = serializers.FileField(required=False, allow_null=True, help_text="Optional image or video")
+    parent_tweet = serializers.IntegerField(required=False, allow_null=True, help_text="ID of the tweet you are replying to")
 
     class Meta:
         model = Tweet
         fields = ['content', 'media', 'parent_tweet']
         extra_kwargs = {
             'content': {'required': True},
-            'parent_tweet': {'required': False}
         }
 
     @extend_schema_field(OpenApiTypes.BINARY)
     def get_media(self, obj):
-        pass  # only to attach the schema extension
+        pass
 
     def create(self, validated_data: dict) -> Tweet:
+        # parent_tweet can be None or an ID; fetch the actual tweet instance if present
+        parent_id = validated_data.pop('parent_tweet', None)
+        if parent_id:
+            from django.shortcuts import get_object_or_404
+            from tweets.models import Tweet as TweetModel
+            parent = get_object_or_404(TweetModel, pk=parent_id)
+            validated_data['parent_tweet'] = parent
         return Tweet.objects.create(**validated_data)
 
 
