@@ -4,9 +4,9 @@ from .models import Tweet, ReTweet
 from accounts.serializers import UserLiteSerializer
 from .services.engagement import TweetEngagementService
 from .services.visibility import TweetVisibilityService
+from drf_spectacular.utils import extend_schema_field, OpenApiTypes
 
 User = get_user_model()
-
 
 # =====================================================================
 # Tweet Output Serializers
@@ -64,19 +64,21 @@ class TweetSerializer(serializers.ModelSerializer):
 # =====================================================================
 
 class CreateTweetSerializer(serializers.ModelSerializer):
-    """Input serializer for creating a new tweet."""
-    
+    media = serializers.FileField(required=False, allow_null=True, help_text="Optional image or video")
+
     class Meta:
         model = Tweet
         fields = ['content', 'media', 'parent_tweet']
         extra_kwargs = {
             'content': {'required': True},
-            'media': {'required': False},
             'parent_tweet': {'required': False}
         }
 
+    @extend_schema_field(OpenApiTypes.BINARY)
+    def get_media(self, obj):
+        pass  # only to attach the schema extension
+
     def create(self, validated_data: dict) -> Tweet:
-        # Business logic (reply validation) is performed in the view's perform_create()
         return Tweet.objects.create(**validated_data)
 
 

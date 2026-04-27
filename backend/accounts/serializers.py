@@ -4,6 +4,7 @@ from django.contrib.auth.password_validation import validate_password
 from accounts.models import Follower
 from accounts.services import UserService
 from accounts.selectors import is_following
+from drf_spectacular.utils import extend_schema_field, OpenApiTypes
 
 User = get_user_model()
 
@@ -50,21 +51,21 @@ class UserSerializer(serializers.ModelSerializer):
 # =====================================================================
 
 class UserUpdateSerializer(serializers.ModelSerializer):
-    """Input serializer for user profile updates."""
-    
+    profile_picture = serializers.ImageField(required=False, allow_null=True, help_text="Optional profile picture")
+    profile_banner = serializers.ImageField(required=False, allow_null=True, help_text="Optional profile banner")
+
     class Meta:
         model = User
         fields = ['username', 'email', 'first_name', 'last_name', 'bio', 'is_public_user', 'profile_picture', 'profile_banner']
-        extra_kwargs = {field: {'required': False} for field in fields}
+        extra_kwargs = {field: {'required': False} for field in ['username', 'email', 'first_name', 'last_name', 'bio', 'is_public_user']}
 
-    def validate_username(self, value):
-        try:
-            user = self.context['request'].user
-            UserService.validate_username(value, exclude_user_id=user.id)
-        except ValueError as e:
-            raise serializers.ValidationError(str(e))
-        return value
+    @extend_schema_field(OpenApiTypes.BINARY)
+    def get_profile_picture(self, obj):
+        pass
 
+    @extend_schema_field(OpenApiTypes.BINARY)
+    def get_profile_banner(self, obj):
+        pass
 
 class RegisterSerializer(serializers.ModelSerializer):
     """Input serializer for user registration."""
