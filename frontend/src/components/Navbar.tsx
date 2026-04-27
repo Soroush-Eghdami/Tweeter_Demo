@@ -22,6 +22,8 @@ const Navbar = () => {
       }
     };
 
+    handleScrolled();
+
     window.addEventListener("scroll", handleScrolled);
     return () => window.removeEventListener("scroll", handleScrolled);
   }, []);

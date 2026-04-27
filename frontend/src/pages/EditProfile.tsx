@@ -1,6 +1,5 @@
 import WarningPopUp from "../components/WarningPopUp";
 
-import backToHome from "../assets/icons/left-arrow.svg";
 import userProfile from "../assets/icons/profile-default.svg";
 import name from "../assets/icons/login/name.svg";
 import username from "../assets/icons/login/username.svg";
@@ -12,11 +11,13 @@ import email from "../assets/icons/login/email.svg";
 import biography from "../assets/icons/profile/bio.svg";
 import { useState } from "react";
 
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import BackToPrev from "../components/BackToPrev";
+import ProfilePictureEdit from "../components/profilePictureEdit/ProfilePictureEdit";
 
 const EditProfile = () => {
   const [isOpenPopUp, setIsOpenPopUp] = useState(false);
+  const [isProfilePicOpen, setIsProfilePicOpen] = useState(false);
 
   const [isOpenEyeLeft, setIsOpenEyeLeft] = useState(true);
   const [isOpenEyeRight, setIsOpenEyeRight] = useState(true);
@@ -182,6 +183,9 @@ const EditProfile = () => {
           description={"if you proceed yor profile will be lost!!"}
         />
       )}
+      {isProfilePicOpen && (
+        <ProfilePictureEdit setIsOpen={setIsProfilePicOpen} />
+      )}
       <div className="max-w-full mx-auto mt-10">
         <div className="absolute ml-40 mt-5 hover:scale-105 transition-all duration-200 ease-in-out">
           <BackToPrev url="/profile" />
@@ -327,7 +331,10 @@ const EditProfile = () => {
               <button className="px-3.5  text-sm border  rounded-xl hover:bg-white hover:text-black hover:border-black cursor-pointer hover:scale-105 transition-all duration-200 ease-in-out">
                 Profile Banner
               </button>
-              <button className=" px-3.5 py-3 text-sm  border border-white rounded-xl hover:bg-black hover:border-black cursor-pointer hover:scale-105 transition-all duration-200 ease-in-out">
+              <button
+                className=" px-3.5 py-3 text-sm  border border-white rounded-xl hover:bg-black hover:border-black cursor-pointer hover:scale-105 transition-all duration-200 ease-in-out"
+                onClick={() => setIsProfilePicOpen(true)}
+              >
                 Profile Picture
               </button>
             </div>
