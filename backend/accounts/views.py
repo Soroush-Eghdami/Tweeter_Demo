@@ -91,6 +91,10 @@ class UserProfileView(generics.RetrieveUpdateDestroyAPIView):
     def delete(self, request, *args, **kwargs):
         return super().delete(request, *args, **kwargs)
 
+    def perform_update(self, serializer):
+        """Use UserService to update profile instead of serializer.save()."""
+        return UserService.update_profile(self.request.user, **serializer.validated_data)
+
     def destroy(self, request, *args, **kwargs):
         user = self.get_object()
         UserService.delete_account(user)
@@ -293,6 +297,10 @@ class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
     permission_classes = [permissions.AllowAny]
     serializer_class = RegisterSerializer
+
+    def perform_create(self, serializer):
+        """Delegate user creation to UserService."""
+        return UserService.create_user(**serializer.validated_data)
 
     @extend_schema(
         summary="Register new user",

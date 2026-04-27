@@ -59,20 +59,12 @@ class UserService:
 
     @staticmethod
     def ensure_custom_id(user: User) -> str:
-        """
-        Ensure user has a custom_id. Generates one if not present.
-        Returns the custom_id.
-        """
         if not user.custom_id:
             user.custom_id = UserService.generate_custom_id()
         return user.custom_id
 
     @staticmethod
     def validate_username(username: str, exclude_user_id: str = None) -> None:
-        """
-        Validate username is unique and follows rules.
-        Raises ValueError if validation fails.
-        """
         query = User.objects.filter(username=username)
         if exclude_user_id:
             query = query.exclude(id=exclude_user_id)
@@ -80,6 +72,12 @@ class UserService:
             raise ValueError("This username is already taken.")
         if ' ' in username:
             raise ValueError("Username cannot contain spaces.")
+
+    @staticmethod
+    def create_user(**validated_data) -> User:
+        """Create a new user from validated registration data."""
+        validated_data.pop('password2', None)
+        return User.objects.create_user(**validated_data)
 
     @staticmethod
     def follow(follower: User, followee: User) -> Tuple[Follower, bool]:

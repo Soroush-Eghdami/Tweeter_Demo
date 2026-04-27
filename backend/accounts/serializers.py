@@ -3,6 +3,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
 from accounts.models import Follower
 from accounts.services import UserService
+from accounts.selectors import is_following
 
 User = get_user_model()
 
@@ -39,8 +40,8 @@ class UserSerializer(serializers.ModelSerializer):
 
     def get_is_following(self, obj):
         request = self.context.get('request')
-        if request and request.user.is_authenticated:
-            return Follower.objects.filter(follower=request.user, followee=obj).exists()
+        if request:
+            return is_following(request.user, obj)
         return False
 
 
@@ -79,11 +80,6 @@ class RegisterSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({"password": "Password fields didn't match."})
         return attrs
 
-    def create(self, validated_data):
-        validated_data.pop('password2')
-        user = User.objects.create_user(**validated_data)
-        return user
-
 
 class PasswordChangeSerializer(serializers.Serializer):
     """Input serializer for password change."""
@@ -95,13 +91,6 @@ class PasswordChangeSerializer(serializers.Serializer):
         if attrs['new_password'] != attrs['confirm_new_password']:
             raise serializers.ValidationError({"confirm_new_password": "Passwords do not match."})
         return attrs
-
-    def save(self, **kwargs):
-        user = self.context['request'].user
-        old_password = self.validated_data['old_password']
-        new_password = self.validated_data['new_password']
-        UserService.change_password(user, old_password, new_password)
-        return user
 
 
 class LogoutSerializer(serializers.Serializer):
