@@ -1,13 +1,15 @@
-from rest_framework import generics, permissions, status
+from rest_framework import generics, permissions, status, serializers
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
-from django.db.models import Q
+from django.core.exceptions import ValidationError
 from .models import Tweet, ReTweet, Like
 from .serializers import TweetSerializer, CreateTweetSerializer, ReTweetSerializer
-from accounts.models import Follower
+from .services.engagement import TweetEngagementService
+from .services.visibility import TweetVisibilityService
+from .services.reply import ReplyService
+from .selectors import get_visible_tweets, get_tweet_by_id
 from drf_spectacular.utils import extend_schema, OpenApiResponse, OpenApiParameter
-from .services import TweetService
 
 
 class TweetListView(generics.ListCreateAPIView):
@@ -20,10 +22,17 @@ class TweetListView(generics.ListCreateAPIView):
         return TweetSerializer
 
     def get_queryset(self):
-        return TweetService.get_visible_tweets_queryset(self.request.user)
+        return get_visible_tweets(self.request.user)
 
     def perform_create(self, serializer):
-        return serializer.save(user=self.request.user)
+        try:
+            tweet = TweetEngagementService.create_tweet(
+                user=self.request.user,
+                **serializer.validated_data
+            )
+        except ValueError as e:
+            raise serializers.ValidationError({"error": str(e)}) from e
+        return tweet
 
     @extend_schema(
         summary="List tweets",
@@ -64,7 +73,7 @@ class TweetDetailView(generics.RetrieveDestroyAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        return TweetService.get_visible_tweets_queryset(self.request.user)
+        return get_visible_tweets(self.request.user)
 
     @extend_schema(
         summary="Get tweet details",
@@ -90,7 +99,7 @@ class TweetDetailView(generics.RetrieveDestroyAPIView):
     def perform_destroy(self, instance):
         if instance.user != self.request.user:
             return Response({'error': 'You can only delete your own tweets.'}, status=status.HTTP_403_FORBIDDEN)
-        TweetService.delete_tweet(instance)
+        TweetEngagementService.delete_tweet(instance)
 
 
 class RetweetView(APIView):
@@ -110,16 +119,13 @@ class RetweetView(APIView):
         tags=["tweets"]
     )
     def post(self, request, pk):
-        try:
-            tweet = Tweet.objects.get(pk=pk)
-        except Tweet.DoesNotExist:
-            return Response({'error': 'Tweet not found'}, status=status.HTTP_404_NOT_FOUND)
+        tweet = get_tweet_by_id(pk)      # selector
 
-        if not TweetService.is_visible_to(tweet, request.user):
+        if not TweetVisibilityService.is_visible_to(tweet, request.user):
             return Response({'error': 'Tweet not accessible'}, status=status.HTTP_403_FORBIDDEN)
 
         try:
-            retweet, created = TweetService.retweet(tweet, request.user)
+            retweet, created = TweetEngagementService.retweet(tweet, request.user)
         except ValueError as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -148,12 +154,8 @@ class UnretweetView(APIView):
         tags=["tweets"]
     )
     def post(self, request, pk):
-        try:
-            tweet = Tweet.objects.get(pk=pk)
-        except Tweet.DoesNotExist:
-            return Response({'error': 'Tweet not found'}, status=status.HTTP_404_NOT_FOUND)
-
-        success = TweetService.unretweet(tweet, request.user)
+        tweet = get_tweet_by_id(pk)      # selector
+        success = TweetEngagementService.unretweet(tweet, request.user)
         if success:
             return Response({'message': 'Unretweeted successfully'})
         else:
@@ -176,19 +178,16 @@ class LikeView(APIView):
         tags=["tweets"]
     )
     def post(self, request, pk):
-        try:
-            tweet = Tweet.objects.get(pk=pk)
-        except Tweet.DoesNotExist:
-            return Response({'error': 'Tweet not found'}, status=status.HTTP_404_NOT_FOUND)
+        tweet = get_tweet_by_id(pk)      # selector
 
-        if not TweetService.is_visible_to(tweet, request.user):
+        if not TweetVisibilityService.is_visible_to(tweet, request.user):
             return Response({'error': 'Tweet not accessible'}, status=status.HTTP_403_FORBIDDEN)
 
-        like, created = TweetService.like(tweet, request.user)
+        like, created = TweetEngagementService.like(tweet, request.user)
         if created:
-            return Response({'message': 'Liked', 'like_count': TweetService.get_like_count(tweet)}, status=status.HTTP_201_CREATED)
+            return Response({'message': 'Liked', 'like_count': TweetEngagementService.get_like_count(tweet)}, status=status.HTTP_201_CREATED)
         else:
-            return Response({'message': 'Already liked', 'like_count': TweetService.get_like_count(tweet)}, status=status.HTTP_200_OK)
+            return Response({'message': 'Already liked', 'like_count': TweetEngagementService.get_like_count(tweet)}, status=status.HTTP_200_OK)
 
 
 class UnlikeView(APIView):
@@ -206,13 +205,9 @@ class UnlikeView(APIView):
         tags=["tweets"]
     )
     def post(self, request, pk):
-        try:
-            tweet = Tweet.objects.get(pk=pk)
-        except Tweet.DoesNotExist:
-            return Response({'error': 'Tweet not found'}, status=status.HTTP_404_NOT_FOUND)
-
-        removed = TweetService.unlike(tweet, request.user)
+        tweet = get_tweet_by_id(pk)      # selector
+        removed = TweetEngagementService.unlike(tweet, request.user)
         if removed:
-            return Response({'message': 'Unliked', 'like_count': TweetService.get_like_count(tweet)}, status=status.HTTP_200_OK)
+            return Response({'message': 'Unliked', 'like_count': TweetEngagementService.get_like_count(tweet)}, status=status.HTTP_200_OK)
         else:
             return Response({'error': 'You have not liked this tweet'}, status=status.HTTP_400_BAD_REQUEST)

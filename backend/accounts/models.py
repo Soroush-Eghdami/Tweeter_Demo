@@ -1,16 +1,18 @@
 from django.db import models
-from django.conf import settings
 from django.contrib.auth.models import AbstractUser
 import uuid
 
 
 class User(AbstractUser):
+    """Minimal User model - all custom logic moved to UserService."""
+    
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     custom_id = models.CharField(max_length=6, unique=True, blank=True)
     bio = models.TextField(max_length=200, blank=True)
     is_public_user = models.BooleanField(default=True)
     profile_picture = models.ImageField(upload_to='profile_pics/', blank=True, null=True)
     profile_banner = models.ImageField(upload_to='profile_banners/', blank=True, null=True)
+    email = models.EmailField(unique=True, db_index=True)
 
     @property
     def is_public(self):
@@ -20,18 +22,8 @@ class User(AbstractUser):
     def is_private(self):
         return not self.is_public_user
 
-    def save(self, *args, **kwargs):
-        if not self.custom_id:
-            self.custom_id = str(uuid.uuid4()).replace('-', '')[:6]
-        super().save(*args, **kwargs)
-
     def __str__(self):
         return f"{self.username} | {self.custom_id}"
-
-    # Override email field to add index (already unique, index helps lookups)
-    # Django's AbstractUser already has email, so we redefine it only to add db_index=True.
-    # This is safe because we keep the same field type.
-    email = models.EmailField(unique=True, db_index=True)
 
 
 class Follower(models.Model):
@@ -47,7 +39,7 @@ class Follower(models.Model):
 
 
 class PasswordHistory(models.Model):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='password_history')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='password_history')
     password_hash = models.CharField(max_length=255)
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
 

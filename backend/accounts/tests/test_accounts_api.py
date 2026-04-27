@@ -22,6 +22,8 @@ def create_test_image(name='test.jpg', size=(100, 100), color='red'):
 
 
 class AccountsAPITestCase(TestCase):
+    """Integration tests for accounts API endpoints."""
+
     def setUp(self):
         self.client = APIClient()
         # Create users with UNIQUE emails
@@ -197,7 +199,7 @@ class AccountsAPITestCase(TestCase):
         }
         response = self.client.post(url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn('old_password', response.data['detail'])
+        self.assertEqual(response.data['error'], 'Old password is incorrect.')
 
     def test_change_password_mismatch(self):
         url = reverse('password-change')
@@ -227,7 +229,7 @@ class AccountsAPITestCase(TestCase):
         }
         response = self.client.post(url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn('new_password', response.data['detail'])
+        self.assertIn('recently', response.data['error'])   # or a full match
 
     # ------------------------------------------------------------------
     # User List/Detail

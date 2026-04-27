@@ -1,15 +1,20 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
-from django.core.exceptions import ValidationError
 from .models import Tweet, ReTweet
-from accounts.serializers import UserSerializer
-from .services import TweetService
+from accounts.serializers import UserLiteSerializer
+from .services.engagement import TweetEngagementService
+from .services.visibility import TweetVisibilityService
 
 User = get_user_model()
 
 
+# =====================================================================
+# Tweet Output Serializers
+# =====================================================================
+
 class TweetSerializer(serializers.ModelSerializer):
-    user = UserSerializer(read_only=True)
+    """Full tweet output serializer with engagement counts and metadata."""
+    user = UserLiteSerializer(read_only=True)
     message = serializers.CharField(source='content', read_only=True)
     retweet_count = serializers.SerializerMethodField()
     like_count = serializers.SerializerMethodField()
@@ -18,26 +23,29 @@ class TweetSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Tweet
-        fields = '__all__'
-        read_only_fields = ['id', 'user', 'created_at', 'updated_at']
+        fields = [
+            'id', 'user', 'content', 'message', 'media', 'parent_tweet',
+            'retweet_count', 'like_count', 'is_liked',
+            'created_at', 'updated_at'
+        ]
+        read_only_fields = fields
 
     def get_retweet_count(self, obj: Tweet) -> int:
-        return TweetService.get_retweet_count(obj)
+        return TweetEngagementService.get_retweet_count(obj)
 
     def get_like_count(self, obj: Tweet) -> int:
-        return TweetService.get_like_count(obj)
+        return TweetEngagementService.get_like_count(obj)
 
     def get_is_liked(self, obj: Tweet) -> bool:
         request = self.context.get('request')
         if request and request.user.is_authenticated:
-            return TweetService.is_liked_by(obj, request.user)
+            return TweetEngagementService.is_liked_by(obj, request.user)
         return False
 
     def get_parent_tweet(self, obj: Tweet) -> dict | None:
         """Return a lightweight representation of the parent tweet."""
         if obj.parent_tweet_id is None:
             return None
-        # Use the already fetched parent_tweet from select_related
         parent = obj.parent_tweet
         return {
             'id': parent.id,
@@ -45,18 +53,19 @@ class TweetSerializer(serializers.ModelSerializer):
             'user': {
                 'id': parent.user.id,
                 'username': parent.user.username,
-                'email': parent.user.email,
-                'first_name': parent.user.first_name,
-                'last_name': parent.user.last_name,
-                'profile_picture': parent.user.profile_picture.url if parent.user.profile_picture else None,
-                'profile_banner': parent.user.profile_banner.url if parent.user.profile_banner else None,
+                'custom_id': parent.user.custom_id,
             },
             'created_at': parent.created_at,
         }
 
 
+# =====================================================================
+# Tweet Input Serializers
+# =====================================================================
+
 class CreateTweetSerializer(serializers.ModelSerializer):
-    """Serializer for creating a new tweet."""
+    """Input serializer for creating a new tweet."""
+    
     class Meta:
         model = Tweet
         fields = ['content', 'media', 'parent_tweet']
@@ -66,35 +75,21 @@ class CreateTweetSerializer(serializers.ModelSerializer):
             'parent_tweet': {'required': False}
         }
 
-    def validate_parent_tweet(self, value: Tweet | None) -> Tweet | None:
-        if value is None:
-            return value
-        request = self.context.get('request')
-        if request and request.user.is_authenticated:
-            if not TweetService.is_visible_to(value, request.user):
-                raise serializers.ValidationError("You cannot reply to a tweet that is not visible to you.")
-        return value
-
     def create(self, validated_data: dict) -> Tweet:
-        try:
-            tweet = Tweet(**validated_data)
-            tweet.full_clean()
-            tweet.save()
-            return tweet
-        except ValidationError as e:
-            if hasattr(e, 'message_dict'):
-                raise serializers.ValidationError(e.message_dict)
-            elif hasattr(e, 'messages'):
-                raise serializers.ValidationError(e.messages)
-            else:
-                raise serializers.ValidationError(str(e))
+        # Business logic (reply validation) is performed in the view's perform_create()
+        return Tweet.objects.create(**validated_data)
 
+
+# =====================================================================
+# ReTweet Serializers
+# =====================================================================
 
 class ReTweetSerializer(serializers.ModelSerializer):
-    user = UserSerializer(read_only=True)
+    """ReTweet output serializer."""
+    user = UserLiteSerializer(read_only=True)
     original_tweet = TweetSerializer(read_only=True)
 
     class Meta:
         model = ReTweet
-        fields = '__all__'
-        read_only_fields = ['id', 'user', 'created_at']
+        fields = ['id', 'user', 'original_tweet', 'created_at']
+        read_only_fields = fields
