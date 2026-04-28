@@ -1,4 +1,3 @@
-"""Selectors for fetching user data."""
 from django.shortcuts import get_object_or_404
 from accounts.models import User, Follower
 

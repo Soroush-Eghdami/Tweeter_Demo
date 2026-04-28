@@ -3,9 +3,9 @@ from PIL import Image
 from django.test import TestCase
 from django.urls import reverse
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.contrib.auth import get_user_model
 from rest_framework.test import APIClient
 from rest_framework import status
-from django.contrib.auth import get_user_model
 from accounts.models import Follower, PasswordHistory
 from tweets.models import Tweet, Like
 

@@ -1,5 +1,5 @@
-from django.test import TestCase
 from unittest.mock import patch, MagicMock
+from django.test import TestCase
 from tweets.services.visibility import TweetVisibilityService
 from tweets.models import Tweet
 

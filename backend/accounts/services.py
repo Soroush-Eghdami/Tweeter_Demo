@@ -1,12 +1,11 @@
-from django.db.models import QuerySet, Prefetch, Q
-from django.db import transaction
-from django.contrib.auth.hashers import check_password
-from typing import Tuple
 import uuid
-
+import logging
+from typing import Tuple
+from django.db import transaction
+from django.db.models import QuerySet, Prefetch, Q
+from django.contrib.auth.hashers import check_password
 from tweets.models import Tweet, ReTweet
 from accounts.models import User, Follower, PasswordHistory
-import logging
 
 logger = logging.getLogger(__name__)
 

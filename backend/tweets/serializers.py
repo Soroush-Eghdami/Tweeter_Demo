@@ -1,10 +1,10 @@
-from rest_framework import serializers
 from django.contrib.auth import get_user_model
+from rest_framework import serializers
+from drf_spectacular.utils import extend_schema_field, OpenApiTypes
 from .models import Tweet, ReTweet
 from accounts.serializers import UserLiteSerializer
 from .services.engagement import TweetEngagementService
 from .services.visibility import TweetVisibilityService
-from drf_spectacular.utils import extend_schema_field, OpenApiTypes
 
 User = get_user_model()
 

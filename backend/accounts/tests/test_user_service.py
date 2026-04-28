@@ -1,5 +1,5 @@
-from django.test import TestCase
 from unittest.mock import patch, MagicMock
+from django.test import TestCase
 from accounts.services import UserService
 from accounts.models import Follower, PasswordHistory, User
 

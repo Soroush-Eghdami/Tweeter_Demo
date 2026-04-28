@@ -3,9 +3,9 @@ from django.test import TestCase
 from django.urls import reverse
 from django.test.utils import CaptureQueriesContext
 from django.db import connection
+from django.contrib.auth import get_user_model
 from rest_framework.test import APIClient
 from rest_framework import status
-from django.contrib.auth import get_user_model
 from tweets.models import Tweet, ReTweet, Like
 from tweets.services.engagement import TweetEngagementService
 

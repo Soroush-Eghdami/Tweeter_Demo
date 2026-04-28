@@ -1,9 +1,9 @@
 """Test suite for tweet visibility and error handling."""
 from django.test import TestCase
 from django.urls import reverse
+from django.contrib.auth import get_user_model
 from rest_framework.test import APIClient
 from rest_framework import status
-from django.contrib.auth import get_user_model
 from tweets.models import Tweet
 from accounts.models import Follower
 
