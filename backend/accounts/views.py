@@ -1,22 +1,21 @@
+from django.contrib.auth import get_user_model
 from rest_framework import generics, status, permissions
 from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
-from django.contrib.auth import get_user_model
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+from rest_framework_simplejwt.tokens import RefreshToken
+from drf_spectacular.utils import extend_schema, OpenApiResponse, OpenApiParameter
 from accounts.models import Follower
 from accounts.serializers import (
     UserSerializer, UserUpdateSerializer, FollowerSerializer,
-    RegisterSerializer, LogoutSerializer
+    RegisterSerializer, LogoutSerializer, PasswordChangeSerializer
 )
 from accounts.services import TimelineService, UserService
 from accounts.selectors import get_user_by_id
 from tweets.serializers import TweetSerializer
 from tweets.models import Tweet
-from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
-from rest_framework_simplejwt.tokens import RefreshToken
-from drf_spectacular.utils import extend_schema, OpenApiResponse, OpenApiParameter
-from .serializers import PasswordChangeSerializer
 
 User = get_user_model()
 

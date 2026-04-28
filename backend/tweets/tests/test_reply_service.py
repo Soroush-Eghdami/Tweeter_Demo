@@ -1,7 +1,7 @@
-from django.test import TestCase
 from unittest.mock import MagicMock
-from tweets.services.reply import ReplyService
+from django.test import TestCase
 from django.core.exceptions import ValidationError
+from tweets.services.reply import ReplyService
 
 class TestReplyService(TestCase):
     def test_depth_within_limit(self):

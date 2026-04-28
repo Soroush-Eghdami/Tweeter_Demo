@@ -2,9 +2,9 @@
 from django.test import TestCase
 from django.urls import reverse
 from django.core.exceptions import ValidationError
+from django.contrib.auth import get_user_model
 from rest_framework.test import APIClient
 from rest_framework import status
-from django.contrib.auth import get_user_model
 from tweets.models import Tweet
 from tweets.services.reply import ReplyService
 
