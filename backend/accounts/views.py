@@ -13,7 +13,7 @@ from accounts.serializers import (
     RegisterSerializer, LogoutSerializer, PasswordChangeSerializer
 )
 from accounts.services import TimelineService, UserService
-from accounts.selectors import get_user_by_id
+from accounts.selectors import get_user_by_id, search_users
 from tweets.serializers import TweetSerializer
 from tweets.models import Tweet
 
@@ -187,6 +187,33 @@ class UnfollowUserView(generics.DestroyAPIView):
             return Response({'error': 'You are not following this user'}, status=status.HTTP_400_BAD_REQUEST)
 
         return Response({'message': 'Unfollowed successfully'}, status=status.HTTP_200_OK)
+
+
+# ------------------------------------------------------------------
+# Search
+# ------------------------------------------------------------------
+@extend_schema(
+    parameters=[
+        OpenApiParameter(name='q', type=str, location=OpenApiParameter.QUERY, description='Search query', required=True),
+        OpenApiParameter(name='page', type=int, location=OpenApiParameter.QUERY, description='Page number'),
+        OpenApiParameter(name='page_size', type=int, location=OpenApiParameter.QUERY, description='Items per page'),
+    ],
+    summary="Search users",
+    description="Search for users by username, first name, last name, or custom ID.",
+    tags=["search"],
+    responses={200: UserSerializer(many=True)},
+)
+@api_view(['GET'])
+@permission_classes([permissions.AllowAny])
+def search_users_view(request):
+    query = request.GET.get('q', '').strip()
+    if not query:
+        return Response({'error': 'Search query is required.'}, status=status.HTTP_400_BAD_REQUEST)
+    queryset = search_users(query)
+    paginator = PageNumberPagination()
+    page = paginator.paginate_queryset(queryset, request)
+    serializer = UserSerializer(page, many=True)
+    return paginator.get_paginated_response(serializer.data)
 
 
 # ------------------------------------------------------------------
