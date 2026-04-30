@@ -3,7 +3,7 @@ from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
 from drf_spectacular.utils import extend_schema_field, OpenApiTypes
 from accounts.models import Follower 
-from accounts.selectors import is_following, validate_username
+from accounts.selectors import is_following
 
 User = get_user_model()
 

@@ -2,7 +2,6 @@ from unittest.mock import patch, MagicMock
 from django.test import TestCase
 from django.contrib.auth.hashers import make_password
 from accounts.services import UserService
-from accounts.models import Follower, PasswordHistory, User
 
 
 class TestUserServiceFollow(TestCase):

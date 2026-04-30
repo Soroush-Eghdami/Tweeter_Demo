@@ -25,10 +25,8 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from rest_framework.test import APIClient
 from rest_framework import status
 from django.contrib.auth import get_user_model
-from accounts.models import Follower, PasswordHistory
-from tweets.models import Tweet, Like
+from tweets.models import Tweet
 from unittest.mock import patch, MagicMock
-from django.contrib.auth.hashers import make_password
 
 User = get_user_model()
 

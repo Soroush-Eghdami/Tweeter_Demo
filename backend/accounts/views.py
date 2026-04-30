@@ -12,7 +12,10 @@ from accounts.serializers import (
     RegisterSerializer, LogoutSerializer, PasswordChangeSerializer
 )
 from accounts.services import UserService
-from accounts.selectors import get_user_by_id, search_users
+from accounts.selectors import (get_user_by_id, search_users, get_public_timeline_queryset,
+    get_private_timeline_queryset, get_user_tweets_queryset, get_user_followers_queryset,
+    get_user_following_queryset,
+)
 from tweets.serializers import TweetSerializer
 
 
@@ -196,19 +199,18 @@ class SearchUsersView(generics.ListAPIView):
     permission_classes = [permissions.AllowAny]
 
     def get_queryset(self):
-        query = self.request.GET.get('q', '').strip()
-        if not query:
-            raise serializers.ValidationError({'error': 'Search query is required.'})
-        return search_users(query)
+        query = self.request.GET.get('q', '')
+        try:
+            return search_users(query)
+        except ValueError as e:
+            raise serializers.ValidationError({'error': str(e)})
 
     @extend_schema(
         parameters=[
             OpenApiParameter(name='q', type=str, location=OpenApiParameter.QUERY, description='Search query', required=True),
-            OpenApiParameter(name='page', type=int, location=OpenApiParameter.QUERY, description='Page number'),
-            OpenApiParameter(name='page_size', type=int, location=OpenApiParameter.QUERY, description='Items per page'),
         ],
         summary="Search users",
-        description="Search for users by username, first name, last name, or custom ID.",
+        description="Search for users by username, first name, or last name.",
         tags=["search"],
         responses={200: UserSerializer(many=True)},
     )

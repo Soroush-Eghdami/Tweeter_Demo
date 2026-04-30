@@ -1,11 +1,7 @@
 from django.test import TestCase
 from unittest.mock import patch, MagicMock
-from accounts.selectors import (
-    get_public_timeline_queryset,
-    get_private_timeline_queryset,
-    get_user_tweets_queryset,
-    get_user_followers_queryset,
-    get_user_following_queryset,
+from accounts.selectors import (get_public_timeline_queryset, get_private_timeline_queryset,
+    get_user_tweets_queryset, get_user_followers_queryset, get_user_following_queryset,
 )
 
 
