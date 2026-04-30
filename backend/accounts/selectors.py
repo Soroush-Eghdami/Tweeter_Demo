@@ -1,8 +1,27 @@
+from django_filters import FilterSet, CharFilter
 from django.shortcuts import get_object_or_404
 from django.db.models import Q, QuerySet, Prefetch
 from accounts.models import User, Follower
 from tweets.models import Tweet, ReTweet
 
+
+#* Defining Search Class
+
+class UserSearchFilter(FilterSet):
+    q = CharFilter(method='filter_search', label='search')
+
+    class Meta:
+        model = User
+        fields = ['q']
+
+    def filter_search(self, queryset, name, value):
+        return queryset.filter(
+            Q(username__icontains=value) |
+            Q(first_name__icontains=value) |
+            Q(last_name__icontains=value)
+        )
+
+#* Defining Functions 
 
 def get_user_by_id(user_id):
     return get_object_or_404(User, id=user_id)
@@ -14,14 +33,6 @@ def is_following(user, target_user) -> bool:
     if not user.is_authenticated:
         return False
     return Follower.objects.filter(follower=user, followee=target_user).exists()
-
-def search_users(query: str) -> QuerySet[User]:
-    return User.objects.filter(
-        Q(username__icontains=query) |
-        Q(first_name__icontains=query) |
-        Q(last_name__icontains=query) |
-        Q(custom_id__icontains=query)
-    ).order_by('username')
 
 def validate_username(username: str, exclude_user_id: str = None) -> None:
     query = User.objects.filter(username=username)
@@ -61,3 +72,9 @@ def get_user_followers_queryset(user: User) -> QuerySet[Follower]:
 
 def get_user_following_queryset(user: User) -> QuerySet[Follower]:
     return Follower.objects.filter(follower=user).select_related('followee').order_by('-created_at')
+
+def search_users(query: str):
+    filter_set = UserSearchFilter({'q':query}, queryset=User.objects.all())
+    if not filter_set.is_valid():
+        raise ValueError("Invalid search query")
+    return filter_set.qs.order_by('username')

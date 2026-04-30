@@ -14,7 +14,7 @@ urlpatterns = [
     path('unfollow/', views.UnfollowUserView.as_view(), name='unfollow-user'),
     
     # Search
-    path('search/', views.search_users_view, name='search-users'),
+    path('search/', views.SearchUsersView.as_view(), name='search-users'),
 
     # Timelines
     path('timeline/public/', views.public_timeline, name='public-timeline'),

@@ -1,5 +1,5 @@
 from django.contrib.auth import get_user_model
-from rest_framework import generics, status, permissions
+from rest_framework import generics, status, permissions, serializers
 from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.pagination import PageNumberPagination
@@ -7,7 +7,6 @@ from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from rest_framework_simplejwt.tokens import RefreshToken
 from drf_spectacular.utils import extend_schema, OpenApiResponse, OpenApiParameter
-from accounts.models import Follower
 from accounts.serializers import (
     UserSerializer, UserUpdateSerializer, FollowerSerializer,
     RegisterSerializer, LogoutSerializer, PasswordChangeSerializer
@@ -15,15 +14,7 @@ from accounts.serializers import (
 from accounts.services import UserService
 from accounts.selectors import get_user_by_id, search_users
 from tweets.serializers import TweetSerializer
-from tweets.models import Tweet
-from accounts.selectors import (
-    get_user_by_id, search_users,
-    get_public_timeline_queryset,
-    get_private_timeline_queryset,
-    get_user_tweets_queryset,
-    get_user_followers_queryset,
-    get_user_following_queryset,
-)
+
 
 User = get_user_model()
 
@@ -200,29 +191,30 @@ class UnfollowUserView(generics.DestroyAPIView):
 # ------------------------------------------------------------------
 # Search
 # ------------------------------------------------------------------
-@extend_schema(
-    parameters=[
-        OpenApiParameter(name='q', type=str, location=OpenApiParameter.QUERY, description='Search query', required=True),
-        OpenApiParameter(name='page', type=int, location=OpenApiParameter.QUERY, description='Page number'),
-        OpenApiParameter(name='page_size', type=int, location=OpenApiParameter.QUERY, description='Items per page'),
-    ],
-    summary="Search users",
-    description="Search for users by username, first name, last name, or custom ID.",
-    tags=["search"],
-    responses={200: UserSerializer(many=True)},
-)
-@api_view(['GET'])
-@permission_classes([permissions.AllowAny])
-def search_users_view(request):
-    query = request.GET.get('q', '').strip()
-    if not query:
-        return Response({'error': 'Search query is required.'}, status=status.HTTP_400_BAD_REQUEST)
-    queryset = search_users(query)
-    paginator = PageNumberPagination()
-    page = paginator.paginate_queryset(queryset, request)
-    serializer = UserSerializer(page, many=True)
-    return paginator.get_paginated_response(serializer.data)
+class SearchUsersView(generics.ListAPIView):
+    serializer_class = UserSerializer
+    permission_classes = [permissions.AllowAny]
 
+    def get_queryset(self):
+        query = self.request.GET.get('q', '').strip()
+        if not query:
+            raise serializers.ValidationError({'error': 'Search query is required.'})
+        return search_users(query)
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(name='q', type=str, location=OpenApiParameter.QUERY, description='Search query', required=True),
+            OpenApiParameter(name='page', type=int, location=OpenApiParameter.QUERY, description='Page number'),
+            OpenApiParameter(name='page_size', type=int, location=OpenApiParameter.QUERY, description='Items per page'),
+        ],
+        summary="Search users",
+        description="Search for users by username, first name, last name, or custom ID.",
+        tags=["search"],
+        responses={200: UserSerializer(many=True)},
+    )
+    def get(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)
+        
 
 # ------------------------------------------------------------------
 # Timelines
