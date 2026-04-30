@@ -12,10 +12,18 @@ from accounts.serializers import (
     UserSerializer, UserUpdateSerializer, FollowerSerializer,
     RegisterSerializer, LogoutSerializer, PasswordChangeSerializer
 )
-from accounts.services import TimelineService, UserService
+from accounts.services import UserService
 from accounts.selectors import get_user_by_id, search_users
 from tweets.serializers import TweetSerializer
 from tweets.models import Tweet
+from accounts.selectors import (
+    get_user_by_id, search_users,
+    get_public_timeline_queryset,
+    get_private_timeline_queryset,
+    get_user_tweets_queryset,
+    get_user_followers_queryset,
+    get_user_following_queryset,
+)
 
 User = get_user_model()
 
@@ -232,7 +240,7 @@ def search_users_view(request):
 @api_view(['GET'])
 @permission_classes([permissions.IsAuthenticated])
 def public_timeline(request):
-    queryset = TimelineService.get_public_timeline_queryset(request.user)
+    queryset = get_public_timeline_queryset(request.user)
     paginator = PageNumberPagination()
     page = paginator.paginate_queryset(queryset, request)
     serializer = TweetSerializer(page, many=True, context={'request': request})
@@ -252,7 +260,7 @@ def public_timeline(request):
 @api_view(['GET'])
 @permission_classes([permissions.IsAuthenticated])
 def private_timeline(request):
-    queryset = TimelineService.get_private_timeline_queryset(request.user)
+    queryset = get_private_timeline_queryset(request.user)
     paginator = PageNumberPagination()
     page = paginator.paginate_queryset(queryset, request)
     serializer = TweetSerializer(page, many=True, context={'request': request})
@@ -274,7 +282,7 @@ def private_timeline(request):
 @permission_classes([permissions.IsAuthenticated])
 def user_tweets(request, user_id):
     user = get_user_by_id(user_id)
-    queryset = TimelineService.get_user_tweets_queryset(user)
+    queryset = get_user_tweets_queryset(user)
     paginator = PageNumberPagination()
     page = paginator.paginate_queryset(queryset, request)
     serializer = TweetSerializer(page, many=True, context={'request': request})
@@ -296,7 +304,7 @@ def user_tweets(request, user_id):
 @permission_classes([permissions.IsAuthenticated])
 def user_followers(request, user_id):
     user = get_user_by_id(user_id)
-    queryset = TimelineService.get_user_followers_queryset(user)
+    queryset = get_user_followers_queryset(user)
     paginator = PageNumberPagination()
     page = paginator.paginate_queryset(queryset, request)
     serializer = FollowerSerializer(page, many=True)
@@ -318,7 +326,7 @@ def user_followers(request, user_id):
 @permission_classes([permissions.IsAuthenticated])
 def user_following(request, user_id):
     user = get_user_by_id(user_id)
-    queryset = TimelineService.get_user_following_queryset(user)
+    queryset = get_user_following_queryset(user)
     paginator = PageNumberPagination()
     page = paginator.paginate_queryset(queryset, request)
     serializer = FollowerSerializer(page, many=True)

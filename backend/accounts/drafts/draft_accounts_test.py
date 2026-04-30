@@ -1,8 +1,21 @@
 """
-Draft test specification for the Accounts domain.
-Contains all existing tests (verified) plus missing tests for complete coverage.
-This file is not imported – it is a reference document for the overhaul.
+Draft file for accounts domain tests (not importet any where)
+contaiuns : 
+    1. all verified tests
+    2. new tests added for :
+        2.1 API interigation (3 new):
+            2.1.1 for search API
+        2.2 User_services (4 new):
+            2.2.1 create
+            2.2.2 update profile 
+            2.2.3 validate username (its in selector)
+            2.2.4 delete user
+        2.3 selectors (3 new):
+           2.3.1 user tweets queryset
+           2.3.2 user followers queryset
+           2.3.3 user following queryset
 """
+
 
 import tempfile
 from PIL import Image
@@ -29,7 +42,7 @@ def create_test_image(name='test.jpg', size=(100, 100), color='red'):
 
 
 # =====================================================================
-# 1. Accounts API Integration Tests (28 existing + 1 new = 29)
+# 1. Accounts API Integration Tests
 # =====================================================================
 class AccountsAPIDraft(TestCase):
     """Integration tests for accounts API endpoints."""
@@ -115,7 +128,7 @@ class AccountsAPIDraft(TestCase):
 
 
 # =====================================================================
-# 2. UserService Unit Tests (10 existing + 6 new = 16)
+# 2. UserService Unit Tests
 # =====================================================================
 class UserServiceDraft(TestCase):
     """Unit tests for UserService (mocked)."""
@@ -133,7 +146,7 @@ class UserServiceDraft(TestCase):
     def test_update_profile_username_with_spaces(self): ...
 
     # --- NEW: create_user ---
-    @patch('accounts.services.User.objects.create_user')
+    @patch('accounts.services.user.User.objects.create_user')
     def test_create_user_calls_create_user(self, mock_create):
         from accounts.services import UserService
         data = {'username': 'new', 'password': 'pass', 'email': 'new@e.com'}
@@ -141,7 +154,7 @@ class UserServiceDraft(TestCase):
         mock_create.assert_called_once_with(username='new', password='pass', email='new@e.com')
 
     # --- NEW: update_profile success ---
-    @patch('accounts.services.User.objects.exclude')
+    @patch('accounts.selectors.User.objects.exclude')
     def test_update_profile_success(self, mock_exclude):
         user = MagicMock()
         mock_exclude.return_value.filter.return_value.exists.return_value = False
@@ -150,12 +163,12 @@ class UserServiceDraft(TestCase):
         self.assertEqual(result, user)
         user.save.assert_called_once()
 
-    # --- NEW: validate_username success ---
-    @patch('accounts.services.User.objects.filter')
+    # --- NEW: validate_username (now a selector) ---
+    @patch('accounts.selectors.User.objects.filter')
     def test_validate_username_success(self, mock_filter):
+        from accounts.selectors import validate_username
         mock_filter.return_value.exists.return_value = False
-        from accounts.services import UserService
-        UserService.validate_username('unique_name')  # no exception raised
+        validate_username('unique_name')  # no exception raised
 
     # --- NEW: delete_account ---
     def test_delete_account_calls_delete(self):
@@ -166,31 +179,31 @@ class UserServiceDraft(TestCase):
 
 
 # =====================================================================
-# 3. TimelineService Unit Tests (2 existing + 3 new = 5)
+# 3. Selectors Unit Tests
 # =====================================================================
-class TimelineServiceDraft(TestCase):
-    """Unit tests for TimelineService (mocked)."""
+class SelectorsDraft(TestCase):
+    """Unit tests for account selectors (mocked)."""
 
-    @patch('accounts.services.Tweet.objects.filter')
+    @patch('accounts.selectors.Tweet.objects.filter')
     def test_get_user_tweets_queryset(self, mock_filter):
-        from accounts.services import TimelineService
+        from accounts.selectors import get_user_tweets_queryset
         user = MagicMock()
         mock_filter.return_value.select_related.return_value.prefetch_related.return_value.order_by.return_value = 'qs'
-        qs = TimelineService.get_user_tweets_queryset(user)
+        qs = get_user_tweets_queryset(user)
         self.assertEqual(qs, 'qs')
 
-    @patch('accounts.services.Follower.objects.filter')
+    @patch('accounts.selectors.Follower.objects.filter')
     def test_get_user_followers_queryset(self, mock_filter):
-        from accounts.services import TimelineService
+        from accounts.selectors import get_user_followers_queryset
         user = MagicMock()
         mock_filter.return_value.select_related.return_value.order_by.return_value = 'qs'
-        qs = TimelineService.get_user_followers_queryset(user)
+        qs = get_user_followers_queryset(user)
         self.assertEqual(qs, 'qs')
 
-    @patch('accounts.services.Follower.objects.filter')
+    @patch('accounts.selectors.Follower.objects.filter')
     def test_get_user_following_queryset(self, mock_filter):
-        from accounts.services import TimelineService
+        from accounts.selectors import get_user_following_queryset
         user = MagicMock()
         mock_filter.return_value.select_related.return_value.order_by.return_value = 'qs'
-        qs = TimelineService.get_user_following_queryset(user)
+        qs = get_user_following_queryset(user)
         self.assertEqual(qs, 'qs')

@@ -2,9 +2,8 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
 from drf_spectacular.utils import extend_schema_field, OpenApiTypes
-from accounts.models import Follower
-from accounts.services import UserService
-from accounts.selectors import is_following
+from accounts.models import Follower 
+from accounts.selectors import is_following, validate_username
 
 User = get_user_model()
 

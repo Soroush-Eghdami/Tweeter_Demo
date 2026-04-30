@@ -79,7 +79,7 @@ class TestUserServicePassword(TestCase):
 
 
 class TestUserServiceProfile(TestCase):
-    @patch('accounts.services.user.User.objects.exclude')
+    @patch('accounts.selectors.User.objects.exclude')
     def test_update_profile_username_taken(self, mock_exclude):
         user = MagicMock()
         user.pk = 1
@@ -87,7 +87,7 @@ class TestUserServiceProfile(TestCase):
         with self.assertRaises(ValueError):
             UserService.update_profile(user, username='taken')
 
-    @patch('accounts.services.user.User.objects.exclude')
+    @patch('accounts.selectors.User.objects.exclude')
     def test_update_profile_username_with_spaces(self, mock_exclude):
         user = MagicMock()
         user.pk = 1

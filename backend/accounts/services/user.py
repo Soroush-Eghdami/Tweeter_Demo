@@ -22,16 +22,6 @@ class UserService:
         return user.custom_id
 
     @staticmethod
-    def validate_username(username: str, exclude_user_id: str = None) -> None:
-        query = User.objects.filter(username=username)
-        if exclude_user_id:
-            query = query.exclude(id=exclude_user_id)
-        if query.exists():
-            raise ValueError("This username is already taken.")
-        if ' ' in username:
-            raise ValueError("Username cannot contain spaces.")
-
-    @staticmethod
     def create_user(**validated_data) -> User:
         """Create a new user from validated registration data."""
         validated_data.pop('password2', None)
