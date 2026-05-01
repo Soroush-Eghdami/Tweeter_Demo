@@ -1,6 +1,7 @@
-0. Fixing search (Done)
-1. initiate serializers draft
-2. checking all serializers and remove any business logic from them 
-3. write a draft for it 
-4. cross check 
-5. run tests and validate
+1. try get methon in follower in views must be in serializer (must be handled in business logics)
+2. if i'm using hint in a def, use them for all of them 
+3. nameing the class in serializers is bad, fixing it (for example Followeroutputserializer, instred of followerserializer)
+4. write class based views instead of function based
+5. use Pytest library for testing
+
+==========================================

@@ -1,3 +1,4 @@
+from typing import cast, Any
 from django.contrib.auth import get_user_model
 from rest_framework import status, permissions
 from rest_framework.decorators import api_view, permission_classes
@@ -136,19 +137,13 @@ class FollowUserView(APIView):
         if not followee_id:
             return Response({'error': 'followee_id is required'}, status=status.HTTP_400_BAD_REQUEST)
 
-        followee = get_user_by_id(followee_id)
-
         try:
-            follower_obj, created = UserService.follow(request.user, followee)
+            follower_obj = UserService.follow_create(request.user, followee_id)
         except ValueError as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-        if not created:
-            return Response({'error': 'You are already following this user'}, status=status.HTTP_400_BAD_REQUEST)
-
         serializer = FollowerSerializer(follower_obj)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
-
 
 class UnfollowUserView(APIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -175,11 +170,10 @@ class UnfollowUserView(APIView):
         if not followee_id:
             return Response({'error': 'followee_id is required'}, status=status.HTTP_400_BAD_REQUEST)
 
-        followee = get_user_by_id(followee_id)
-        deleted = UserService.unfollow(request.user, followee)
-
-        if not deleted:
-            return Response({'error': 'You are not following this user'}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            UserService.unfollow_delete(request.user, followee_id)
+        except ValueError as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
         return Response({'message': 'Unfollowed successfully'}, status=status.HTTP_200_OK)
 

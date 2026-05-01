@@ -70,3 +70,24 @@ class UserService:
             setattr(user, field, value)
         user.save()
         return user
+
+    @staticmethod
+    def follow_create(follower: User, followee_id: str) -> Follower:
+        """Follow a user by their ID. Returns the Follower object or raises ValueError."""
+        from accounts.selectors import get_user_by_id
+        followee = get_user_by_id(followee_id)
+        if follower == followee:
+            raise ValueError("You cannot follow yourself.")
+        follower_obj, created = Follower.objects.get_or_create(follower=follower, followee=followee)
+        if not created:
+            raise ValueError("You are already following this user.")
+        return follower_obj
+    
+    @staticmethod
+    def unfollow_delete(follower: User, followee_id: str) -> None:
+        """Unfollow a user by their ID. Raises ValueError if not following."""
+        from accounts.selectors import get_user_by_id
+        followee = get_user_by_id(followee_id)
+        deleted, _ = Follower.objects.filter(follower=follower, followee=followee).delete()
+        if not deleted:
+            raise ValueError("You are not following this user.")
