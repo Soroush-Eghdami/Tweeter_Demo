@@ -1,7 +1,8 @@
 from django.contrib.auth import get_user_model
-from rest_framework import generics, status, permissions, serializers
-from rest_framework.response import Response
+from rest_framework import status, permissions
 from rest_framework.decorators import api_view, permission_classes
+from rest_framework.response import Response
+from rest_framework.views import APIView
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
@@ -12,12 +13,15 @@ from accounts.serializers import (
     RegisterSerializer, LogoutSerializer, PasswordChangeSerializer
 )
 from accounts.services import UserService
-from accounts.selectors import (get_user_by_id, search_users, get_public_timeline_queryset,
-    get_private_timeline_queryset, get_user_tweets_queryset, get_user_followers_queryset,
+from accounts.selectors import (
+    get_user_by_id, search_users,
+    get_public_timeline_queryset,
+    get_private_timeline_queryset,
+    get_user_tweets_queryset,
+    get_user_followers_queryset,
     get_user_following_queryset,
 )
 from tweets.serializers import TweetSerializer
-
 
 User = get_user_model()
 
@@ -25,50 +29,49 @@ User = get_user_model()
 # ------------------------------------------------------------------
 # User CRUD
 # ------------------------------------------------------------------
-class UserListView(generics.ListAPIView):
-    queryset = User.objects.all().order_by('-date_joined')
-    serializer_class = UserSerializer
+class UserListView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     @extend_schema(
+        parameters=[
+            OpenApiParameter(name='page', type=int, location=OpenApiParameter.QUERY, description='Page number'),
+            OpenApiParameter(name='page_size', type=int, location=OpenApiParameter.QUERY, description='Items per page'),
+        ],
         summary="List all users",
         description="Returns a paginated list of all users.",
         tags=["users"],
         responses={200: UserSerializer(many=True)},
     )
-    def get(self, request, *args, **kwargs):
-        return super().get(request, *args, **kwargs)
+    def get(self, request):
+        queryset = User.objects.all().order_by('-date_joined')
+        paginator = PageNumberPagination()
+        page = paginator.paginate_queryset(queryset, request)
+        serializer = UserSerializer(page, many=True, context={'request': request})
+        return paginator.get_paginated_response(serializer.data)
 
 
-class UserDetailView(generics.RetrieveAPIView):
-    queryset = User.objects.all()
-    serializer_class = UserSerializer
+class UserDetailView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     @extend_schema(
+        parameters=[
+            OpenApiParameter(name='pk', type=str, location=OpenApiParameter.PATH, description='UUID of the user'),
+        ],
         summary="Get user details",
         description="Retrieve a specific user's profile by UUID.",
         tags=["users"],
         responses={200: UserSerializer},
     )
-    def get(self, request, *args, **kwargs):
-        return super().get(request, *args, **kwargs)
-
-
+    def get(self, request, pk):
+        user = get_user_by_id(pk)
+        serializer = UserSerializer(user, context={'request': request})
+        return Response(serializer.data, status=status.HTTP_200_OK)
 # ------------------------------------------------------------------
 # Profile Management
 # ------------------------------------------------------------------
-class UserProfileView(generics.RetrieveUpdateDestroyAPIView):
+class UserProfileView(APIView):
     parser_classes = [MultiPartParser, FormParser, JSONParser]
     permission_classes = [permissions.IsAuthenticated]
-
-    def get_object(self):
-        return self.request.user
-
-    def get_serializer_class(self):
-        if self.request.method in ['PATCH', 'PUT']:
-            return UserUpdateSerializer
-        return UserSerializer
 
     @extend_schema(
         summary="Get own profile",
@@ -76,17 +79,23 @@ class UserProfileView(generics.RetrieveUpdateDestroyAPIView):
         tags=["profile"],
         responses={200: UserSerializer},
     )
-    def get(self, request, *args, **kwargs):
-        return super().get(request, *args, **kwargs)
+    def get(self, request):
+        serializer = UserSerializer(request.user, context={'request': request})
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     @extend_schema(
         summary="Update profile",
         description="Update own profile fields (email, name, bio, privacy, profile picture, banner).",
         tags=["profile"],
+        request=UserUpdateSerializer,
         responses={200: UserSerializer},
     )
-    def patch(self, request, *args, **kwargs):
-        return super().patch(request, *args, **kwargs)
+    def patch(self, request):
+        input_ser = UserUpdateSerializer(data=request.data, context={'request': request})
+        input_ser.is_valid(raise_exception=True)
+        updated_user = UserService.update_profile(request.user, **input_ser.validated_data)
+        output_ser = UserSerializer(updated_user, context={'request': request})
+        return Response(output_ser.data, status=status.HTTP_200_OK)
 
     @extend_schema(
         summary="Delete account",
@@ -94,23 +103,15 @@ class UserProfileView(generics.RetrieveUpdateDestroyAPIView):
         tags=["profile"],
         responses={204: OpenApiResponse(description="Account deleted")},
     )
-    def delete(self, request, *args, **kwargs):
-        return super().delete(request, *args, **kwargs)
-
-    def perform_update(self, serializer):
-        return UserService.update_profile(self.request.user, **serializer.validated_data)
-
-    def destroy(self, request, *args, **kwargs):
-        user = self.get_object()
-        UserService.delete_account(user)
-        return Response({"detail": "Account deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
+    def delete(self, request):
+        UserService.delete_account(request.user)
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 # ------------------------------------------------------------------
 # Follow/Unfollow
 # ------------------------------------------------------------------
-class FollowUserView(generics.CreateAPIView):
-    serializer_class = FollowerSerializer
+class FollowUserView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     @extend_schema(
@@ -130,11 +131,7 @@ class FollowUserView(generics.CreateAPIView):
         },
         tags=["follow"]
     )
-    def post(self, request, *args, **kwargs):
-        return super().post(request, *args, **kwargs)
-
-    def create(self, request, *args, **kwargs):
-        follower = request.user
+    def post(self, request):
         followee_id = request.data.get('followee_id')
         if not followee_id:
             return Response({'error': 'followee_id is required'}, status=status.HTTP_400_BAD_REQUEST)
@@ -142,18 +139,18 @@ class FollowUserView(generics.CreateAPIView):
         followee = get_user_by_id(followee_id)
 
         try:
-            follower_obj, created = UserService.follow(follower, followee)
+            follower_obj, created = UserService.follow(request.user, followee)
         except ValueError as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
         if not created:
             return Response({'error': 'You are already following this user'}, status=status.HTTP_400_BAD_REQUEST)
 
-        serializer = self.get_serializer(follower_obj)
+        serializer = FollowerSerializer(follower_obj)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
-class UnfollowUserView(generics.DestroyAPIView):
+class UnfollowUserView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     @extend_schema(
@@ -173,18 +170,14 @@ class UnfollowUserView(generics.DestroyAPIView):
         },
         tags=["follow"]
     )
-    def delete(self, request, *args, **kwargs):
-        return super().delete(request, *args, **kwargs)
-
-    def destroy(self, request, *args, **kwargs):
-        follower = request.user
+    def delete(self, request):
         followee_id = request.data.get('followee_id')
         if not followee_id:
             return Response({'error': 'followee_id is required'}, status=status.HTTP_400_BAD_REQUEST)
 
         followee = get_user_by_id(followee_id)
+        deleted = UserService.unfollow(request.user, followee)
 
-        deleted = UserService.unfollow(follower, followee)
         if not deleted:
             return Response({'error': 'You are not following this user'}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -194,16 +187,8 @@ class UnfollowUserView(generics.DestroyAPIView):
 # ------------------------------------------------------------------
 # Search
 # ------------------------------------------------------------------
-class SearchUsersView(generics.ListAPIView):
-    serializer_class = UserSerializer
+class SearchUsersView(APIView):
     permission_classes = [permissions.AllowAny]
-
-    def get_queryset(self):
-        query = self.request.GET.get('q', '')
-        try:
-            return search_users(query)
-        except ValueError as e:
-            raise serializers.ValidationError({'error': str(e)})
 
     @extend_schema(
         parameters=[
@@ -214,12 +199,18 @@ class SearchUsersView(generics.ListAPIView):
         tags=["search"],
         responses={200: UserSerializer(many=True)},
     )
-    def get(self, request, *args, **kwargs):
-        return super().get(request, *args, **kwargs)
-        
+    def get(self, request):
+        query = request.GET.get('q', '')
+        try:
+            results = search_users(query)
+        except ValueError as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        serializer = UserSerializer(results, many=True, context={'request': request})
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
 
 # ------------------------------------------------------------------
-# Timelines
+# Timelines (function‑based, already thin – unchanged)
 # ------------------------------------------------------------------
 @extend_schema(
     parameters=[
@@ -328,25 +319,24 @@ def user_following(request, user_id):
 
 
 # ------------------------------------------------------------------
-# Authentication (JWT)
+# Authentication (JWT)  (unchanged, already thin)
 # ------------------------------------------------------------------
-class RegisterView(generics.CreateAPIView):
-    queryset = User.objects.all()
+class RegisterView(APIView):
     permission_classes = [permissions.AllowAny]
-    serializer_class = RegisterSerializer
-
-    def perform_create(self, serializer):
-        return UserService.create_user(**serializer.validated_data)
 
     @extend_schema(
         summary="Register new user",
         description="Create a new user account.",
         tags=["authentication"],
+        request=RegisterSerializer,
         responses={201: UserSerializer},
     )
-    def post(self, request, *args, **kwargs):
-        return super().post(request, *args, **kwargs)
-
+    def post(self, request):
+        serializer = RegisterSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = UserService.create_user(**serializer.validated_data)
+        output = UserSerializer(user, context={'request': request})
+        return Response(output.data, status=status.HTTP_201_CREATED)
 
 class CustomTokenObtainPairView(TokenObtainPairView):
     @extend_schema(
@@ -390,8 +380,7 @@ class CustomTokenRefreshView(TokenRefreshView):
         return super().post(request, *args, **kwargs)
 
 
-class LogoutView(generics.GenericAPIView):
-    serializer_class = LogoutSerializer
+class LogoutView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     @extend_schema(
@@ -405,9 +394,8 @@ class LogoutView(generics.GenericAPIView):
         }
     )
     def post(self, request):
-        serializer = self.get_serializer(data=request.data)
+        serializer = LogoutSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-
         try:
             refresh_token = serializer.validated_data['refresh']
             token = RefreshToken(refresh_token)
@@ -417,18 +405,18 @@ class LogoutView(generics.GenericAPIView):
             return Response({"detail": "Invalid token."}, status=status.HTTP_400_BAD_REQUEST)
 
 
-class PasswordChangeView(generics.GenericAPIView):
-    serializer_class = PasswordChangeSerializer
+class PasswordChangeView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     @extend_schema(
         summary="Change password",
         description="Change the authenticated user's password. Requires old password and ensures new password meets complexity requirements and hasn't been used recently.",
         tags=["profile"],
+        request=PasswordChangeSerializer,
         responses={200: OpenApiResponse(description="Password changed successfully")},
     )
     def post(self, request):
-        serializer = self.get_serializer(data=request.data, context={'request': request})
+        serializer = PasswordChangeSerializer(data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
         try:
             UserService.change_password(
