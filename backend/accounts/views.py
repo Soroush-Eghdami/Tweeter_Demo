@@ -1,7 +1,6 @@
 from typing import cast, Any
 from django.contrib.auth import get_user_model
 from rest_framework import status, permissions
-from rest_framework.decorators import api_view, permission_classes
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -28,6 +27,9 @@ from tweets.serializers import TweetSerializer
 User = get_user_model()
 
 
+# =============================================================================
+# User CRUD
+# =============================================================================
 class UserListView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
@@ -67,6 +69,9 @@ class UserDetailView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
+# =============================================================================
+# Profile Management
+# =============================================================================
 class UserProfileView(APIView):
     parser_classes = [MultiPartParser, FormParser, JSONParser]
     permission_classes = [permissions.IsAuthenticated]
@@ -107,6 +112,9 @@ class UserProfileView(APIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
+# =============================================================================
+# Follow / Unfollow
+# =============================================================================
 class FollowUserView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
@@ -133,6 +141,7 @@ class FollowUserView(APIView):
             follower_obj = UserService.follow_create(request.user, followee_id)
         except ValueError as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
         serializer = FollowerOutputSerializer(follower_obj)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
@@ -163,9 +172,13 @@ class UnfollowUserView(APIView):
             UserService.unfollow_delete(request.user, followee_id)
         except ValueError as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
         return Response({'message': 'Unfollowed successfully'}, status=status.HTTP_200_OK)
 
 
+# =============================================================================
+# Search
+# =============================================================================
 class SearchUsersView(APIView):
     permission_classes = [permissions.AllowAny]
 
@@ -188,112 +201,123 @@ class SearchUsersView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-@extend_schema(
-    parameters=[
-        OpenApiParameter(name='page', type=int, location=OpenApiParameter.QUERY, description='Page number'),
-        OpenApiParameter(name='page_size', type=int, location=OpenApiParameter.QUERY, description='Items per page'),
-    ],
-    summary="Public timeline",
-    description="Returns a paginated list of tweets visible to the authenticated user (public tweets + tweets from followed private users).",
-    tags=["timelines"],
-    responses={200: TweetSerializer(many=True)},
-)
-@api_view(['GET'])
-@permission_classes([permissions.IsAuthenticated])
-def public_timeline(request: Request) -> Response:
-    queryset = get_public_timeline_queryset(request.user)
-    paginator = PageNumberPagination()
-    page = paginator.paginate_queryset(queryset, request)
-    serializer = TweetSerializer(page, many=True, context={'request': request})
-    return paginator.get_paginated_response(serializer.data)
+# =============================================================================
+# Timelines (class‑based)
+# =============================================================================
+class PublicTimelineView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(name='page', type=int, location=OpenApiParameter.QUERY, description='Page number'),
+            OpenApiParameter(name='page_size', type=int, location=OpenApiParameter.QUERY, description='Items per page'),
+        ],
+        summary="Public timeline",
+        description="Returns a paginated list of tweets visible to the authenticated user (public tweets + tweets from followed private users).",
+        tags=["timelines"],
+        responses={200: TweetSerializer(many=True)},
+    )
+    def get(self, request: Request) -> Response:
+        queryset = get_public_timeline_queryset(request.user)
+        paginator = PageNumberPagination()
+        page = paginator.paginate_queryset(queryset, request)
+        serializer = TweetSerializer(page, many=True, context={'request': request})
+        return paginator.get_paginated_response(serializer.data)
 
 
-@extend_schema(
-    parameters=[
-        OpenApiParameter(name='page', type=int, location=OpenApiParameter.QUERY, description='Page number'),
-        OpenApiParameter(name='page_size', type=int, location=OpenApiParameter.QUERY, description='Items per page'),
-    ],
-    summary="Private timeline",
-    description="Returns a paginated list of tweets only from users the authenticated user follows.",
-    tags=["timelines"],
-    responses={200: TweetSerializer(many=True)},
-)
-@api_view(['GET'])
-@permission_classes([permissions.IsAuthenticated])
-def private_timeline(request: Request) -> Response:
-    queryset = get_private_timeline_queryset(request.user)
-    paginator = PageNumberPagination()
-    page = paginator.paginate_queryset(queryset, request)
-    serializer = TweetSerializer(page, many=True, context={'request': request})
-    return paginator.get_paginated_response(serializer.data)
+class PrivateTimelineView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(name='page', type=int, location=OpenApiParameter.QUERY, description='Page number'),
+            OpenApiParameter(name='page_size', type=int, location=OpenApiParameter.QUERY, description='Items per page'),
+        ],
+        summary="Private timeline",
+        description="Returns a paginated list of tweets only from users the authenticated user follows.",
+        tags=["timelines"],
+        responses={200: TweetSerializer(many=True)},
+    )
+    def get(self, request: Request) -> Response:
+        queryset = get_private_timeline_queryset(request.user)
+        paginator = PageNumberPagination()
+        page = paginator.paginate_queryset(queryset, request)
+        serializer = TweetSerializer(page, many=True, context={'request': request})
+        return paginator.get_paginated_response(serializer.data)
 
 
-@extend_schema(
-    parameters=[
-        OpenApiParameter(name='page', type=int, location=OpenApiParameter.QUERY, description='Page number'),
-        OpenApiParameter(name='page_size', type=int, location=OpenApiParameter.QUERY, description='Items per page'),
-        OpenApiParameter(name='user_id', type=str, location=OpenApiParameter.PATH, description='UUID of the user'),
-    ],
-    summary="User tweets",
-    description="Returns a paginated list of tweets by a specific user.",
-    tags=["users"],
-    responses={200: TweetSerializer(many=True)},
-)
-@api_view(['GET'])
-@permission_classes([permissions.IsAuthenticated])
-def user_tweets(request: Request, user_id: str) -> Response:
-    user = get_user_by_id(user_id)
-    queryset = get_user_tweets_queryset(user)
-    paginator = PageNumberPagination()
-    page = paginator.paginate_queryset(queryset, request)
-    serializer = TweetSerializer(page, many=True, context={'request': request})
-    return paginator.get_paginated_response(serializer.data)
+class UserTweetsView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(name='page', type=int, location=OpenApiParameter.QUERY, description='Page number'),
+            OpenApiParameter(name='page_size', type=int, location=OpenApiParameter.QUERY, description='Items per page'),
+            OpenApiParameter(name='user_id', type=str, location=OpenApiParameter.PATH, description='UUID of the user'),
+        ],
+        summary="User tweets",
+        description="Returns a paginated list of tweets by a specific user.",
+        tags=["users"],
+        responses={200: TweetSerializer(many=True)},
+    )
+    def get(self, request: Request, user_id: str) -> Response:
+        user = get_user_by_id(user_id)
+        queryset = get_user_tweets_queryset(user)
+        paginator = PageNumberPagination()
+        page = paginator.paginate_queryset(queryset, request)
+        serializer = TweetSerializer(page, many=True, context={'request': request})
+        return paginator.get_paginated_response(serializer.data)
 
 
-@extend_schema(
-    parameters=[
-        OpenApiParameter(name='page', type=int, location=OpenApiParameter.QUERY, description='Page number'),
-        OpenApiParameter(name='page_size', type=int, location=OpenApiParameter.QUERY, description='Items per page'),
-        OpenApiParameter(name='user_id', type=str, location=OpenApiParameter.PATH, description='UUID of the user'),
-    ],
-    summary="User followers",
-    description="Returns a paginated list of followers of a specific user.",
-    tags=["users"],
-    responses={200: FollowerOutputSerializer(many=True)},
-)
-@api_view(['GET'])
-@permission_classes([permissions.IsAuthenticated])
-def user_followers(request: Request, user_id: str) -> Response:
-    user = get_user_by_id(user_id)
-    queryset = get_user_followers_queryset(user)
-    paginator = PageNumberPagination()
-    page = paginator.paginate_queryset(queryset, request)
-    serializer = FollowerOutputSerializer(page, many=True)
-    return paginator.get_paginated_response(serializer.data)
+class UserFollowersView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(name='page', type=int, location=OpenApiParameter.QUERY, description='Page number'),
+            OpenApiParameter(name='page_size', type=int, location=OpenApiParameter.QUERY, description='Items per page'),
+            OpenApiParameter(name='user_id', type=str, location=OpenApiParameter.PATH, description='UUID of the user'),
+        ],
+        summary="User followers",
+        description="Returns a paginated list of followers of a specific user.",
+        tags=["users"],
+        responses={200: FollowerOutputSerializer(many=True)},
+    )
+    def get(self, request: Request, user_id: str) -> Response:
+        user = get_user_by_id(user_id)
+        queryset = get_user_followers_queryset(user)
+        paginator = PageNumberPagination()
+        page = paginator.paginate_queryset(queryset, request)
+        serializer = FollowerOutputSerializer(page, many=True)
+        return paginator.get_paginated_response(serializer.data)
 
 
-@extend_schema(
-    parameters=[
-        OpenApiParameter(name='page', type=int, location=OpenApiParameter.QUERY, description='Page number'),
-        OpenApiParameter(name='page_size', type=int, location=OpenApiParameter.QUERY, description='Items per page'),
-        OpenApiParameter(name='user_id', type=str, location=OpenApiParameter.PATH, description='UUID of the user'),
-    ],
-    summary="User following",
-    description="Returns a paginated list of users that a specific user is following.",
-    tags=["users"],
-    responses={200: FollowerOutputSerializer(many=True)},
-)
-@api_view(['GET'])
-@permission_classes([permissions.IsAuthenticated])
-def user_following(request: Request, user_id: str) -> Response:
-    user = get_user_by_id(user_id)
-    queryset = get_user_following_queryset(user)
-    paginator = PageNumberPagination()
-    page = paginator.paginate_queryset(queryset, request)
-    serializer = FollowerOutputSerializer(page, many=True)
-    return paginator.get_paginated_response(serializer.data)
+class UserFollowingView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(name='page', type=int, location=OpenApiParameter.QUERY, description='Page number'),
+            OpenApiParameter(name='page_size', type=int, location=OpenApiParameter.QUERY, description='Items per page'),
+            OpenApiParameter(name='user_id', type=str, location=OpenApiParameter.PATH, description='UUID of the user'),
+        ],
+        summary="User following",
+        description="Returns a paginated list of users that a specific user is following.",
+        tags=["users"],
+        responses={200: FollowerOutputSerializer(many=True)},
+    )
+    def get(self, request: Request, user_id: str) -> Response:
+        user = get_user_by_id(user_id)
+        queryset = get_user_following_queryset(user)
+        paginator = PageNumberPagination()
+        page = paginator.paginate_queryset(queryset, request)
+        serializer = FollowerOutputSerializer(page, many=True)
+        return paginator.get_paginated_response(serializer.data)
 
 
+# =============================================================================
+# Authentication (JWT)
+# =============================================================================
 class RegisterView(APIView):
     permission_classes = [permissions.AllowAny]
 
