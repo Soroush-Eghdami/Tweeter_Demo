@@ -1,52 +1,63 @@
-from unittest.mock import patch, MagicMock
 from django.test import TestCase
-from django.contrib.auth.hashers import make_password
+from unittest.mock import patch, MagicMock
 from accounts.services import UserService
+from django.contrib.auth.hashers import make_password
 
 
 class TestUserServiceFollow(TestCase):
     @patch('accounts.services.user.Follower.objects.get_or_create')
     def test_follow_creates_relationship(self, mock_get_or_create):
         follower = MagicMock()
-        followee = MagicMock()
+        followee_id = '550e8400-e29b-41d4-a716-446655440000'
         mock_get_or_create.return_value = (MagicMock(), True)
-        _, created = UserService.follow(follower, followee)
-        self.assertTrue(created)
+        with patch('accounts.services.user.get_user_by_id') as mock_get_user:
+            mock_get_user.return_value = MagicMock()
+            created = UserService.follow_create(follower, followee_id)
+            self.assertIsNotNone(created)
 
     @patch('accounts.services.user.Follower.objects.get_or_create')
     def test_follow_already_exists(self, mock_get_or_create):
         follower = MagicMock()
-        followee = MagicMock()
+        followee_id = '550e8400-e29b-41d4-a716-446655440000'
         mock_get_or_create.return_value = (MagicMock(), False)
-        _, created = UserService.follow(follower, followee)
-        self.assertFalse(created)
+        with patch('accounts.services.user.get_user_by_id') as mock_get_user:
+            mock_get_user.return_value = MagicMock()
+            with self.assertRaises(ValueError):
+                UserService.follow_create(follower, followee_id)
 
     def test_follow_self_raises_error(self):
-        user = MagicMock()
-        with self.assertRaises(ValueError):
-            UserService.follow(user, user)
+        follower = MagicMock()
+        followee_id = '550e8400-e29b-41d4-a716-446655440000'   # doesn't matter because self-check is first
+        with patch('accounts.services.user.get_user_by_id') as mock_get_user:
+            mock_get_user.return_value = follower   # same object as follower
+            with self.assertRaises(ValueError):
+                UserService.follow_create(follower, followee_id)
 
 
 class TestUserServiceUnfollow(TestCase):
-    @patch('accounts.services.user.Follower.objects.filter')
-    def test_unfollow_deletes_and_returns_true(self, mock_filter):
+    @patch('accounts.services.user.get_user_by_id')
+    def test_unfollow_deletes_and_returns_none(self, mock_get_user):
         follower = MagicMock()
-        followee = MagicMock()
-        mock_qs = MagicMock()
-        mock_qs.delete.return_value = (1, {})
-        mock_filter.return_value = mock_qs
-        result = UserService.unfollow(follower, followee)
-        self.assertTrue(result)
+        followee_id = '550e8400-e29b-41d4-a716-446655440000'
+        mock_get_user.return_value = MagicMock()
+        with patch('accounts.services.user.Follower.objects.filter') as mock_filter:
+            mock_qs = MagicMock()
+            mock_qs.delete.return_value = (1, {})
+            mock_filter.return_value = mock_qs
+            # should not raise
+            UserService.unfollow_delete(follower, followee_id)
 
-    @patch('accounts.services.user.Follower.objects.filter')
-    def test_unfollow_not_exist_returns_false(self, mock_filter):
+    @patch('accounts.services.user.get_user_by_id')
+    def test_unfollow_not_exist_raises_error(self, mock_get_user):
         follower = MagicMock()
-        followee = MagicMock()
-        mock_qs = MagicMock()
-        mock_qs.delete.return_value = (0, {})
-        mock_filter.return_value = mock_qs
-        result = UserService.unfollow(follower, followee)
-        self.assertFalse(result)
+        followee_id = '550e8400-e29b-41d4-a716-446655440000'
+        mock_get_user.return_value = MagicMock()
+        with patch('accounts.services.user.Follower.objects.filter') as mock_filter:
+            mock_qs = MagicMock()
+            mock_qs.delete.return_value = (0, {})
+            mock_filter.return_value = mock_qs
+            with self.assertRaises(ValueError):
+                UserService.unfollow_delete(follower, followee_id)
 
 
 class TestUserServicePassword(TestCase):
