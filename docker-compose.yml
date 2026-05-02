@@ -23,7 +23,6 @@ services:
       dockerfile: Dockerfile
     container_name: tweeter_web
     restart: unless-stopped
-    network_mode: host                          # <-- add this
     command: >
       sh -c "python manage.py migrate &&
              python manage.py collectstatic --noinput &&
@@ -32,13 +31,14 @@ services:
       - ./backend:/app
       - static_volume:/app/staticfiles
       - media_volume:/app/media
-    # ports:                                    # <-- COMMENT OUT or DELETE the ports line
-    #   - "8000:8000"
+    ports:
+      - "8000:8000"
     environment:
       - DEBUG=0
       - SECRET_KEY=${SECRET_KEY:-change-this-in-production}
       - DJANGO_ALLOWED_HOSTS=${DJANGO_ALLOWED_HOSTS:-localhost,127.0.0.1}
-      - DATABASE_URL=postgres://tweeteruser:tweeterpass@localhost:5432/tweeterdb   # ← change db to localhost
+      # ✅ FIXED: use service name "db", not "localhost"
+      - DATABASE_URL=postgres://tweeteruser:tweeterpass@db:5432/tweeterdb
       - CSRF_TRUSTED_ORIGINS=${CSRF_TRUSTED_ORIGINS:-http://localhost:8000,http://127.0.0.1:8000}
     depends_on:
       db:
