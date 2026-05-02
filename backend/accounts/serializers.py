@@ -13,7 +13,7 @@ User = get_user_model()
 # User Output Serializers
 # =====================================================================
 
-class UserLiteSerializer(serializers.ModelSerializer):
+class UserLiteOutputSerializer(serializers.ModelSerializer):
     """Lightweight user representation for nested use (e.g., in Follower)."""
     is_public = serializers.ReadOnlyField()
 
@@ -23,7 +23,7 @@ class UserLiteSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
 
-class UserSerializer(serializers.ModelSerializer):
+class UserOutputSerializer(serializers.ModelSerializer):
     """Full user output serializer for detail/list views."""
     is_following = serializers.SerializerMethodField()
     is_public = serializers.ReadOnlyField()
@@ -50,7 +50,7 @@ class UserSerializer(serializers.ModelSerializer):
 # User Input Serializers
 # =====================================================================
 
-class UserUpdateSerializer(serializers.ModelSerializer):
+class UserUpdateInputSerializer(serializers.ModelSerializer):
     profile_picture = serializers.ImageField(required=False, allow_null=True, help_text="Optional profile picture")
     profile_banner = serializers.ImageField(required=False, allow_null=True, help_text="Optional profile banner")
 
@@ -68,7 +68,7 @@ class UserUpdateSerializer(serializers.ModelSerializer):
         pass
 
 
-class RegisterSerializer(serializers.ModelSerializer):
+class RegisterInputSerializer(serializers.ModelSerializer):
     """Input serializer for user registration."""
     password = serializers.CharField(write_only=True, required=True, validators=[validate_password])
     password2 = serializers.CharField(write_only=True, required=True)
@@ -83,7 +83,7 @@ class RegisterSerializer(serializers.ModelSerializer):
         return attrs
 
 
-class PasswordChangeSerializer(serializers.Serializer):
+class PasswordChangeInputSerializer(serializers.Serializer):
     """Input serializer for password change."""
     old_password = serializers.CharField(write_only=True, required=True)
     new_password = serializers.CharField(write_only=True, required=True, validators=[validate_password])
@@ -95,7 +95,7 @@ class PasswordChangeSerializer(serializers.Serializer):
         return attrs
 
 
-class LogoutSerializer(serializers.Serializer):
+class LogoutInputSerializer(serializers.Serializer):
     """Input serializer for logout."""
     refresh = serializers.CharField(required=True, write_only=True)
 
@@ -104,10 +104,10 @@ class LogoutSerializer(serializers.Serializer):
 # Follower Serializers
 # =====================================================================
 
-class FollowerSerializer(serializers.ModelSerializer):
+class FollowerOutputSerializer(serializers.ModelSerializer):
     """Follower relationship output serializer."""
-    follower = UserLiteSerializer(read_only=True)
-    followee = UserLiteSerializer(read_only=True)
+    follower = UserLiteOutputSerializer(read_only=True)
+    followee = UserLiteOutputSerializer(read_only=True)
 
     class Meta:
         model = Follower

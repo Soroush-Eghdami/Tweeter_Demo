@@ -11,8 +11,8 @@ from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from rest_framework_simplejwt.tokens import RefreshToken
 from drf_spectacular.utils import extend_schema, OpenApiResponse, OpenApiParameter
 from accounts.serializers import (
-    UserSerializer, UserUpdateSerializer, FollowerSerializer,
-    RegisterSerializer, LogoutSerializer, PasswordChangeSerializer
+    UserOutputSerializer, UserUpdateInputSerializer, FollowerOutputSerializer,
+    RegisterInputSerializer, LogoutInputSerializer, PasswordChangeInputSerializer
 )
 from accounts.services import UserService
 from accounts.selectors import (
@@ -39,13 +39,13 @@ class UserListView(APIView):
         summary="List all users",
         description="Returns a paginated list of all users.",
         tags=["users"],
-        responses={200: UserSerializer(many=True)},
+        responses={200: UserOutputSerializer(many=True)},
     )
     def get(self, request: Request) -> Response:
         queryset = User.objects.all().order_by('-date_joined')
         paginator = PageNumberPagination()
         page = paginator.paginate_queryset(queryset, request)
-        serializer = UserSerializer(page, many=True, context={'request': request})
+        serializer = UserOutputSerializer(page, many=True, context={'request': request})
         return paginator.get_paginated_response(serializer.data)
 
 
@@ -59,11 +59,11 @@ class UserDetailView(APIView):
         summary="Get user details",
         description="Retrieve a specific user's profile by UUID.",
         tags=["users"],
-        responses={200: UserSerializer},
+        responses={200: UserOutputSerializer},
     )
     def get(self, request: Request, pk: str) -> Response:
         user = get_user_by_id(pk)
-        serializer = UserSerializer(user, context={'request': request})
+        serializer = UserOutputSerializer(user, context={'request': request})
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
@@ -75,25 +75,25 @@ class UserProfileView(APIView):
         summary="Get own profile",
         description="Returns the authenticated user's profile.",
         tags=["profile"],
-        responses={200: UserSerializer},
+        responses={200: UserOutputSerializer},
     )
     def get(self, request: Request) -> Response:
-        serializer = UserSerializer(request.user, context={'request': request})
+        serializer = UserOutputSerializer(request.user, context={'request': request})
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     @extend_schema(
         summary="Update profile",
         description="Update own profile fields (email, name, bio, privacy, profile picture, banner).",
         tags=["profile"],
-        request=UserUpdateSerializer,
-        responses={200: UserSerializer},
+        request=UserUpdateInputSerializer,
+        responses={200: UserOutputSerializer},
     )
     def patch(self, request: Request) -> Response:
-        input_ser = UserUpdateSerializer(data=request.data, context={'request': request})
+        input_ser = UserUpdateInputSerializer(data=request.data, context={'request': request})
         input_ser.is_valid(raise_exception=True)
         data = cast(dict[str, Any], input_ser.validated_data)
         updated_user = UserService.update_profile(request.user, **data)
-        output_ser = UserSerializer(updated_user, context={'request': request})
+        output_ser = UserOutputSerializer(updated_user, context={'request': request})
         return Response(output_ser.data, status=status.HTTP_200_OK)
 
     @extend_schema(
@@ -121,7 +121,7 @@ class FollowUserView(APIView):
             }
         },
         responses={
-            201: FollowerSerializer,
+            201: FollowerOutputSerializer,
             400: OpenApiResponse(description="Bad request (e.g., follow self or already following)"),
             404: OpenApiResponse(description="User not found")
         },
@@ -133,7 +133,7 @@ class FollowUserView(APIView):
             follower_obj = UserService.follow_create(request.user, followee_id)
         except ValueError as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-        serializer = FollowerSerializer(follower_obj)
+        serializer = FollowerOutputSerializer(follower_obj)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
@@ -176,7 +176,7 @@ class SearchUsersView(APIView):
         summary="Search users",
         description="Search for users by username, first name, or last name.",
         tags=["search"],
-        responses={200: UserSerializer(many=True)},
+        responses={200: UserOutputSerializer(many=True)},
     )
     def get(self, request: Request) -> Response:
         query = request.GET.get('q', '')
@@ -184,7 +184,7 @@ class SearchUsersView(APIView):
             results = search_users(query)
         except ValueError as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-        serializer = UserSerializer(results, many=True, context={'request': request})
+        serializer = UserOutputSerializer(results, many=True, context={'request': request})
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
@@ -259,7 +259,7 @@ def user_tweets(request: Request, user_id: str) -> Response:
     summary="User followers",
     description="Returns a paginated list of followers of a specific user.",
     tags=["users"],
-    responses={200: FollowerSerializer(many=True)},
+    responses={200: FollowerOutputSerializer(many=True)},
 )
 @api_view(['GET'])
 @permission_classes([permissions.IsAuthenticated])
@@ -268,7 +268,7 @@ def user_followers(request: Request, user_id: str) -> Response:
     queryset = get_user_followers_queryset(user)
     paginator = PageNumberPagination()
     page = paginator.paginate_queryset(queryset, request)
-    serializer = FollowerSerializer(page, many=True)
+    serializer = FollowerOutputSerializer(page, many=True)
     return paginator.get_paginated_response(serializer.data)
 
 
@@ -281,7 +281,7 @@ def user_followers(request: Request, user_id: str) -> Response:
     summary="User following",
     description="Returns a paginated list of users that a specific user is following.",
     tags=["users"],
-    responses={200: FollowerSerializer(many=True)},
+    responses={200: FollowerOutputSerializer(many=True)},
 )
 @api_view(['GET'])
 @permission_classes([permissions.IsAuthenticated])
@@ -290,7 +290,7 @@ def user_following(request: Request, user_id: str) -> Response:
     queryset = get_user_following_queryset(user)
     paginator = PageNumberPagination()
     page = paginator.paginate_queryset(queryset, request)
-    serializer = FollowerSerializer(page, many=True)
+    serializer = FollowerOutputSerializer(page, many=True)
     return paginator.get_paginated_response(serializer.data)
 
 
@@ -301,15 +301,15 @@ class RegisterView(APIView):
         summary="Register new user",
         description="Create a new user account.",
         tags=["authentication"],
-        request=RegisterSerializer,
-        responses={201: UserSerializer},
+        request=RegisterInputSerializer,
+        responses={201: UserOutputSerializer},
     )
     def post(self, request: Request) -> Response:
-        serializer = RegisterSerializer(data=request.data)
+        serializer = RegisterInputSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         data = cast(dict[str, Any], serializer.validated_data)
         user = UserService.create_user(**data)
-        output = UserSerializer(user, context={'request': request})
+        output = UserOutputSerializer(user, context={'request': request})
         return Response(output.data, status=status.HTTP_201_CREATED)
 
 
@@ -362,14 +362,14 @@ class LogoutView(APIView):
         summary="Logout",
         description="Blacklist the provided refresh token. The access token will remain valid until its expiry.",
         tags=["authentication"],
-        request=LogoutSerializer,
+        request=LogoutInputSerializer,
         responses={
             205: OpenApiResponse(description="Successfully logged out"),
             400: OpenApiResponse(description="Invalid token"),
         }
     )
     def post(self, request: Request) -> Response:
-        serializer = LogoutSerializer(data=request.data)
+        serializer = LogoutInputSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         try:
             data = cast(dict[str, Any], serializer.validated_data)
@@ -388,11 +388,11 @@ class PasswordChangeView(APIView):
         summary="Change password",
         description="Change the authenticated user's password. Requires old password and ensures new password meets complexity requirements and hasn't been used recently.",
         tags=["profile"],
-        request=PasswordChangeSerializer,
+        request=PasswordChangeInputSerializer,
         responses={200: OpenApiResponse(description="Password changed successfully")},
     )
     def post(self, request: Request) -> Response:
-        serializer = PasswordChangeSerializer(data=request.data, context={'request': request})
+        serializer = PasswordChangeInputSerializer(data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
         data = cast(dict[str, Any], serializer.validated_data)
         try:
