@@ -1,11 +1,10 @@
+from typing import Optional
 from django_filters import FilterSet, CharFilter
 from django.shortcuts import get_object_or_404
 from django.db.models import Q, QuerySet, Prefetch
 from accounts.models import User, Follower
 from tweets.models import Tweet, ReTweet
 
-
-#* Defining Search Class
 
 class UserSearchFilter(FilterSet):
     q = CharFilter(method='filter_search', label='search')
@@ -14,27 +13,26 @@ class UserSearchFilter(FilterSet):
         model = User
         fields = ['q']
 
-    def filter_search(self, queryset, name, value):
+    def filter_search(self, queryset: QuerySet[User], name: str, value: str) -> QuerySet[User]:
         return queryset.filter(
             Q(username__icontains=value) |
             Q(first_name__icontains=value) |
             Q(last_name__icontains=value)
         )
 
-#* Defining Functions 
 
-def get_user_by_id(user_id):
+def get_user_by_id(user_id: str) -> User:
     return get_object_or_404(User, id=user_id)
 
-def get_user_by_username(username):
+def get_user_by_username(username: str) -> User:
     return get_object_or_404(User, username=username)
 
-def is_following(user, target_user) -> bool:
+def is_following(user: User, target_user: User) -> bool:
     if not user.is_authenticated:
         return False
     return Follower.objects.filter(follower=user, followee=target_user).exists()
 
-def validate_username(username: str, exclude_user_id: str = None) -> None:
+def validate_username(username: str, exclude_user_id: Optional[str] = None) -> None:
     query = User.objects.filter(username=username)
     if exclude_user_id:
         query = query.exclude(id=exclude_user_id)
@@ -73,8 +71,8 @@ def get_user_followers_queryset(user: User) -> QuerySet[Follower]:
 def get_user_following_queryset(user: User) -> QuerySet[Follower]:
     return Follower.objects.filter(follower=user).select_related('followee').order_by('-created_at')
 
-def search_users(query: str):
-    filter_set = UserSearchFilter({'q':query}, queryset=User.objects.all())
+def search_users(query: str) -> QuerySet[User]:
+    filter_set = UserSearchFilter({'q': query}, queryset=User.objects.all())
     if not filter_set.is_valid():
         raise ValueError("Invalid search query")
     return filter_set.qs.order_by('username')

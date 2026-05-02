@@ -1,8 +1,9 @@
+from typing import Any
 from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
 from drf_spectacular.utils import extend_schema_field, OpenApiTypes
-from accounts.models import Follower 
+from accounts.models import Follower
 from accounts.selectors import is_following
 
 User = get_user_model()
@@ -38,7 +39,7 @@ class UserSerializer(serializers.ModelSerializer):
             'id', 'custom_id', 'date_joined', 'is_public', 'is_following'
         ]
 
-    def get_is_following(self, obj):
+    def get_is_following(self, obj: User) -> bool:
         request = self.context.get('request')
         if request:
             return is_following(request.user, obj)
@@ -59,12 +60,13 @@ class UserUpdateSerializer(serializers.ModelSerializer):
         extra_kwargs = {field: {'required': False} for field in ['username', 'email', 'first_name', 'last_name', 'bio', 'is_public_user']}
 
     @extend_schema_field(OpenApiTypes.BINARY)
-    def get_profile_picture(self, obj):
+    def get_profile_picture(self, obj: Any) -> None:
         pass
 
     @extend_schema_field(OpenApiTypes.BINARY)
-    def get_profile_banner(self, obj):
+    def get_profile_banner(self, obj: Any) -> None:
         pass
+
 
 class RegisterSerializer(serializers.ModelSerializer):
     """Input serializer for user registration."""
@@ -75,7 +77,7 @@ class RegisterSerializer(serializers.ModelSerializer):
         model = User
         fields = ('username', 'password', 'password2', 'email', 'first_name', 'last_name', 'bio')
 
-    def validate(self, attrs):
+    def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
         if attrs['password'] != attrs['password2']:
             raise serializers.ValidationError({"password": "Password fields didn't match."})
         return attrs
@@ -87,7 +89,7 @@ class PasswordChangeSerializer(serializers.Serializer):
     new_password = serializers.CharField(write_only=True, required=True, validators=[validate_password])
     confirm_new_password = serializers.CharField(write_only=True, required=True)
 
-    def validate(self, attrs):
+    def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
         if attrs['new_password'] != attrs['confirm_new_password']:
             raise serializers.ValidationError({"confirm_new_password": "Passwords do not match."})
         return attrs

@@ -2,6 +2,7 @@ from typing import cast, Any
 from django.contrib.auth import get_user_model
 from rest_framework import status, permissions
 from rest_framework.decorators import api_view, permission_classes
+from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.pagination import PageNumberPagination
@@ -27,9 +28,6 @@ from tweets.serializers import TweetSerializer
 User = get_user_model()
 
 
-# ------------------------------------------------------------------
-# User CRUD
-# ------------------------------------------------------------------
 class UserListView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
@@ -43,7 +41,7 @@ class UserListView(APIView):
         tags=["users"],
         responses={200: UserSerializer(many=True)},
     )
-    def get(self, request):
+    def get(self, request: Request) -> Response:
         queryset = User.objects.all().order_by('-date_joined')
         paginator = PageNumberPagination()
         page = paginator.paginate_queryset(queryset, request)
@@ -63,13 +61,12 @@ class UserDetailView(APIView):
         tags=["users"],
         responses={200: UserSerializer},
     )
-    def get(self, request, pk):
+    def get(self, request: Request, pk: str) -> Response:
         user = get_user_by_id(pk)
         serializer = UserSerializer(user, context={'request': request})
         return Response(serializer.data, status=status.HTTP_200_OK)
-# ------------------------------------------------------------------
-# Profile Management
-# ------------------------------------------------------------------
+
+
 class UserProfileView(APIView):
     parser_classes = [MultiPartParser, FormParser, JSONParser]
     permission_classes = [permissions.IsAuthenticated]
@@ -80,7 +77,7 @@ class UserProfileView(APIView):
         tags=["profile"],
         responses={200: UserSerializer},
     )
-    def get(self, request):
+    def get(self, request: Request) -> Response:
         serializer = UserSerializer(request.user, context={'request': request})
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -91,7 +88,7 @@ class UserProfileView(APIView):
         request=UserUpdateSerializer,
         responses={200: UserSerializer},
     )
-    def patch(self, request):
+    def patch(self, request: Request) -> Response:
         input_ser = UserUpdateSerializer(data=request.data, context={'request': request})
         input_ser.is_valid(raise_exception=True)
         data = cast(dict[str, Any], input_ser.validated_data)
@@ -105,14 +102,11 @@ class UserProfileView(APIView):
         tags=["profile"],
         responses={204: OpenApiResponse(description="Account deleted")},
     )
-    def delete(self, request):
+    def delete(self, request: Request) -> Response:
         UserService.delete_account(request.user)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-# ------------------------------------------------------------------
-# Follow/Unfollow
-# ------------------------------------------------------------------
 class FollowUserView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
@@ -133,15 +127,15 @@ class FollowUserView(APIView):
         },
         tags=["follow"]
     )
-    def post(self, request):
+    def post(self, request: Request) -> Response:
         followee_id = request.data.get('followee_id', '')
         try:
             follower_obj = UserService.follow_create(request.user, followee_id)
         except ValueError as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
         serializer = FollowerSerializer(follower_obj)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+
 
 class UnfollowUserView(APIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -163,19 +157,15 @@ class UnfollowUserView(APIView):
         },
         tags=["follow"]
     )
-    def delete(self, request):
+    def delete(self, request: Request) -> Response:
         followee_id = request.data.get('followee_id', '')
         try:
             UserService.unfollow_delete(request.user, followee_id)
         except ValueError as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
         return Response({'message': 'Unfollowed successfully'}, status=status.HTTP_200_OK)
 
 
-# ------------------------------------------------------------------
-# Search
-# ------------------------------------------------------------------
 class SearchUsersView(APIView):
     permission_classes = [permissions.AllowAny]
 
@@ -188,7 +178,7 @@ class SearchUsersView(APIView):
         tags=["search"],
         responses={200: UserSerializer(many=True)},
     )
-    def get(self, request):
+    def get(self, request: Request) -> Response:
         query = request.GET.get('q', '')
         try:
             results = search_users(query)
@@ -198,9 +188,6 @@ class SearchUsersView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-# ------------------------------------------------------------------
-# Timelines (function‑based, already thin – unchanged)
-# ------------------------------------------------------------------
 @extend_schema(
     parameters=[
         OpenApiParameter(name='page', type=int, location=OpenApiParameter.QUERY, description='Page number'),
@@ -213,7 +200,7 @@ class SearchUsersView(APIView):
 )
 @api_view(['GET'])
 @permission_classes([permissions.IsAuthenticated])
-def public_timeline(request):
+def public_timeline(request: Request) -> Response:
     queryset = get_public_timeline_queryset(request.user)
     paginator = PageNumberPagination()
     page = paginator.paginate_queryset(queryset, request)
@@ -233,7 +220,7 @@ def public_timeline(request):
 )
 @api_view(['GET'])
 @permission_classes([permissions.IsAuthenticated])
-def private_timeline(request):
+def private_timeline(request: Request) -> Response:
     queryset = get_private_timeline_queryset(request.user)
     paginator = PageNumberPagination()
     page = paginator.paginate_queryset(queryset, request)
@@ -254,7 +241,7 @@ def private_timeline(request):
 )
 @api_view(['GET'])
 @permission_classes([permissions.IsAuthenticated])
-def user_tweets(request, user_id):
+def user_tweets(request: Request, user_id: str) -> Response:
     user = get_user_by_id(user_id)
     queryset = get_user_tweets_queryset(user)
     paginator = PageNumberPagination()
@@ -276,7 +263,7 @@ def user_tweets(request, user_id):
 )
 @api_view(['GET'])
 @permission_classes([permissions.IsAuthenticated])
-def user_followers(request, user_id):
+def user_followers(request: Request, user_id: str) -> Response:
     user = get_user_by_id(user_id)
     queryset = get_user_followers_queryset(user)
     paginator = PageNumberPagination()
@@ -298,7 +285,7 @@ def user_followers(request, user_id):
 )
 @api_view(['GET'])
 @permission_classes([permissions.IsAuthenticated])
-def user_following(request, user_id):
+def user_following(request: Request, user_id: str) -> Response:
     user = get_user_by_id(user_id)
     queryset = get_user_following_queryset(user)
     paginator = PageNumberPagination()
@@ -307,9 +294,6 @@ def user_following(request, user_id):
     return paginator.get_paginated_response(serializer.data)
 
 
-# ------------------------------------------------------------------
-# Authentication (JWT)  (unchanged, already thin)
-# ------------------------------------------------------------------
 class RegisterView(APIView):
     permission_classes = [permissions.AllowAny]
 
@@ -320,13 +304,14 @@ class RegisterView(APIView):
         request=RegisterSerializer,
         responses={201: UserSerializer},
     )
-    def post(self, request):
+    def post(self, request: Request) -> Response:
         serializer = RegisterSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         data = cast(dict[str, Any], serializer.validated_data)
         user = UserService.create_user(**data)
         output = UserSerializer(user, context={'request': request})
         return Response(output.data, status=status.HTTP_201_CREATED)
+
 
 class CustomTokenObtainPairView(TokenObtainPairView):
     @extend_schema(
@@ -343,7 +328,7 @@ class CustomTokenObtainPairView(TokenObtainPairView):
             }
         }
     )
-    def post(self, request, *args, **kwargs):
+    def post(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         return super().post(request, *args, **kwargs)
 
 
@@ -366,7 +351,7 @@ class CustomTokenRefreshView(TokenRefreshView):
             }
         }
     )
-    def post(self, request, *args, **kwargs):
+    def post(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         return super().post(request, *args, **kwargs)
 
 
@@ -383,7 +368,7 @@ class LogoutView(APIView):
             400: OpenApiResponse(description="Invalid token"),
         }
     )
-    def post(self, request):
+    def post(self, request: Request) -> Response:
         serializer = LogoutSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         try:
@@ -406,7 +391,7 @@ class PasswordChangeView(APIView):
         request=PasswordChangeSerializer,
         responses={200: OpenApiResponse(description="Password changed successfully")},
     )
-    def post(self, request):
+    def post(self, request: Request) -> Response:
         serializer = PasswordChangeSerializer(data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
         data = cast(dict[str, Any], serializer.validated_data)

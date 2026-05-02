@@ -1,6 +1,6 @@
 import uuid
 import logging
-from typing import Tuple
+from typing import Any
 from django.db import transaction
 from django.contrib.auth.hashers import check_password
 from accounts.models import User, Follower, PasswordHistory
@@ -22,7 +22,7 @@ class UserService:
         return user.custom_id
 
     @staticmethod
-    def create_user(**validated_data) -> User:
+    def create_user(**validated_data: Any) -> User:
         """Create a new user from validated registration data."""
         validated_data.pop('password2', None)
         return User.objects.create_user(**validated_data)
@@ -45,7 +45,7 @@ class UserService:
         user.delete()
 
     @staticmethod
-    def update_profile(user, **data):
+    def update_profile(user: User, **data: Any) -> User:
         if 'username' in data:
             username = data['username']
             if User.objects.exclude(pk=user.pk).filter(username=username).exists():
