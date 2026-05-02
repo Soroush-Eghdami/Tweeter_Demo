@@ -6,8 +6,8 @@ ENV PYTHONUNBUFFERED=1
 WORKDIR /app
 
 # Replace default Alpine repositories with a working Iranian mirror (Alpine v3.23)
-RUN echo "https://dl-cdn.alpinelinux.org/alpine/v3.23/main" > /etc/apk/repositories \
-    && echo "https://dl-cdn.alpinelinux.org/alpine/v3.23/community" >> /etc/apk/repositories
+RUN echo "https://mirror.arvancloud.ir/alpine/v3.23/main" > /etc/apk/repositories \
+    && echo "https://mirror.arvancloud.ir/alpine/v3.23/community" >> /etc/apk/repositories
 
 # Install system dependencies
 RUN apk update && apk add --no-cache \

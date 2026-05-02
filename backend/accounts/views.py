@@ -94,7 +94,8 @@ class UserProfileView(APIView):
     def patch(self, request):
         input_ser = UserUpdateSerializer(data=request.data, context={'request': request})
         input_ser.is_valid(raise_exception=True)
-        updated_user = UserService.update_profile(request.user, **input_ser.validated_data)
+        data = cast(dict[str, Any], input_ser.validated_data)
+        updated_user = UserService.update_profile(request.user, **data)
         output_ser = UserSerializer(updated_user, context={'request': request})
         return Response(output_ser.data, status=status.HTTP_200_OK)
 
@@ -328,7 +329,8 @@ class RegisterView(APIView):
     def post(self, request):
         serializer = RegisterSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        user = UserService.create_user(**serializer.validated_data)
+        data = cast(dict[str, Any], serializer.validated_data)
+        user = UserService.create_user(**data)
         output = UserSerializer(user, context={'request': request})
         return Response(output.data, status=status.HTTP_201_CREATED)
 
@@ -391,7 +393,8 @@ class LogoutView(APIView):
         serializer = LogoutSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         try:
-            refresh_token = serializer.validated_data['refresh']
+            data = cast(dict[str, Any], serializer.validated_data)
+            refresh_token = data['refresh']
             token = RefreshToken(refresh_token)
             token.blacklist()
             return Response({"detail": "Successfully logged out."}, status=status.HTTP_205_RESET_CONTENT)
@@ -412,11 +415,12 @@ class PasswordChangeView(APIView):
     def post(self, request):
         serializer = PasswordChangeSerializer(data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
+        data = cast(dict[str, Any], serializer.validated_data)
         try:
             UserService.change_password(
                 request.user,
-                serializer.validated_data['old_password'],
-                serializer.validated_data['new_password']
+                data['old_password'],
+                data['new_password']
             )
         except ValueError as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
