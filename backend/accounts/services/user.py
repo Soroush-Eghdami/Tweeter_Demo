@@ -28,27 +28,13 @@ class UserService:
         return User.objects.create_user(**validated_data)
 
     @staticmethod
-    def follow(follower: User, followee: User) -> Tuple[Follower, bool]:
-        if follower == followee:
-            raise ValueError("You cannot follow yourself.")
-        follower_obj, created = Follower.objects.get_or_create(follower=follower, followee=followee)
-        return follower_obj, created
-
-    @staticmethod
-    def unfollow(follower: User, followee: User) -> bool:
-        deleted, _ = Follower.objects.filter(follower=follower, followee=followee).delete()
-        return deleted > 0
-
-    @staticmethod
     def change_password(user: User, old_password: str, new_password: str) -> None:
         if not user.check_password(old_password):
             raise ValueError("Old password is incorrect.")
-
         password_history = PasswordHistory.objects.filter(user=user).order_by('-created_at')[:5]
         for entry in password_history:
             if check_password(new_password, entry.password_hash):
                 raise ValueError("You have used this password recently. Please choose a different one.")
-
         with transaction.atomic():
             PasswordHistory.objects.create(user=user, password_hash=user.password)
             user.set_password(new_password)
@@ -57,7 +43,7 @@ class UserService:
     @staticmethod
     def delete_account(user: User) -> None:
         user.delete()
-        
+
     @staticmethod
     def update_profile(user, **data):
         if 'username' in data:
@@ -74,6 +60,8 @@ class UserService:
     @staticmethod
     def follow_create(follower: User, followee_id: str) -> Follower:
         """Follow a user by their ID. Returns the Follower object or raises ValueError."""
+        if not followee_id or not followee_id.strip():
+            raise ValueError("followee_id is required")
         from accounts.selectors import get_user_by_id
         followee = get_user_by_id(followee_id)
         if follower == followee:
@@ -82,10 +70,12 @@ class UserService:
         if not created:
             raise ValueError("You are already following this user.")
         return follower_obj
-    
+
     @staticmethod
     def unfollow_delete(follower: User, followee_id: str) -> None:
         """Unfollow a user by their ID. Raises ValueError if not following."""
+        if not followee_id or not followee_id.strip():
+            raise ValueError("followee_id is required")
         from accounts.selectors import get_user_by_id
         followee = get_user_by_id(followee_id)
         deleted, _ = Follower.objects.filter(follower=follower, followee=followee).delete()

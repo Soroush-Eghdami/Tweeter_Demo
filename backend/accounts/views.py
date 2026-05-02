@@ -134,10 +134,7 @@ class FollowUserView(APIView):
         tags=["follow"]
     )
     def post(self, request):
-        followee_id = request.data.get('followee_id')
-        if not followee_id:
-            return Response({'error': 'followee_id is required'}, status=status.HTTP_400_BAD_REQUEST)
-
+        followee_id = request.data.get('followee_id', '')
         try:
             follower_obj = UserService.follow_create(request.user, followee_id)
         except ValueError as e:
@@ -167,10 +164,7 @@ class UnfollowUserView(APIView):
         tags=["follow"]
     )
     def delete(self, request):
-        followee_id = request.data.get('followee_id')
-        if not followee_id:
-            return Response({'error': 'followee_id is required'}, status=status.HTTP_400_BAD_REQUEST)
-
+        followee_id = request.data.get('followee_id', '')
         try:
             UserService.unfollow_delete(request.user, followee_id)
         except ValueError as e:
