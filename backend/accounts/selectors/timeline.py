@@ -1,7 +1,7 @@
 from django.db.models import Prefetch, Q, QuerySet
+from ..models import Follower, User
 from tweets.models import ReTweet, Tweet
 
-from ..models import Follower, User
 
 
 # Functions

@@ -1,24 +1,24 @@
 from django.test import TestCase
 from unittest.mock import patch, MagicMock
 from accounts.services import UserService
+from accounts.models import Follower, PasswordHistory, User
 from django.contrib.auth.hashers import make_password
 
 
 class TestUserServiceFollow(TestCase):
     @patch('accounts.services.user.Follower.objects.get_or_create')
-    @patch('accounts.selectors.get_user_by_id')
+    @patch('accounts.selectors.user.get_user_by_id')
     def test_follow_creates_relationship(self, mock_get_user, mock_get_or_create):
         follower = MagicMock()
         followee = MagicMock()
         followee_id = '550e8400-e29b-41d4-a716-446655440000'
         mock_get_user.return_value = followee
         mock_get_or_create.return_value = (MagicMock(), True)
-        # Should not raise
         result = UserService.follow_create(follower, followee_id)
         self.assertIsNotNone(result)
 
     @patch('accounts.services.user.Follower.objects.get_or_create')
-    @patch('accounts.selectors.get_user_by_id')
+    @patch('accounts.selectors.user.get_user_by_id')
     def test_follow_already_exists(self, mock_get_user, mock_get_or_create):
         follower = MagicMock()
         followee = MagicMock()
@@ -28,18 +28,18 @@ class TestUserServiceFollow(TestCase):
         with self.assertRaises(ValueError):
             UserService.follow_create(follower, followee_id)
 
-    @patch('accounts.selectors.get_user_by_id')
+    @patch('accounts.selectors.user.get_user_by_id')
     def test_follow_self_raises_error(self, mock_get_user):
         follower = MagicMock()
         followee_id = '550e8400-e29b-41d4-a716-446655440000'
-        mock_get_user.return_value = follower   # same object as follower
+        mock_get_user.return_value = follower
         with self.assertRaises(ValueError):
             UserService.follow_create(follower, followee_id)
 
 
 class TestUserServiceUnfollow(TestCase):
     @patch('accounts.services.user.Follower.objects.filter')
-    @patch('accounts.selectors.get_user_by_id')
+    @patch('accounts.selectors.user.get_user_by_id')
     def test_unfollow_deletes_and_returns_none(self, mock_get_user, mock_filter):
         follower = MagicMock()
         followee = MagicMock()
@@ -48,11 +48,10 @@ class TestUserServiceUnfollow(TestCase):
         mock_qs = MagicMock()
         mock_qs.delete.return_value = (1, {})
         mock_filter.return_value = mock_qs
-        # Should not raise
         UserService.unfollow_delete(follower, followee_id)
 
     @patch('accounts.services.user.Follower.objects.filter')
-    @patch('accounts.selectors.get_user_by_id')
+    @patch('accounts.selectors.user.get_user_by_id')
     def test_unfollow_not_exist_raises_error(self, mock_get_user, mock_filter):
         follower = MagicMock()
         followee = MagicMock()
@@ -94,7 +93,7 @@ class TestUserServicePassword(TestCase):
 
 
 class TestUserServiceProfile(TestCase):
-    @patch('accounts.selectors.User.objects.exclude')
+    @patch('accounts.selectors.user.User.objects.exclude')
     def test_update_profile_username_taken(self, mock_exclude):
         user = MagicMock()
         user.pk = 1
@@ -102,7 +101,7 @@ class TestUserServiceProfile(TestCase):
         with self.assertRaises(ValueError):
             UserService.update_profile(user, username='taken')
 
-    @patch('accounts.selectors.User.objects.exclude')
+    @patch('accounts.selectors.user.User.objects.exclude')
     def test_update_profile_username_with_spaces(self, mock_exclude):
         user = MagicMock()
         user.pk = 1
