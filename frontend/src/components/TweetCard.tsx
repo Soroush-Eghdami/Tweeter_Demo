@@ -1,3 +1,6 @@
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import type { tweetInfoType } from "../contents/tweetInfo";
 import profilePicture from "../assets/icons/profile-default.svg";
 import like from "../assets/icons/heart.svg";
 import likeFilled from "../assets/icons/filled-heart.svg";
@@ -6,44 +9,41 @@ import retweetFilled from "../assets/icons/retweet-filled.svg";
 import comment from "../assets/icons/comment.svg";
 import commentFilled from "../assets/icons/filled-comment.svg";
 import pin from "../assets/icons/pin.svg";
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 
 interface TweetCardPropsType {
   isPinned?: boolean;
+  info: tweetInfoType;
+  defaultRetweeted?: boolean;
 }
 
-const TweetCard = ({ isPinned }: TweetCardPropsType) => {
+const TweetCard = ({ isPinned, info , defaultRetweeted = false}: TweetCardPropsType) => {
   const [liked, setLiked] = useState(false);
-  const [retweeted, setRetweeted] = useState(false);
+  const [retweeted, setRetweeted] = useState(defaultRetweeted);
   const navigation = useNavigate();
-  const year = new Date().toLocaleDateString();
+
+  if (!info) return null;
 
   return (
-    <div className="relative border-2 border-white px-12 py-8 rounded-3xl h-fit mb-7">
+    <div className="relative border-2 border-white h-fit px-12 py-8 mb-7 rounded-3xl">
       {isPinned && (
-        <div className="absolute right-10 top-10 size-6">
+        <div className="absolute top-10 right-10 size-6">
           <img src={pin} alt="Pin" />
         </div>
       )}
+      {/* Tweet Info */}
       <div className="flex items-center gap-3.5 mb-8">
         <img src={profilePicture} alt="User-Profile" />
         <h2
           className="font-semibold text-xl cursor-pointer hover:text-[#ddd] hover:underline"
           onClick={() => navigation("/profile")}
         >
-          Khargoosh
+          {info.username}
         </h2>
-        <h5 className="text-md text-[#ddd]">{year}</h5>
+        <h5 className="text-md text-[#ddd]">{info.createdAt}</h5>
       </div>
-      <p className="font-medium mb-9 pl-12">
-        Lorem ipsum dolor sit amet consectetur adipisicing elit. Optio,
-        necessitatibus deleniti adipisci unde ipsa quaerat soluta ipsum quasi
-        sint amet vitae fugiat maiores. Quidem consequatur voluptatibus, quas
-        error possimus excepturi eius molestias tenetur, libero necessitatibus
-        quasi in commodi inventore nostrum?
-      </p>
+      <p className="font-medium mb-9 pl-12">{info.description}</p>
       <div className="flex items-center gap-9 pl-6">
+        {/* Like Button */}
         <div
           className="flex items-center gap-2.5 cursor-pointer"
           onClick={() => setLiked((prev) => !prev)}
@@ -61,8 +61,9 @@ const TweetCard = ({ isPinned }: TweetCardPropsType) => {
               className="size-10 hover:scale-105 transition-all duration-150 ease-in-out"
             />
           )}
-          <p className="text-[#ddd] text-sm">20</p>
+          <p className="text-[#ddd] text-sm">{info.likeNumber}</p>
         </div>
+        {/* Comment Button */}
         <div
           className="flex items-center gap-2.5 cursor-pointer"
           onClick={() => navigation("/comment")}
@@ -81,9 +82,9 @@ const TweetCard = ({ isPinned }: TweetCardPropsType) => {
               onClick={() => navigation("/comment")}
             />
           )}
-
-          <p className="text-[#ddd] text-sm">6</p>
+          <p className="text-[#ddd] text-sm">{info.commentNumber}</p>
         </div>
+        {/* Retweet Button */}
         <div
           className="flex items-center gap-2.5 cursor-pointer"
           onClick={() => setRetweeted((prev) => !prev)}
@@ -101,7 +102,7 @@ const TweetCard = ({ isPinned }: TweetCardPropsType) => {
               className="size-8.5 hover:scale-105 transition-all duration-150 ease-in-out"
             />
           )}
-          <p className="text-[#ddd] text-sm">15</p>
+          <p className="text-[#ddd] text-sm">{info.retweetNumber}</p>
         </div>
       </div>
     </div>

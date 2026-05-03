@@ -1,5 +1,3 @@
-// utils/imageCropper.ts
-
 export interface CroppedAreaPixels {
   width: number;
   height: number;

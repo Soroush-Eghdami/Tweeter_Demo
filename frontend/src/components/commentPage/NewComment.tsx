@@ -5,7 +5,7 @@ const NewComment = () => {
   const navigation = useNavigate();
 
   return (
-    <>
+    <div className="rounded-xl">
       <div className="ml-18 pt-12">
         <div className="flex items-start gap-5">
           <img src={defaultProfile} alt="Default-Profile" />
@@ -23,7 +23,7 @@ const NewComment = () => {
           name="comment"
           id="comment"
           placeholder="Write your comment..."
-          className="relative -top-3 resize-none w-full focus:outline-none pl-22 "
+          className="relative -top-3 w-full pl-22 resize-none focus:outline-none"
         ></textarea>
         <div className="text-right mb-6">
           <button className="bg-white font-bold py-2 px-4 mr-4 text-black rounded-3xl cursor-pointer hover:text-white hover:bg-black transition-all duration-200 ease-in-out">
@@ -32,7 +32,7 @@ const NewComment = () => {
         </div>
       </div>
       <div className="h-px w-full bg-white mb-14"></div>
-    </>
+    </div>
   );
 };
 

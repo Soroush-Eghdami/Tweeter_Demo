@@ -1,12 +1,12 @@
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import useIsLoggedIn from "../hooks/global-hooks/useIsLoggedIn";
+import Search from "./Search";
 import logo from "../assets/icons/pigeon.svg";
 import home from "../assets/icons/home.svg";
 import profile from "../assets/icons/user-profile.svg";
 import logout from "../assets/icons/logout.svg";
 import login from "../assets/icons/login.svg";
-import Search from "./Search";
-import { useNavigate } from "react-router-dom";
-import { useEffect, useState } from "react";
-import useIsLoggedIn from "../hooks/global-hooks/useIsLoggedIn";
 
 const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -30,7 +30,7 @@ const Navbar = () => {
 
   return (
     <div
-      className={`${isScrolled ? "backdrop-blur-[35px] backdrop-brightness-[1.5]" : ""} fixed top-0 pt-6 right-0  w-full z-30 transition-all duration-50 ease-in-out`}
+      className={`${isScrolled ? "backdrop-blur-sm" : ""} fixed top-0 right-0 pt-6 w-full z-30 transition-all duration-50 ease-in-out`}
     >
       <div className="max-w-[92%] mx-auto">
         <div className="flex items-center justify-between px-6">

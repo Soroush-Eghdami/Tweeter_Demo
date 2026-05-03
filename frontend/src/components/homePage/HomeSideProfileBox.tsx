@@ -1,27 +1,11 @@
 import { useNavigate } from "react-router-dom";
-import profilePicture from "../../assets/icons/profile-default.svg";
 import useIsLoggedIn from "../../hooks/global-hooks/useIsLoggedIn";
 import HomeProfileFilled from "./HomeProfileFilled";
-import newTweet from "../../assets/icons/new-tweet.svg";
-import { useEffect, useState } from "react";
+import profilePicture from "../../assets/icons/profile-default.svg";
 
 const HomeSideProfileBox = () => {
   const { isLoggedIn } = useIsLoggedIn();
-  const [IsScrolled, setIsScrolled] = useState(false);
   const navigation = useNavigate();
-
-  useEffect(() => {
-    const handleScrolled = () => {
-      if (window.scrollY > 20) {
-        setIsScrolled(true);
-      } else {
-        setIsScrolled(false);
-      }
-    };
-
-    window.addEventListener("scroll", handleScrolled);
-    return () => window.removeEventListener("scroll", handleScrolled);
-  }, []);
 
   return (
     <div className="relative h-fit">
@@ -46,7 +30,7 @@ const HomeSideProfileBox = () => {
               bgColor="bg-black"
             />
             <HomeProfileFilled
-              title="ReTweet"
+              title="Retweet"
               number={6}
               textColor="text-[#333]"
               bgColor="bg-[#f4f4f4]"
@@ -73,19 +57,13 @@ const HomeSideProfileBox = () => {
           <div className="text-center">
             <button
               className="bg-white text-xl font-semibold text-black py-3 px-7 rounded-lg cursor-pointer hover:bg-[#ccc] transition-all duration-200 ease-in-out"
-              onClick={() => navigation("/login")}
+              onClick={() => navigation("/register")}
             >
               Register Now!!
             </button>
           </div>
         </div>
       )}
-
-      {/* <div
-        className={`${IsScrolled ? "bottom-60" : "bottom-10"} fixed right-20 cursor-pointer hover:rotate-90 transition-all duration-500 ease-in-out`}
-      >
-        <img src={newTweet} alt="New-Tweet" className="size-23" />
-      </div> */}
     </div>
   );
 };
