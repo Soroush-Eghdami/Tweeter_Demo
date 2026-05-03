@@ -2,6 +2,8 @@ FROM node:24.8.0-alpine
 
 WORKDIR /app
 
+RUN npm config set registry https://registry.npmjs.org/
+
 COPY package*.json .
 RUN npm install
 COPY . .
