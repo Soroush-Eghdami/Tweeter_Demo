@@ -1,4 +1,6 @@
 from typing import Optional
+from functools import reduce
+import operator
 from django.db.models import Q, QuerySet
 from django.shortcuts import get_object_or_404
 from django_filters import FilterSet, CharFilter
@@ -13,11 +15,12 @@ class UserSearchFilter(FilterSet):
         fields = ['q']
 
     def filter_search(self, queryset: QuerySet[User], name: str, value: str) -> QuerySet[User]:
-        return queryset.filter(
-            Q(username__icontains=value) |
-            Q(first_name__icontains=value) |
+        q_list = [
+            Q(username__icontains=value),
+            Q(first_name__icontains=value),
             Q(last_name__icontains=value)
-        )
+        ]
+        return queryset.filter(reduce(operator.or_, q_list))
 
 
 def get_user_by_id(user_id: str) -> User:
@@ -31,7 +34,7 @@ def get_user_by_username(username: str) -> User:
 def is_following(user: User, target_user: User) -> bool:
     if not user.is_authenticated:
         return False
-    return Follower.objects.filter(follower=user, followee=target_user).exists()
+    return Follower.objects.filter(follower=user, followee=target_user).exists() # type: ignore[union-attr]
 
 
 def validate_username(username: str, exclude_user_id: Optional[str] = None) -> None:
