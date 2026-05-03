@@ -4,7 +4,7 @@ import Footer from "../components/Footer";
 
 const Layout = () => {
   return (
-    <div className="bg-custom-dark-gradient text-white h-auto min-h-dvh">
+    <div className="h-auto min-h-dvh bg-custom-dark-gradient text-white">
       <main className="pt-22">
         <Navbar />
         <section>

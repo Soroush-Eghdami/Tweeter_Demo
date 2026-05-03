@@ -1,11 +1,11 @@
 import { createBrowserRouter, type RouteObject } from "react-router-dom";
 import Layout from "../layout/Layout";
 import Home from "../pages/Home";
-import Profile from "../pages/Profile";
-import Login from "../pages/Login";
-import EditProfile from "../pages/EditProfile";
-import Register from "../pages/Register";
 import CommentPage from "../pages/CommentPage";
+import Profile from "../pages/Profile";
+import EditProfile from "../pages/EditProfile";
+import Login from "../pages/Login";
+import Register from "../pages/Register";
 
 const routes: RouteObject[] = [
   {

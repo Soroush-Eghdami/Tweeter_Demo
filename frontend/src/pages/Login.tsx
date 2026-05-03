@@ -1,17 +1,19 @@
 import { Link, useNavigate } from "react-router-dom";
+import { useState } from "react";
 import username from "../assets/icons/login/username.svg";
 import password from "../assets/icons/login/password.svg";
-import openeye from "../assets/icons/login/opened-eye.svg";
-import closeeye from "../assets/icons/login/closed-eye.svg";
-import { useState } from "react";
+import openEye from "../assets/icons/login/opened-eye.svg";
+import closeEye from "../assets/icons/login/closed-eye.svg";
 
 const Login = () => {
   const [isOpenEye, setIsOpenEye] = useState(true);
+
   const navigation = useNavigate();
+
   return (
     <div className="bg-custom-login-gradient min-h-dvh">
       <div className="pt-32">
-        <form className="container flex flex-col items-center justify-center gap-2 shadow-[0_0px_30px_rgba(0,0,0,0.4)] backdrop-filter-md backdrop-blur-[35px] backdrop-brightness-[1.5] rounded-3xl text-white max-w-[30%] mx-auto ">
+        <form className="container flex flex-col items-center justify-center gap-2 text-white max-w-[30%] mx-auto shadow-[0_0px_30px_rgba(0,0,0,0.4)] backdrop-filter-md backdrop-blur-[35px] backdrop-brightness-[1.5] rounded-3xl">
           <div className="pt-12 pb-6 px-4 mt-4">
             <p className="text-center text-3xl font-semibold"> Welcome!</p>
           </div>
@@ -19,14 +21,16 @@ const Login = () => {
             <div className="flex flex-row items-center gap-1.5 pl-1 pb-1">
               <img src={username} alt="username" className="size-5" />
               <label
-                htmlFor="UserName"
-                className="text-left text-[14px] font-medium block  "
+                htmlFor="username"
+                className="block text-left text-[14px] font-medium"
               >
-                UserName
+                Username
               </label>
             </div>
             <input
               type="text"
+              name="username"
+              id="username"
               className="h-13 pb-1 px-3 mb-2 rounded-xl border-[#383838] backdrop-filter-md backdrop-blur-[35px] backdrop-brightness-[6] bg-white/10 placeholder:text-[14px] w-full focus:outline-none"
               placeholder="Enter your Username ..."
             />
@@ -36,30 +40,32 @@ const Login = () => {
               <img src={password} alt="password" className="size-4.5" />
 
               <label
-                htmlFor="Password"
-                className="text-left text-[14px] font-medium block "
+                htmlFor="password"
+                className="block text-left text-[14px] font-medium"
               >
                 Password
               </label>
             </div>
-            <div className="relative ">
+            <div className="relative">
               <input
                 type={isOpenEye ? "password" : "text"}
+                name="password"
+                id="password"
                 className="h-13 pb-1 px-3 rounded-xl border-[#383838] backdrop-filter-md backdrop-blur-[35px] backdrop-brightness-[6] bg-white/10 placeholder:text-[14px] w-full focus:outline-none"
                 placeholder="Enter your Password ..."
               />
               {isOpenEye ? (
                 <img
                   onClick={() => setIsOpenEye((prev) => !prev)}
-                  src={closeeye}
-                  alt="closeeye"
-                  className="absolute right-4.5 top-4.5  cursor-pointer"
+                  src={closeEye}
+                  alt="close-eye"
+                  className="absolute right-4.5 top-4.5 cursor-pointer"
                 />
               ) : (
                 <img
                   onClick={() => setIsOpenEye((prev) => !prev)}
-                  src={openeye}
-                  alt="openeye"
+                  src={openEye}
+                  alt="open-eye"
                   className="absolute right-4.5 top-5 cursor-pointer"
                 />
               )}
@@ -82,7 +88,7 @@ const Login = () => {
         </form>
       </div>
     </div>
-    );
+  );
 };
 
 export default Login;

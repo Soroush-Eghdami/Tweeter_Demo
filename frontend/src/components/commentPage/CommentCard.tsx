@@ -1,13 +1,17 @@
 import { useEffect, useRef, useState } from "react";
 import TweetCard from "../TweetCard";
+import type { commentInfoType } from "../../contents/commentInfo";
 
 interface CommentCardPropsType {
-  isLastCard?: boolean;
+  info: commentInfoType;
+  isLastComment: boolean;
 }
 
-const CommentCard = ({ isLastCard }: CommentCardPropsType) => {
-  const tweetCardRef = useRef(null);
+const CommentCard = ({ info, isLastComment }: CommentCardPropsType) => {
   const [lineHeight, setLineHeight] = useState(0);
+  const tweetCardRef = useRef<HTMLDivElement>(null);
+
+  if (!info) return null;
 
   const updateTweetCardHeight = () => {
     if (tweetCardRef.current) {
@@ -20,10 +24,7 @@ const CommentCard = ({ isLastCard }: CommentCardPropsType) => {
     updateTweetCardHeight();
 
     window.addEventListener("resize", updateTweetCardHeight);
-
-    return () => {
-      window.removeEventListener("resize", updateTweetCardHeight);
-    };
+    return () => window.removeEventListener("resize", updateTweetCardHeight);
   }, []);
 
   return (
@@ -31,12 +32,12 @@ const CommentCard = ({ isLastCard }: CommentCardPropsType) => {
       <div className="relative top-10 flex flex-col items-center justify-center">
         <div className="bg-white size-10 rounded-[50%]"></div>
         <div
-          className={`${isLastCard && "relative -top-29"} bg-white w-px`}
+          className={`${isLastComment && "relative -top-29"} bg-white w-px`}
           style={{ height: `${lineHeight}px` }}
         ></div>
       </div>
-      <div ref={tweetCardRef}>
-        <TweetCard />
+      <div ref={tweetCardRef} className="w-full">
+        <TweetCard info={info} />
       </div>
     </div>
   );
