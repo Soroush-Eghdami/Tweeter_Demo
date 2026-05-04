@@ -1,7 +1,10 @@
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
 import UsernameInput from "../components/loginRegister/UsernameInput";
 import PasswordInput from "../components/loginRegister/PasswordInput";
+import { useLogin } from "../hooks/useLogin";
+import useIsLoggedIn from "../hooks/global-hooks/useIsLoggedIn";
 import type { LoginFormType } from "../types/FormTypes";
 
 const Login = () => {
@@ -11,11 +14,28 @@ const Login = () => {
     reset,
     formState: { errors },
   } = useForm<LoginFormType>();
+  const { mutate } = useLogin();
+  const { setIsLoggedIn } = useIsLoggedIn();
   const navigation = useNavigate();
 
   const onSubmit = (data: LoginFormType) => {
-    console.log(data);
-    navigation("/");
+    mutate(
+      {
+        username: data.username,
+        password: data.password,
+      },
+      {
+        onSuccess: () => {
+          toast.success("User Logged in Successfully!");
+          setIsLoggedIn();
+          navigation("/");
+        },
+        onError: () => {
+          toast.error("Login Failed!");
+        },
+      },
+    );
+
     reset();
   };
 
@@ -31,13 +51,16 @@ const Login = () => {
           </p>
 
           {/* Username */}
-          <UsernameInput register={register} />
+          <UsernameInput register={register} error={errors.username} />
           {/* Password */}
           <div className="w-[70%]">
-            <PasswordInput register={register} />
+            <PasswordInput register={register} error={errors.password} />
           </div>
 
-          <button className="w-[70%] rounded-xl font-bold px-16 py-3 bg-white text-black mt-12 cursor-pointer hover:bg-gray-200">
+          <button
+            type="submit"
+            className="w-[70%] rounded-xl font-bold px-16 py-3 bg-white text-black mt-12 cursor-pointer hover:bg-gray-200"
+          >
             Login
           </button>
           <p className="mb-14">

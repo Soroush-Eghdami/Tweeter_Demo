@@ -1,13 +1,14 @@
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
-import { toast } from "react-hot-toast";
-import NameInput from "../components/loginRegister/NameInput";
+import toast from "react-hot-toast";
+import FirstNameInput from "../components/loginRegister/FirstNameInput";
+import LastNameInput from "../components/loginRegister/LastNameInput";
 import UsernameInput from "../components/loginRegister/UsernameInput";
 import EmailInput from "../components/loginRegister/EmailInput";
 import PasswordInput from "../components/loginRegister/PasswordInput";
 import RepeatPasswordInput from "../components/loginRegister/RepeatPasswordInput";
-import type { RegisterFormType } from "../types/FormTypes";
 import { useRegister } from "../hooks/useRegister";
+import type { RegisterFormType } from "../types/FormTypes";
 
 const Register = () => {
   const {
@@ -15,6 +16,7 @@ const Register = () => {
     handleSubmit,
     reset,
     watch,
+    getValues,
     formState: { errors },
   } = useForm<RegisterFormType>();
   const { mutate } = useRegister();
@@ -27,26 +29,30 @@ const Register = () => {
         password: data.password,
         password2: data.repeatPassword,
         email: data.email,
-        first_name: data.name,
+        first_name: data.firstName,
+        last_name: data.lastName,
       },
       {
         onSuccess: () => {
           toast.success("User Registered Successfully!");
           navigation("/login");
+          reset();
         },
         onError: (errors) => {
           toast.error("Registration Failed!");
           console.log(errors);
+
+          const currentValues = getValues();
+          reset({
+            ...currentValues,
+            username: "",
+            password: "",
+            repeatPassword: "",
+          });
         },
       },
     );
-
-    reset();
   };
-
-  // const onError = (errors) => {
-  //   console.log(errors);
-  // };
 
   return (
     <>
@@ -62,28 +68,38 @@ const Register = () => {
                 Create your account
               </p>
             </div>
-            {/* Name */}
-            <NameInput register={register} />
+            {/* First Name */}
+            <FirstNameInput register={register} error={errors.firstName} />
+
+            {/* Last Name */}
+            <LastNameInput register={register} error={errors.lastName} />
 
             {/* Username */}
-            <UsernameInput register={register} />
+            <UsernameInput register={register} error={errors.username} />
 
             {/* Email */}
-            <EmailInput register={register} />
+            <EmailInput register={register} error={errors.email} />
 
-            <div className="flex flex-wrap justify-center items-center gap-6">
+            <div className="flex flex-wrap justify-start gap-6">
               {/* Password */}
               <div className="max-w-48">
-                <PasswordInput register={register} />
+                <PasswordInput register={register} error={errors.password} />
               </div>
 
               {/* Repeat Password */}
               <div className="max-w-48">
-                <RepeatPasswordInput register={register} watch={watch} />
+                <RepeatPasswordInput
+                  register={register}
+                  watch={watch}
+                  error={errors.repeatPassword}
+                />
               </div>
             </div>
 
-            <button className="w-[70%] rounded-xl font-bold px-16 py-3 bg-white text-black mt-12 cursor-pointer hover:bg-gray-200">
+            <button
+              type="submit"
+              className="w-[70%] rounded-xl font-bold px-16 py-3 bg-white text-black mt-12 cursor-pointer hover:bg-gray-200"
+            >
               Register
             </button>
 

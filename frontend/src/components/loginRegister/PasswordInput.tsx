@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { UseFormRegister } from "react-hook-form";
+import type { FieldError, UseFormRegister } from "react-hook-form";
 import type { LoginFormType, RegisterFormType } from "../../types/FormTypes";
 import password from "../../assets/icons/login/password.svg";
 import openEye from "../../assets/icons/login/opened-eye.svg";
@@ -7,9 +7,10 @@ import closeEye from "../../assets/icons/login/closed-eye.svg";
 
 interface PasswordInputPropsType {
   register: UseFormRegister<RegisterFormType | LoginFormType>;
+  error?: FieldError;
 }
 
-const PasswordInput = ({ register }: PasswordInputPropsType) => {
+const PasswordInput = ({ register, error }: PasswordInputPropsType) => {
   const [isOpenEye, setIsOpenEye] = useState(true);
 
   return (
@@ -47,9 +48,12 @@ const PasswordInput = ({ register }: PasswordInputPropsType) => {
           type={isOpenEye ? "password" : "text"}
           name="password"
           id="password"
-          className="h-13 pb-1 pl-3 pr-12 rounded-xl border-[#383838] backdrop-filter-md backdrop-blur-[35px] backdrop-brightness-[6] bg-white/10 placeholder:text-[14px] w-full focus:outline-none"
+          className="h-13 pb-1 pl-3 pr-12 mb-2 w-full rounded-xl border-[#383838] backdrop-filter-md backdrop-blur-[35px] backdrop-brightness-[6] bg-white/10 placeholder:text-[14px] focus:outline-none"
           placeholder="********"
         />
+        {error && (
+          <p className="pl-4 text-yellow-200 text-sm mb-1">{error.message}</p>
+        )}
         {isOpenEye ? (
           <img
             onClick={() => setIsOpenEye((prev) => !prev)}

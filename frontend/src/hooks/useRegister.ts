@@ -7,10 +7,11 @@ interface newUserInfoType {
   password2: string;
   email: string;
   first_name: string;
+  last_name: string;
 }
 
 const newUserInfo = async (userData: newUserInfoType) => {
-  const response = await api.post("/accounts/register", userData);
+  const response = await api.post("/accounts/register/", userData);
   return response.data;
 };
 

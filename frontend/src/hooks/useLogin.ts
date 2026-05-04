@@ -1,17 +1,21 @@
 import { useMutation } from "@tanstack/react-query";
 import api from "../api-services/api";
 
-const getUserInfo = async () => {
-  try {
-    const response = await api.post("/accounts/login");
-    return response.data;
-  } catch (error) {
-    console.log(error);
-  }
+interface loginUserInfoType {
+  username: string;
+  password: string;
+}
+
+const loginUserInfo = async (userData: loginUserInfoType) => {
+  const response = await api.post("/accounts/login/", userData);
+  return response.data;
 };
 
 export const useLogin = () => {
   return useMutation({
-    mutationFn: getUserInfo,
+    mutationFn: loginUserInfo,
+    onError: (error) => {
+      console.log("Login failed:", error);
+    },
   });
 };
