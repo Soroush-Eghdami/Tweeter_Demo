@@ -7,7 +7,7 @@ from django.contrib.auth import get_user_model
 from rest_framework.test import APIClient
 from rest_framework import status
 from accounts.models import Follower, PasswordHistory
-from tweets.models import Tweet, Like
+from tweets.models import Tweet
 
 User = get_user_model()
 

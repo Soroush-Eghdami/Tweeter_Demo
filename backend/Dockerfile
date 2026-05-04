@@ -11,6 +11,7 @@ RUN echo "https://mirror.arvancloud.ir/alpine/v3.23/main" > /etc/apk/repositorie
 
 # Install system dependencies
 RUN apk update && apk add --no-cache \
+    curl \
     gcc \
     musl-dev \
     postgresql-dev \
@@ -31,10 +32,11 @@ COPY requirements.txt /app/
 
 # Use a reliable Iranian PyPI mirror
 # CHANGE THIS LINE TO A WORKING MIRROR
-ARG PYPI_MIRROR=https://mirror-pypi.runflare.com/simple
+# ARG PYPI_MIRROR=https://mirror-pypi.runflare.com/simple
 
 # Install Python dependencies
-RUN pip install --no-cache-dir -i ${PYPI_MIRROR} -r requirements.txt
+# RUN pip install --no-cache-dir -i ${PYPI_MIRROR} -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt 
 
 # Copy the rest of the project
 COPY . /app/

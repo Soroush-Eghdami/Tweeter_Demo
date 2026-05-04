@@ -2,7 +2,7 @@ from django.contrib.auth import get_user_model
 from rest_framework import serializers
 from drf_spectacular.utils import extend_schema_field, OpenApiTypes
 from .models import Tweet, ReTweet
-from accounts.serializers import UserLiteSerializer
+from accounts.serializers import UserLiteOutputSerializer
 from .services.engagement import TweetEngagementService
 from .services.visibility import TweetVisibilityService
 
@@ -14,7 +14,7 @@ User = get_user_model()
 
 class TweetSerializer(serializers.ModelSerializer):
     """Full tweet output serializer with engagement counts and metadata."""
-    user = UserLiteSerializer(read_only=True)
+    user = UserLiteOutputSerializer(read_only=True)
     message = serializers.CharField(source='content', read_only=True)
     retweet_count = serializers.SerializerMethodField()
     like_count = serializers.SerializerMethodField()
@@ -95,7 +95,7 @@ class CreateTweetSerializer(serializers.ModelSerializer):
 
 class ReTweetSerializer(serializers.ModelSerializer):
     """ReTweet output serializer."""
-    user = UserLiteSerializer(read_only=True)
+    user = UserLiteOutputSerializer(read_only=True)
     original_tweet = TweetSerializer(read_only=True)
 
     class Meta:
