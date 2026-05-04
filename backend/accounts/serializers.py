@@ -96,8 +96,8 @@ class PasswordChangeInputSerializer(serializers.Serializer):
 
 
 class LogoutInputSerializer(serializers.Serializer):
-    """Input serializer for logout."""
-    refresh = serializers.CharField(required=True, write_only=True)
+    """Input serializer for logout. Refresh token can come from cookies or body."""
+    refresh = serializers.CharField(required=False, write_only=True, allow_blank=True)
 
 
 # =====================================================================

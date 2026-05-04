@@ -3,6 +3,7 @@ import logging
 from typing import Any
 from django.db import transaction
 from django.contrib.auth.hashers import check_password
+from django.contrib.auth.backends import ModelBackend
 from accounts.models import User, Follower, PasswordHistory
 
 logger = logging.getLogger(__name__)
@@ -26,6 +27,11 @@ class UserService:
         """Create a new user from validated registration data."""
         validated_data.pop('password2', None)
         return User.objects.create_user(**validated_data)
+
+    @staticmethod
+    def authenticate_user(request: Any, username: str, password: str) -> User | None:
+        """Authenticate user with username and password."""
+        return ModelBackend().authenticate(request, username=username, password=password)
 
     @staticmethod
     def change_password(user: User, old_password: str, new_password: str) -> None:

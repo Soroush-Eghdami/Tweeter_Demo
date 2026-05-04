@@ -14,6 +14,7 @@ from accounts.serializers import (
     RegisterInputSerializer, LogoutInputSerializer, PasswordChangeInputSerializer
 )
 from accounts.services import UserService
+from accounts.auth_utils import set_token_cookies, clear_token_cookies, set_access_token_cookie, set_refresh_token_cookie
 from accounts.selectors import (
     get_user_by_id, search_users,
     get_public_timeline_queryset,
@@ -340,43 +341,100 @@ class RegisterView(APIView):
 class CustomTokenObtainPairView(TokenObtainPairView):
     @extend_schema(
         summary="Login (obtain JWT tokens)",
-        description="Authenticate with username and password to receive access and refresh tokens.",
+        description="Authenticate with username and password to receive access and refresh tokens in HttpOnly cookies.",
         tags=["authentication"],
         responses={
             200: {
                 'type': 'object',
                 'properties': {
-                    'access': {'type': 'string', 'description': 'JWT access token'},
-                    'refresh': {'type': 'string', 'description': 'JWT refresh token'},
+                    'detail': {'type': 'string', 'description': 'Login successful message'},
+                    'user': {'type': 'object', 'description': 'Authenticated user data'},
                 }
             }
         }
     )
     def post(self, request: Request, *args: Any, **kwargs: Any) -> Response:
-        return super().post(request, *args, **kwargs)
+        # Get tokens from parent class
+        response = super().post(request, *args, **kwargs)
+        
+        # If authentication successful, set tokens as HttpOnly cookies
+        if response.status_code == 200:
+            access_token = response.data.get('access')
+            refresh_token = response.data.get('refresh')
+            
+            # Authenticate user to get user object
+            user = UserService.authenticate_user(
+                request,
+                username=request.data.get('username'),
+                password=request.data.get('password')
+            )
+            
+            new_response = Response(
+                {
+                    'detail': 'Login successful',
+                    'user': UserOutputSerializer(user, context={'request': request}).data if user else None,
+                },
+                status=status.HTTP_200_OK
+            )
+            
+            # Set tokens in HttpOnly cookies
+            new_response = set_token_cookies(new_response, access_token, refresh_token)
+            return new_response
+        
+        return response
 
 
 class CustomTokenRefreshView(TokenRefreshView):
     @extend_schema(
         summary="Refresh access token",
-        description="Obtain a new access token using a valid refresh token.",
+        description="Obtain a new access token using the refresh token from HttpOnly cookie.",
         tags=["authentication"],
         request={
             'application/json': {
                 'type': 'object',
                 'properties': {'refresh': {'type': 'string'}},
-                'required': ['refresh']
+                'required': []  # Not required if using cookies
             }
         },
         responses={
             200: {
                 'type': 'object',
-                'properties': {'access': {'type': 'string'}}
+                'properties': {'detail': {'type': 'string'}}
             }
         }
     )
     def post(self, request: Request, *args: Any, **kwargs: Any) -> Response:
-        return super().post(request, *args, **kwargs)
+        # If no refresh token in request body, try to get it from cookies
+        if 'refresh' not in request.data:
+            refresh_token = request.COOKIES.get('refresh_token')
+            if refresh_token:
+                request.data._mutable = True if hasattr(request.data, '_mutable') else True
+                request.data['refresh'] = refresh_token
+        
+        # Get response from parent class
+        response = super().post(request, *args, **kwargs)
+        
+        # If refresh successful, set new tokens as HttpOnly cookies
+        if response.status_code == 200:
+            access_token = response.data.get('access')
+            refresh_token_in_response = response.data.get('refresh')
+            
+            # Create new response
+            new_response = Response(
+                {'detail': 'Token refreshed successfully'},
+                status=status.HTTP_200_OK
+            )
+            
+            # Set access token in cookie
+            new_response = set_access_token_cookie(new_response, access_token)
+            
+            # If refresh token was rotated, update it too
+            if refresh_token_in_response:
+                new_response = set_refresh_token_cookie(new_response, refresh_token_in_response)
+            
+            return new_response
+        
+        return response
 
 
 class LogoutView(APIView):
@@ -384,7 +442,7 @@ class LogoutView(APIView):
 
     @extend_schema(
         summary="Logout",
-        description="Blacklist the provided refresh token. The access token will remain valid until its expiry.",
+        description="Logout by clearing token cookies. Optionally provide refresh token in body to blacklist it (for extra security).",
         tags=["authentication"],
         request=LogoutInputSerializer,
         responses={
@@ -395,14 +453,28 @@ class LogoutView(APIView):
     def post(self, request: Request) -> Response:
         serializer = LogoutInputSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+        
         try:
             data = cast(dict[str, Any], serializer.validated_data)
-            refresh_token = data['refresh']
-            token = RefreshToken(refresh_token)
-            token.blacklist()
-            return Response({"detail": "Successfully logged out."}, status=status.HTTP_205_RESET_CONTENT)
+            refresh_token = data.get('refresh') or request.COOKIES.get('refresh_token')
+            
+            # Blacklist refresh token if provided
+            if refresh_token:
+                try:
+                    token = RefreshToken(refresh_token)
+                    token.blacklist()
+                except Exception:
+                    pass  # Token might already be invalid, that's okay
+            
+            # Create response and clear cookies
+            response = Response(
+                {"detail": "Successfully logged out."},
+                status=status.HTTP_205_RESET_CONTENT
+            )
+            response = clear_token_cookies(response)
+            return response
         except Exception:
-            return Response({"detail": "Invalid token."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": "Logout failed."}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class PasswordChangeView(APIView):
