@@ -49,10 +49,13 @@ class AccountsAPITestCase(TestCase):
             is_public_user=True
         )
 
-        # Obtain JWT token for user1
+        # Obtain JWT token for user1 from cookies
         token_url = reverse('token_obtain_pair')
         response = self.client.post(token_url, {'username': 'alice', 'password': 'alicepass'}, format='json')
-        self.token = response.data['access']
+        # Extract token from cookies (now stored as HttpOnly cookies)
+        self.token = response.cookies['access_token'].value
+        self.refresh_token = response.cookies['refresh_token'].value
+        # Set Authorization header for subsequent requests (tests can also use cookies)
         self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {self.token}')
 
         # Create some tweets
@@ -82,29 +85,39 @@ class AccountsAPITestCase(TestCase):
         data = {'username': 'alice', 'password': 'alicepass'}
         response = self.client.post(url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertIn('access', response.data)
-        self.assertIn('refresh', response.data)
+        # Tokens are now in HttpOnly cookies, not in response data
+        self.assertIn('access_token', response.cookies)
+        self.assertIn('refresh_token', response.cookies)
+        # Response body contains user data
+        self.assertIn('detail', response.data)
+        self.assertIn('user', response.data)
 
     def test_refresh_token(self):
         token_url = reverse('token_obtain_pair')
         resp = self.client.post(token_url, {'username': 'alice', 'password': 'alicepass'}, format='json')
-        refresh = resp.data['refresh']
+        # Extract refresh token from cookies
+        refresh_token = resp.cookies['refresh_token'].value
+        
         refresh_url = reverse('token_refresh')
-        response = self.client.post(refresh_url, {'refresh': refresh}, format='json')
+        response = self.client.post(refresh_url, {'refresh': refresh_token}, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertIn('access', response.data)
+        # New access token should be in cookies
+        self.assertIn('access_token', response.cookies)
+        self.assertIn('detail', response.data)
 
     def test_logout(self):
         token_url = reverse('token_obtain_pair')
         resp = self.client.post(token_url, {'username': 'alice', 'password': 'alicepass'}, format='json')
-        refresh = resp.data['refresh']
+        # Extract refresh token from cookies
+        refresh_token = resp.cookies['refresh_token'].value
+        
         logout_url = reverse('logout')
-        response = self.client.post(logout_url, {'refresh': refresh}, format='json')
+        response = self.client.post(logout_url, {'refresh': refresh_token}, format='json')
         self.assertEqual(response.status_code, status.HTTP_205_RESET_CONTENT)
 
         # Try to use the blacklisted refresh token
         refresh_url = reverse('token_refresh')
-        response = self.client.post(refresh_url, {'refresh': refresh}, format='json')
+        response = self.client.post(refresh_url, {'refresh': refresh_token}, format='json')
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     # ------------------------------------------------------------------
