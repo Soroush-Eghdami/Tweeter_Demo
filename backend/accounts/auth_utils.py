@@ -19,8 +19,10 @@ def set_token_cookies(response: Response, access_token: str, refresh_token: str)
     Returns:
         Response with tokens set as cookies
     """
-    # Configuration
-    secure = not settings.DEBUG  # Use Secure flag only in production
+    # Configuration - only use Secure flag in production
+    # For localhost development, Secure flag prevents cookies from being set
+    from django.conf import settings
+    secure = not settings.DEBUG and settings.CSRF_TRUSTED_ORIGINS and 'https' in settings.CSRF_TRUSTED_ORIGINS[0]
     same_site = 'Lax'  # CSRF protection
     
     # Access token cookie (short-lived, 1 day by default)
@@ -60,7 +62,8 @@ def set_access_token_cookie(response: Response, access_token: str) -> Response:
     Returns:
         Response with access token set as cookie
     """
-    secure = not settings.DEBUG
+    from django.conf import settings
+    secure = not settings.DEBUG and settings.CSRF_TRUSTED_ORIGINS and 'https' in settings.CSRF_TRUSTED_ORIGINS[0]
     same_site = 'Lax'
     
     response.set_cookie(
@@ -88,7 +91,8 @@ def set_refresh_token_cookie(response: Response, refresh_token: str) -> Response
     Returns:
         Response with refresh token set as cookie
     """
-    secure = not settings.DEBUG
+    from django.conf import settings
+    secure = not settings.DEBUG and settings.CSRF_TRUSTED_ORIGINS and 'https' in settings.CSRF_TRUSTED_ORIGINS[0]
     same_site = 'Lax'
     
     response.set_cookie(

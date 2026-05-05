@@ -348,7 +348,6 @@ class CustomTokenObtainPairView(TokenObtainPairView):
                 'type': 'object',
                 'properties': {
                     'detail': {'type': 'string', 'description': 'Login successful message'},
-                    'user': {'type': 'object', 'description': 'Authenticated user data'},
                 }
             }
         }
@@ -362,18 +361,9 @@ class CustomTokenObtainPairView(TokenObtainPairView):
             access_token = response.data.get('access')
             refresh_token = response.data.get('refresh')
             
-            # Authenticate user to get user object
-            user = UserService.authenticate_user(
-                request,
-                username=request.data.get('username'),
-                password=request.data.get('password')
-            )
-            
+            # Create simple success response (frontend fetches user from /profile endpoint)
             new_response = Response(
-                {
-                    'detail': 'Login successful',
-                    'user': UserOutputSerializer(user, context={'request': request}).data if user else None,
-                },
+                {'detail': 'Login successful'},
                 status=status.HTTP_200_OK
             )
             

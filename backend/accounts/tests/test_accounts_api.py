@@ -88,9 +88,8 @@ class AccountsAPITestCase(TestCase):
         # Tokens are now in HttpOnly cookies, not in response data
         self.assertIn('access_token', response.cookies)
         self.assertIn('refresh_token', response.cookies)
-        # Response body contains user data
+        # Response body contains success message
         self.assertIn('detail', response.data)
-        self.assertIn('user', response.data)
 
     def test_refresh_token(self):
         token_url = reverse('token_obtain_pair')
