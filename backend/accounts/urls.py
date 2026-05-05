@@ -1,6 +1,6 @@
 from django.urls import path
 from . import views
-from .views import CustomTokenObtainPairView, CustomTokenRefreshView
+from .views import LoginView, RefreshAccessTokenView
 
 urlpatterns = [
     # Users
@@ -25,7 +25,7 @@ urlpatterns = [
 
     # Authentication
     path('register/', views.RegisterView.as_view(), name='register'),
-    path('login/', CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),
-    path('refresh/', CustomTokenRefreshView.as_view(), name='token_refresh'),
+    path('login/', LoginView.as_view(), name='token_obtain_pair'),
+    path('refresh/', RefreshAccessTokenView.as_view(), name='token_refresh'),
     path('logout/', views.LogoutView.as_view(), name='logout'),
 ]

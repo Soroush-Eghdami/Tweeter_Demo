@@ -322,7 +322,7 @@ class RegisterView(APIView):
 
     @extend_schema(
         summary="Register new user",
-        description="Create a new user account.",
+        description="Create a new user account. No authentication required.",
         tags=["authentication"],
         request=RegisterInputSerializer,
         responses={201: UserOutputSerializer},
@@ -336,23 +336,30 @@ class RegisterView(APIView):
         return Response(output.data, status=status.HTTP_201_CREATED)
 
 
-class CustomTokenObtainPairView(TokenObtainPairView):
+class LoginView(TokenObtainPairView):
     @extend_schema(
         summary="Login (obtain JWT tokens)",
-        description="Authenticate with username and password. Tokens are automatically set as HttpOnly, Secure (in production), SameSite=Lax cookies.\\n\\n"
-                   "**Response Cookies:**\\n"
-                   "- access_token: JWT access token (1 day lifetime)\\n"
-                   "- refresh_token: JWT refresh token (7 days lifetime)\\n\\n"
-                   "**Security:** HttpOnly prevents XSS, Secure (HTTPS only in production), SameSite=Lax prevents CSRF.\\n\\n"
-                   "Cookies auto-included in all requests. Mobile apps use Authorization header with Bearer token.",
+        description="Authenticate with username and password. Sets secure HttpOnly cookies with access and refresh tokens.",
         tags=["authentication"],
+        request={
+            'application/json': {
+                'type': 'object',
+                'properties': {
+                    'username': {'type': 'string', 'description': 'Username'},
+                    'password': {'type': 'string', 'description': 'Password'}
+                },
+                'required': ['username', 'password']
+            }
+        },
         responses={
             200: {
                 'type': 'object',
                 'properties': {
-                    'detail': {'type': 'string', 'description': 'Login successful message'},
-                }
-            }
+                    'detail': {'type': 'string', 'description': 'Success message'},
+                },
+                'description': 'Cookies set: access_token (HttpOnly, 1 day), refresh_token (HttpOnly, 7 days)'
+            },
+            401: {'type': 'object', 'description': 'Invalid credentials'}
         }
     )
     def post(self, request: Request, *args: Any, **kwargs: Any) -> Response:
@@ -377,31 +384,27 @@ class CustomTokenObtainPairView(TokenObtainPairView):
         return response
 
 
-class CustomTokenRefreshView(TokenRefreshView):
+class RefreshAccessTokenView(TokenRefreshView):
     @extend_schema(
         summary="Refresh access token",
-        description="Obtain new access token using refresh token from HttpOnly cookie or request body.\\n\\n"
-                   "**Token Sources (priority order):**\\n"
-                   "1. refresh field in request body\\n"
-                   "2. refresh_token cookie (HttpOnly)\\n\\n"
-                   "**Response Cookies:**\\n"
-                   "- access_token: New JWT access token (1 day lifetime)\\n"
-                   "- refresh_token: New refresh token if rotated\\n\\n"
-                   "**Browser:** Automatically sends refresh_token cookie - no body needed.\\n"
-                   "**Mobile/API:** Send {\"refresh\": \"token_string\"} in body.",
+        description="Get new access token using refresh token from cookie (browser) or request body (API/mobile).",
         tags=["authentication"],
         request={
             'application/json': {
                 'type': 'object',
-                'properties': {'refresh': {'type': 'string', 'description': 'Optional - refresh token'}},
-                'required': []  # Not required if using cookies
+                'properties': {
+                    'refresh': {'type': 'string', 'description': 'Refresh token - optional if using HttpOnly cookie'}
+                },
+                'required': []
             }
         },
         responses={
             200: {
                 'type': 'object',
-                'properties': {'detail': {'type': 'string'}}
-            }
+                'properties': {'detail': {'type': 'string', 'description': 'Success message'}},
+                'description': 'New access_token cookie set (1 day lifetime)'
+            },
+            401: {'type': 'object', 'description': 'Invalid or expired refresh token'}
         }
     )
     def post(self, request: Request, *args: Any, **kwargs: Any) -> Response:
@@ -460,11 +463,11 @@ class LogoutView(APIView):
 
     @extend_schema(
         summary="Logout",
-        description="Logout by clearing token cookies. The refresh token from HttpOnly cookie or request body will be blacklisted.",
+        description="Logout: clear token cookies and blacklist refresh token. Browser automatically sends cookie; API clients send in body.",
         tags=["authentication"],
         request=LogoutInputSerializer,
         responses={
-            205: OpenApiResponse(description="Successfully logged out"),
+            205: OpenApiResponse(description="Successfully logged out. Cookies cleared and token blacklisted."),
             400: OpenApiResponse(description="Logout failed"),
         }
     )
@@ -527,3 +530,29 @@ class PasswordChangeView(APIView):
         except ValueError as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
         return Response({"detail": "Password changed successfully."}, status=status.HTTP_200_OK)
+
+
+# Exported Views for Schema
+__all__ = [
+    # User Management
+    'UserListView',
+    'UserDetailView',
+    'UserProfileView',
+    # Follow/Unfollow
+    'FollowUserView',
+    'UnfollowUserView',
+    # Search
+    'SearchUsersView',
+    # Timelines
+    'PublicTimelineView',
+    'PrivateTimelineView',
+    'UserTweetsView',
+    'UserFollowersView',
+    'UserFollowingView',
+    # Authentication
+    'RegisterView',
+    'LoginView',
+    'RefreshAccessTokenView',
+    'LogoutView',
+    'PasswordChangeView',
+]

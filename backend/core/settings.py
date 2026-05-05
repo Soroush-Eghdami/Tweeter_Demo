@@ -91,6 +91,24 @@ SPECTACULAR_SETTINGS = {
     'SWAGGER_UI_DIST': 'SIDECAR',
     'SWAGGER_UI_TEMPLATE': 'SIDECAR',
     'REDOC_DIST': 'SIDECAR',
+    'SECURITY_SCHEMES': {
+        'cookieAuth': {
+            'type': 'apiKey',
+            'in': 'cookie',
+            'name': 'access_token',
+            'description': 'JWT access token stored in HttpOnly cookie (set during login)'
+        },
+        'Bearer': {
+            'type': 'http',
+            'scheme': 'bearer',
+            'bearerFormat': 'JWT',
+            'description': 'JWT access token via Authorization header (alternative to cookies for mobile/API clients)'
+        }
+    },
+    'DEFAULT_SECURITY': [
+        {'cookieAuth': []},
+        {'Bearer': []}
+    ],
 }
 
 MIDDLEWARE = [
