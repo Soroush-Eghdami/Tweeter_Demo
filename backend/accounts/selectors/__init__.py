@@ -6,6 +6,7 @@ from .timeline import (
     get_user_tweets_queryset,
 )
 from .user import (
+    get_all_users,
     get_user_by_id,
     get_user_by_username,
     is_following,

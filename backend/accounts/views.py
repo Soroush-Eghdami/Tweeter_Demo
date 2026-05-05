@@ -11,11 +11,13 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from drf_spectacular.utils import extend_schema, OpenApiResponse, OpenApiParameter
 from accounts.serializers import (
     UserOutputSerializer, UserUpdateInputSerializer, FollowerOutputSerializer,
-    RegisterInputSerializer, LogoutInputSerializer, PasswordChangeInputSerializer
+    RegisterInputSerializer, LogoutInputSerializer, PasswordChangeInputSerializer,
+    FollowInputSerializer, UnfollowInputSerializer
 )
 from accounts.services import UserService
 from accounts.auth_utils import set_token_cookies, clear_token_cookies, set_access_token_cookie, set_refresh_token_cookie
 from accounts.selectors import (
+    get_all_users,
     get_user_by_id, search_users,
     get_public_timeline_queryset,
     get_private_timeline_queryset,
@@ -45,7 +47,7 @@ class UserListView(APIView):
         responses={200: UserOutputSerializer(many=True)},
     )
     def get(self, request: Request) -> Response:
-        queryset = User.objects.all().order_by('-date_joined')
+        queryset = get_all_users()
         paginator = PageNumberPagination()
         page = paginator.paginate_queryset(queryset, request)
         serializer = UserOutputSerializer(page, many=True, context={'request': request})
@@ -122,13 +124,7 @@ class FollowUserView(APIView):
     @extend_schema(
         summary="Follow a user",
         description="Follow a user by providing their UUID in the request body.",
-        request={
-            'application/json': {
-                'type': 'object',
-                'properties': {'followee_id': {'type': 'string', 'format': 'uuid'}},
-                'required': ['followee_id']
-            }
-        },
+        request=FollowInputSerializer,
         responses={
             201: FollowerOutputSerializer,
             400: OpenApiResponse(description="Bad request (e.g., follow self or already following)"),
@@ -137,14 +133,18 @@ class FollowUserView(APIView):
         tags=["follow"]
     )
     def post(self, request: Request) -> Response:
-        followee_id = request.data.get('followee_id', '')
+        serializer = FollowInputSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        
         try:
-            follower_obj = UserService.follow_create(request.user, followee_id)
+            follower_obj = UserService.follow_create(
+                request.user,
+                serializer.validated_data['followee_id']
+            )
+            output_serializer = FollowerOutputSerializer(follower_obj)
+            return Response(output_serializer.data, status=status.HTTP_201_CREATED)
         except ValueError as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-        serializer = FollowerOutputSerializer(follower_obj)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
 class UnfollowUserView(APIView):
@@ -153,13 +153,7 @@ class UnfollowUserView(APIView):
     @extend_schema(
         summary="Unfollow a user",
         description="Unfollow a user by providing their UUID in the request body.",
-        request={
-            'application/json': {
-                'type': 'object',
-                'properties': {'followee_id': {'type': 'string', 'format': 'uuid'}},
-                'required': ['followee_id']
-            }
-        },
+        request=UnfollowInputSerializer,
         responses={
             200: OpenApiResponse(description="Unfollowed successfully"),
             400: OpenApiResponse(description="Bad request (e.g., not following)"),
@@ -168,13 +162,17 @@ class UnfollowUserView(APIView):
         tags=["follow"]
     )
     def delete(self, request: Request) -> Response:
-        followee_id = request.data.get('followee_id', '')
+        serializer = UnfollowInputSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        
         try:
-            UserService.unfollow_delete(request.user, followee_id)
+            UserService.unfollow_delete(
+                request.user,
+                serializer.validated_data['followee_id']
+            )
+            return Response({'message': 'Unfollowed successfully'}, status=status.HTTP_200_OK)
         except ValueError as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-        return Response({'message': 'Unfollowed successfully'}, status=status.HTTP_200_OK)
 
 
 # =============================================================================
@@ -341,7 +339,12 @@ class RegisterView(APIView):
 class CustomTokenObtainPairView(TokenObtainPairView):
     @extend_schema(
         summary="Login (obtain JWT tokens)",
-        description="Authenticate with username and password to receive access and refresh tokens in HttpOnly cookies.",
+        description="Authenticate with username and password. Tokens are automatically set as HttpOnly, Secure (in production), SameSite=Lax cookies.\\n\\n"
+                   "**Response Cookies:**\\n"
+                   "- access_token: JWT access token (1 day lifetime)\\n"
+                   "- refresh_token: JWT refresh token (7 days lifetime)\\n\\n"
+                   "**Security:** HttpOnly prevents XSS, Secure (HTTPS only in production), SameSite=Lax prevents CSRF.\\n\\n"
+                   "Cookies auto-included in all requests. Mobile apps use Authorization header with Bearer token.",
         tags=["authentication"],
         responses={
             200: {
@@ -377,12 +380,20 @@ class CustomTokenObtainPairView(TokenObtainPairView):
 class CustomTokenRefreshView(TokenRefreshView):
     @extend_schema(
         summary="Refresh access token",
-        description="Obtain a new access token using the refresh token from HttpOnly cookie.",
+        description="Obtain new access token using refresh token from HttpOnly cookie or request body.\\n\\n"
+                   "**Token Sources (priority order):**\\n"
+                   "1. refresh field in request body\\n"
+                   "2. refresh_token cookie (HttpOnly)\\n\\n"
+                   "**Response Cookies:**\\n"
+                   "- access_token: New JWT access token (1 day lifetime)\\n"
+                   "- refresh_token: New refresh token if rotated\\n\\n"
+                   "**Browser:** Automatically sends refresh_token cookie - no body needed.\\n"
+                   "**Mobile/API:** Send {\"refresh\": \"token_string\"} in body.",
         tags=["authentication"],
         request={
             'application/json': {
                 'type': 'object',
-                'properties': {'refresh': {'type': 'string'}},
+                'properties': {'refresh': {'type': 'string', 'description': 'Optional - refresh token'}},
                 'required': []  # Not required if using cookies
             }
         },
@@ -394,12 +405,29 @@ class CustomTokenRefreshView(TokenRefreshView):
         }
     )
     def post(self, request: Request, *args: Any, **kwargs: Any) -> Response:
-        # If no refresh token in request body, try to get it from cookies
-        if 'refresh' not in request.data:
+        # Try to get refresh token from request data first, then from cookies
+        refresh_token = None
+        
+        # Check if refresh token is in request body
+        if request.data and 'refresh' in request.data:
+            refresh_token = request.data.get('refresh')
+        
+        # If not in body, try to get from HttpOnly cookie
+        if not refresh_token:
             refresh_token = request.COOKIES.get('refresh_token')
-            if refresh_token:
-                request.data._mutable = True if hasattr(request.data, '_mutable') else True
+        
+        # If we found a refresh token from cookies, add it to request data
+        if refresh_token and (not request.data or 'refresh' not in request.data):
+            # Create a mutable copy of request data
+            if hasattr(request.data, '_mutable'):
+                # QueryDict - make mutable, add refresh token, make immutable
+                request.data._mutable = True
                 request.data['refresh'] = refresh_token
+                request.data._mutable = False
+            else:
+                # Fallback for other dict-like objects
+                request._full_data = dict(request.data or {}) if request.data else {}
+                request._full_data['refresh'] = refresh_token
         
         # Get response from parent class
         response = super().post(request, *args, **kwargs)
@@ -432,12 +460,12 @@ class LogoutView(APIView):
 
     @extend_schema(
         summary="Logout",
-        description="Logout by clearing token cookies. Optionally provide refresh token in body to blacklist it (for extra security).",
+        description="Logout by clearing token cookies. The refresh token from HttpOnly cookie or request body will be blacklisted.",
         tags=["authentication"],
         request=LogoutInputSerializer,
         responses={
             205: OpenApiResponse(description="Successfully logged out"),
-            400: OpenApiResponse(description="Invalid token"),
+            400: OpenApiResponse(description="Logout failed"),
         }
     )
     def post(self, request: Request) -> Response:
@@ -445,16 +473,22 @@ class LogoutView(APIView):
         serializer.is_valid(raise_exception=True)
         
         try:
+            # Get refresh token from request body or cookies (cookies take precedence for auto-logout)
             data = cast(dict[str, Any], serializer.validated_data)
-            refresh_token = data.get('refresh') or request.COOKIES.get('refresh_token')
+            refresh_token = data.get('refresh')
             
-            # Blacklist refresh token if provided
+            # If not provided in body, get from HttpOnly cookie
+            if not refresh_token:
+                refresh_token = request.COOKIES.get('refresh_token')
+            
+            # Blacklist refresh token if available (for extra security)
             if refresh_token:
                 try:
                     token = RefreshToken(refresh_token)
                     token.blacklist()
                 except Exception:
-                    pass  # Token might already be invalid, that's okay
+                    # Token might already be invalid or already blacklisted, that's okay
+                    pass
             
             # Create response and clear cookies
             response = Response(
@@ -463,8 +497,11 @@ class LogoutView(APIView):
             )
             response = clear_token_cookies(response)
             return response
-        except Exception:
-            return Response({"detail": "Logout failed."}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response(
+                {"detail": "Logout failed."}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
 
 class PasswordChangeView(APIView):

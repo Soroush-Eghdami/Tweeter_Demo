@@ -100,6 +100,16 @@ class LogoutInputSerializer(serializers.Serializer):
     refresh = serializers.CharField(required=False, write_only=True, allow_blank=True)
 
 
+class FollowInputSerializer(serializers.Serializer):
+    """Input serializer for following a user."""
+    followee_id = serializers.CharField(required=True, write_only=True)
+
+
+class UnfollowInputSerializer(serializers.Serializer):
+    """Input serializer for unfollowing a user."""
+    followee_id = serializers.CharField(required=True, write_only=True)
+
+
 # =====================================================================
 # Follower Serializers
 # =====================================================================

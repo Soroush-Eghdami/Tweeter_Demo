@@ -47,6 +47,11 @@ def validate_username(username: str, exclude_user_id: Optional[str] = None) -> N
         raise ValueError("Username cannot contain spaces.")
 
 
+def get_all_users() -> QuerySet[User]:
+    """Get all users ordered by date joined (newest first)."""
+    return User.objects.all().order_by('-date_joined')
+
+
 def search_users(query: str) -> QuerySet[User]:
     filter_set = UserSearchFilter({'q': query}, queryset=User.objects.all())
     if not filter_set.is_valid():
