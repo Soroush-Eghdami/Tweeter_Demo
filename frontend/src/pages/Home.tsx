@@ -82,7 +82,7 @@ const Home = () => {
         </div>
         <div
           onClick={() => setIsCreatedPost((prev) => !prev)}
-          className={`${scrollBottomClass} ${isCreatedPost ? "rotate-45" : "rotate-0"} fixed right-20 cursor-pointer hover:scale-95 transition-all duration-400 ease-in-out z-50`}
+          className={`${scrollBottomClass} ${isCreatedPost ? "rotate-45" : "rotate-0"} fixed right-20 cursor-pointer hover:scale-95 transition-all duration-400 ease-in-out z-40`}
           style={{ bottom: `${iconBottom}px` }}
         >
           <img src={newTweet} alt="New-Tweet" className="size-21" />

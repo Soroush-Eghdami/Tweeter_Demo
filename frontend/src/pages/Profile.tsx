@@ -8,6 +8,7 @@ import RightBox from "../components/profile/RightBox";
 import LeftBox from "./../components/profile/LeftBox";
 import FollowingFollower from "../components/followingFollowerPopUp/FollowingFollowerPopUp";
 import ProfilePictureEdit from "../components/profilePictureEdit/ProfilePictureEdit";
+import { useUserProfile } from "../hooks/useUserProfile";
 import { userTweetInfo } from "../contents/userTweetInfo";
 import { userRetweetInfo } from "../contents/userRetweetInfo";
 import { userInfo } from "../contents/userInfo";
@@ -23,8 +24,10 @@ import bio from "../assets/icons/profile/bio.svg";
 import retweet from "../assets/icons/profile/retweet.svg";
 import retweetGreen from "../assets/icons/profile/repeat.svg";
 import editUser from "../assets/icons/profile/edit-username.svg";
+import LoadingPage from "../components/loading/LoadingPage";
 
 const Profile = () => {
+  const { data, isLoading } = useUserProfile();
   const [isTweetsOpen, setIsTweetsOpen] = useState(true);
   const [isProfilePicOpen, setIsProfilePicOpen] = useState(false);
   const [isFollowed, setIsFollowed] = useState(false);
@@ -38,6 +41,7 @@ const Profile = () => {
 
   return (
     <div className="min-h-fit w-full bg-custom-dark-gradient">
+      {isLoading && <LoadingPage />}
       <div>
         <FollowingFollower
           setIsUserListOpen={setIsUserListOpen}
@@ -64,7 +68,7 @@ const Profile = () => {
 
       <div className="flex gap-6 transition-none sm:px-6 lg:px-8 mt-32">
         <LeftBox
-          profile={userInfo}
+          profile={data}
           editUserIcon={editUser}
           emailIcon={email}
           calendarIcon={calender}
