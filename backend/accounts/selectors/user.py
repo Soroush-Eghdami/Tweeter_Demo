@@ -57,3 +57,26 @@ def search_users(query: str) -> QuerySet[User]:
     if not filter_set.is_valid():
         raise ValueError("Invalid search query")
     return filter_set.qs.order_by('username')
+
+
+def get_followers_count(user: User) -> int:
+    return Follower.objects.filter(followee=user).count()  # type: ignore[union-attr]
+
+
+def get_following_count(user: User) -> int:
+    return Follower.objects.filter(follower=user).count()  # type: ignore[union-attr]
+
+
+def get_tweets_count(user: User) -> int:
+    from tweets.models import Tweet
+    return Tweet.objects.filter(user=user).count()  # type: ignore[union-attr]
+
+
+def get_likes_received_count(user: User) -> int:
+    from tweets.models import Like
+    return Like.objects.filter(tweet__user=user).count()  # type: ignore[union-attr]
+
+
+def get_retweets_made_count(user: User) -> int:
+    from tweets.models import ReTweet
+    return ReTweet.objects.filter(user=user).count()  # type: ignore[union-attr]
