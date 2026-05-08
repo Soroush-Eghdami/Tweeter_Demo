@@ -8,10 +8,11 @@ const HomeSideProfileBox = () => {
   const { isLoggedIn, isLoading } = useIsLoggedIn();
   const navigation = useNavigate();
 
-  if (isLoading) return <LoadingPage />;
+  // if (isLoading) return <LoadingPage />;
 
   return (
     <div className="relative h-fit">
+      {isLoading && <LoadingPage />}
       {isLoggedIn ? (
         <div className="border-2 border-white bg-white/10 backdrop-filter-md backdrop-blur-[35px] backdrop-brightness-[1.5] rounded-3xl py-7 h-fit">
           <div className="mb-11 px-26">

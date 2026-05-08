@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
 import useIsLoggedIn from "../hooks/global-hooks/useIsLoggedIn";
+import { useLogout } from "../hooks/useLogout";
 import Search from "./Search";
 import logo from "../assets/icons/pigeon.svg";
 import home from "../assets/icons/home.svg";
@@ -11,7 +13,18 @@ import login from "../assets/icons/login.svg";
 const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const { isLoggedIn } = useIsLoggedIn();
+  const { mutate } = useLogout();
   const navigation = useNavigate();
+
+  const logoutFunc = () => {
+    try {
+      mutate();
+      toast.success("User Logged Out Successfully!");
+      navigation("/login");
+    } catch (error) {
+      toast.error("Logging Out Failed!");
+    }
+  };
 
   useEffect(() => {
     const handleScrolled = () => {
@@ -63,7 +76,7 @@ const Navbar = () => {
                 src={logout}
                 alt="Logout"
                 className="size-7.5 cursor-pointer hover:scale-115 transition-all duration-100 ease-in-out"
-                onClick={() => navigation("/login")}
+                onClick={logoutFunc}
               />
             )}
           </div>
