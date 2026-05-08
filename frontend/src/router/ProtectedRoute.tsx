@@ -1,12 +1,12 @@
 import { Navigate } from "react-router-dom";
-import { useUserProfile } from "../hooks/useUserProfile";
+import { useMyProfile } from "../hooks/useMyProfile";
 
 interface ProtectedRoutePropsType {
   children: React.ReactNode;
 }
 
 const ProtectedRoute = ({ children }: ProtectedRoutePropsType) => {
-  const { data, isLoading } = useUserProfile();
+  const { data, isLoading } = useMyProfile();
 
   if (isLoading)
     return (

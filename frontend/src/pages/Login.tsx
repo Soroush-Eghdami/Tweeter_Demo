@@ -26,7 +26,7 @@ const Login = () => {
       },
       {
         onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: ["user"] });
+          queryClient.invalidateQueries({ queryKey: ["myProf"] });
 
           toast.success("User Logged in Successfully!");
           navigation("/");

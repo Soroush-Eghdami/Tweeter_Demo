@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import UserTweet from "../components/profile/UserTweet";
 import UserRetweet from "../components/profile/UserRetweet";
 import EditBanner from "../components/profileBannerEdit/EditBanner";
 import HeaderProfile from "../components/profile/HeaderProfile";
 import RightBox from "../components/profile/RightBox";
-import LeftBox from "./../components/profile/LeftBox";
+import LeftBox from "../components/profile/LeftBox";
 import FollowingFollower from "../components/followingFollowerPopUp/FollowingFollowerPopUp";
 import ProfilePictureEdit from "../components/profilePictureEdit/ProfilePictureEdit";
 import { useUserProfile } from "../hooks/useUserProfile";
@@ -26,8 +26,9 @@ import retweetGreen from "../assets/icons/profile/repeat.svg";
 import editUser from "../assets/icons/profile/edit-username.svg";
 import LoadingPage from "../components/loading/LoadingPage";
 
-const Profile = () => {
-  const { data, isLoading } = useUserProfile();
+const UserProfile = () => {
+  const { id } = useParams();
+  const { data, isLoading } = useUserProfile(id || "");
   const [isTweetsOpen, setIsTweetsOpen] = useState(true);
   const [isProfilePicOpen, setIsProfilePicOpen] = useState(false);
   const [isFollowed, setIsFollowed] = useState(false);
@@ -39,9 +40,10 @@ const Profile = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
 
+  if (isLoading) return <LoadingPage />;
+
   return (
     <div className="min-h-fit w-full bg-custom-dark-gradient">
-      {isLoading && <LoadingPage />}
       <div>
         <FollowingFollower
           setIsUserListOpen={setIsUserListOpen}
@@ -57,7 +59,9 @@ const Profile = () => {
 
       <div className="w-full">
         <HeaderProfile
-          avatarSrc={avatar}
+          isMyProfile={false}
+          avatarSrc={data.profile_picture || avatar}
+          bannerSrc={data.profile_banner}
           editIconSrc={edit}
           isFollowed={isFollowed}
           onAvatarClick={() => setIsProfilePicOpen((prev) => !prev)}
@@ -68,6 +72,7 @@ const Profile = () => {
 
       <div className="flex gap-6 transition-none sm:px-6 lg:px-8 mt-32">
         <LeftBox
+          isMyProfile={false}
           profile={data}
           editUserIcon={editUser}
           emailIcon={email}
@@ -116,4 +121,4 @@ const Profile = () => {
   );
 };
 
-export default Profile;
+export default UserProfile;
