@@ -7,7 +7,7 @@ from django.contrib.auth import get_user_model
 from rest_framework.test import APIClient
 from rest_framework import status
 from accounts.models import Follower, PasswordHistory
-from tweets.models import Tweet, Like
+from tweets.models import Tweet, Like, ReTweet
 
 User = get_user_model()
 
@@ -49,15 +49,22 @@ class AccountsAPITestCase(TestCase):
             is_public_user=True
         )
 
-        # Obtain JWT token for user1
+        # Obtain JWT token for user1 from cookies
         token_url = reverse('token_obtain_pair')
         response = self.client.post(token_url, {'username': 'alice', 'password': 'alicepass'}, format='json')
-        self.token = response.data['access']
+        self.token = response.cookies['access_token'].value
+        self.refresh_token = response.cookies['refresh_token'].value
         self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {self.token}')
 
         # Create some tweets
         self.tweet_public = Tweet.objects.create(user=self.user1, content='Public tweet from alice')
         self.tweet_private = Tweet.objects.create(user=self.user2, content='Private tweet from bob')
+
+        # Add a like on user1's tweet so likes_received > 0
+        Like.objects.create(user=self.user2, tweet=self.tweet_public)
+
+        # user1 retweets user2's private tweet → retweets_made = 1
+        ReTweet.objects.create(user=self.user1, original_tweet=self.tweet_private)
 
     # ------------------------------------------------------------------
     # Authentication (Register, Login, Logout, Refresh)
@@ -82,29 +89,32 @@ class AccountsAPITestCase(TestCase):
         data = {'username': 'alice', 'password': 'alicepass'}
         response = self.client.post(url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertIn('access', response.data)
-        self.assertIn('refresh', response.data)
+        self.assertIn('access_token', response.cookies)
+        self.assertIn('refresh_token', response.cookies)
+        self.assertIn('detail', response.data)
 
     def test_refresh_token(self):
         token_url = reverse('token_obtain_pair')
         resp = self.client.post(token_url, {'username': 'alice', 'password': 'alicepass'}, format='json')
-        refresh = resp.data['refresh']
+        refresh_token = resp.cookies['refresh_token'].value
+
         refresh_url = reverse('token_refresh')
-        response = self.client.post(refresh_url, {'refresh': refresh}, format='json')
+        response = self.client.post(refresh_url, {'refresh': refresh_token}, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertIn('access', response.data)
+        self.assertIn('access_token', response.cookies)
+        self.assertIn('detail', response.data)
 
     def test_logout(self):
         token_url = reverse('token_obtain_pair')
         resp = self.client.post(token_url, {'username': 'alice', 'password': 'alicepass'}, format='json')
-        refresh = resp.data['refresh']
+        refresh_token = resp.cookies['refresh_token'].value
+
         logout_url = reverse('logout')
-        response = self.client.post(logout_url, {'refresh': refresh}, format='json')
+        response = self.client.post(logout_url, {'refresh': refresh_token}, format='json')
         self.assertEqual(response.status_code, status.HTTP_205_RESET_CONTENT)
 
-        # Try to use the blacklisted refresh token
         refresh_url = reverse('token_refresh')
-        response = self.client.post(refresh_url, {'refresh': refresh}, format='json')
+        response = self.client.post(refresh_url, {'refresh': refresh_token}, format='json')
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     # ------------------------------------------------------------------
@@ -118,6 +128,18 @@ class AccountsAPITestCase(TestCase):
         self.assertIn('profile_picture', response.data)
         self.assertIn('profile_banner', response.data)
         self.assertIn('is_following', response.data)
+        # New fields
+        self.assertIn('followers_count', response.data)
+        self.assertIn('following_count', response.data)
+        self.assertIn('tweets_count', response.data)
+        self.assertIn('likes_received', response.data)
+        self.assertIn('retweets_made', response.data)
+        # user1 has one tweet, one like on it, and one retweet made
+        self.assertEqual(response.data['tweets_count'], 1)
+        self.assertEqual(response.data['likes_received'], 1)
+        self.assertEqual(response.data['retweets_made'], 1)
+        self.assertEqual(response.data['followers_count'], 0)
+        self.assertEqual(response.data['following_count'], 0)
 
     def test_patch_profile_update_email_and_bio(self):
         url = reverse('user-profile')
@@ -138,7 +160,7 @@ class AccountsAPITestCase(TestCase):
 
     def test_patch_profile_username_already_taken(self):
         url = reverse('user-profile')
-        data = {'username': 'bob'}  # user2 already has this
+        data = {'username': 'bob'}
         response = self.client.patch(url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn('username', response.data['detail'])
@@ -213,7 +235,6 @@ class AccountsAPITestCase(TestCase):
         self.assertIn('confirm_new_password', response.data['detail'])
 
     def test_change_password_reuse_old(self):
-        # Change password once
         url = reverse('password-change')
         data = {
             'old_password': 'alicepass',
@@ -221,7 +242,6 @@ class AccountsAPITestCase(TestCase):
             'confirm_new_password': 'NewSecurePass456!'
         }
         self.client.post(url, data, format='json')
-        # Try to reuse the old password
         data = {
             'old_password': 'NewSecurePass456!',
             'new_password': 'alicepass',
@@ -229,7 +249,7 @@ class AccountsAPITestCase(TestCase):
         }
         response = self.client.post(url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn('recently', response.data['error'])   # or a full match
+        self.assertIn('recently', response.data['error'])
 
     # ------------------------------------------------------------------
     # User List/Detail
@@ -247,6 +267,12 @@ class AccountsAPITestCase(TestCase):
         self.assertEqual(response.data['username'], 'bob')
         self.assertIn('is_following', response.data)
         self.assertIn('profile_picture', response.data)
+        # New fields present
+        self.assertIn('followers_count', response.data)
+        self.assertIn('following_count', response.data)
+        self.assertIn('tweets_count', response.data)
+        self.assertIn('likes_received', response.data)
+        self.assertIn('retweets_made', response.data)
 
     # ------------------------------------------------------------------
     # Follow/Unfollow
@@ -289,14 +315,14 @@ class AccountsAPITestCase(TestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         contents = [t['message'] for t in response.data['results']]
         self.assertIn('Public tweet from alice', contents)
-        self.assertNotIn('Private tweet from bob', contents)  # user1 doesn't follow user2
+        self.assertNotIn('Private tweet from bob', contents)
 
     def test_public_timeline_includes_followed_private_tweets(self):
         Follower.objects.create(follower=self.user1, followee=self.user2)
         url = reverse('public-timeline')
         response = self.client.get(url)
         contents = [t['message'] for t in response.data['results']]
-        self.assertIn('Private tweet from bob', contents)  # now following
+        self.assertIn('Private tweet from bob', contents)
 
     def test_private_timeline_shows_only_followed(self):
         Follower.objects.create(follower=self.user1, followee=self.user2)
@@ -304,8 +330,7 @@ class AccountsAPITestCase(TestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         contents = [t['message'] for t in response.data['results']]
-        self.assertIn('Private tweet from bob', contents)  # followed user
-        # Own tweets should NOT appear in private timeline (unless self-following)
+        self.assertIn('Private tweet from bob', contents)
         self.assertNotIn('Public tweet from alice', contents)
 
     def test_user_tweets_endpoint(self):

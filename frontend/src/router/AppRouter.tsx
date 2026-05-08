@@ -6,6 +6,7 @@ import Profile from "../pages/Profile";
 import EditProfile from "../pages/EditProfile";
 import Login from "../pages/Login";
 import Register from "../pages/Register";
+import ProtectedRoute from "./ProtectedRoute";
 
 const routes: RouteObject[] = [
   {
@@ -14,8 +15,22 @@ const routes: RouteObject[] = [
     children: [
       { index: true, element: <Home /> },
       { path: "home", element: <Home /> },
-      { path: "edit-profile", element: <EditProfile /> },
-      { path: "profile", element: <Profile /> },
+      {
+        path: "edit-profile",
+        element: (
+          <ProtectedRoute>
+            <EditProfile />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "profile",
+        element: (
+          <ProtectedRoute>
+            <Profile />
+          </ProtectedRoute>
+        ),
+      },
       { path: "comment", element: <CommentPage /> },
     ],
   },

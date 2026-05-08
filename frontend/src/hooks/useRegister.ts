@@ -1,17 +1,25 @@
 import { useMutation } from "@tanstack/react-query";
 import api from "../api-services/api";
 
-const getUserInfo = async () => {
-  try {
-    const response = await api.get("/login");
-    return response.data;
-  } catch (error) {
-    console.log(error);
-  }
+interface newUserInfoType {
+  username: string;
+  password: string;
+  password2: string;
+  email: string;
+  first_name: string;
+  last_name: string;
+}
+
+const newUserInfo = async (userData: newUserInfoType) => {
+  const response = await api.post("/accounts/register/", userData);
+  return response.data;
 };
 
 export const useRegister = () => {
   return useMutation({
-    mutationFn: getUserInfo,
+    mutationFn: newUserInfo,
+    onError: (error) => {
+      console.error("Registration failed:", error);
+    },
   });
 };

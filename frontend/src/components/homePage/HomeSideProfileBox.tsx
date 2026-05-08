@@ -1,11 +1,14 @@
 import { useNavigate } from "react-router-dom";
-import useIsLoggedIn from "../../hooks/global-hooks/useIsLoggedIn";
 import HomeProfileFilled from "./HomeProfileFilled";
+import LoadingPage from "../loading/LoadingPage";
+import useIsLoggedIn from "../../hooks/global-hooks/useIsLoggedIn";
 import profilePicture from "../../assets/icons/profile-default.svg";
 
 const HomeSideProfileBox = () => {
-  const { isLoggedIn } = useIsLoggedIn();
+  const { isLoggedIn, isLoading } = useIsLoggedIn();
   const navigation = useNavigate();
+
+  if (isLoading) return <LoadingPage />;
 
   return (
     <div className="relative h-fit">

@@ -7,22 +7,21 @@ class CustomUserAdmin(UserAdmin):
     list_display = ('username', 'email', 'first_name', 'last_name', 'is_staff', 'id', 'custom_id', 'is_public_status')
     list_filter = ('is_staff', 'is_superuser', 'is_active')
     
-    fieldsets = UserAdmin.fieldsets + (
+    fieldsets = UserAdmin.fieldsets + ( # type: ignore[operator]
         ('Profile Information', {
             'fields': ('bio', 'profile_picture', 'profile_banner'),
         }),
     )
     
-    add_fieldsets = UserAdmin.add_fieldsets + (
+    add_fieldsets = UserAdmin.add_fieldsets + ( # type: ignore[operator]
         ('Profile Information', {
             'fields': ('bio', 'profile_picture', 'profile_banner'),
         }),
     )
     
+    @admin.display(description='Public Status', boolean=True)
     def is_public_status(self, obj):
         return obj.is_public
-    is_public_status.short_description = 'Public Status'
-    is_public_status.boolean = True
 
 
 admin.site.register(User, CustomUserAdmin)

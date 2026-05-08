@@ -1,89 +1,77 @@
-import { Link, useNavigate } from "react-router-dom";
-import { useState } from "react";
-import username from "../assets/icons/login/username.svg";
-import password from "../assets/icons/login/password.svg";
-import openEye from "../assets/icons/login/opened-eye.svg";
-import closeEye from "../assets/icons/login/closed-eye.svg";
+import { useForm } from "react-hook-form";
+import { useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
+import { useQueryClient } from "@tanstack/react-query";
+import UsernameInput from "../components/loginRegister/UsernameInput";
+import PasswordInput from "../components/loginRegister/PasswordInput";
+import { useLogin } from "../hooks/useLogin";
+import type { LoginFormType } from "../types/FormTypes";
 
 const Login = () => {
-  const [isOpenEye, setIsOpenEye] = useState(true);
-
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<LoginFormType>();
+  const { mutate } = useLogin();
   const navigation = useNavigate();
+  const queryClient = useQueryClient();
+
+  const onSubmit = (data: LoginFormType) => {
+    mutate(
+      {
+        username: data.username,
+        password: data.password,
+      },
+      {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: ["user"] });
+
+          toast.success("User Logged in Successfully!");
+          navigation("/");
+        },
+        onError: () => {
+          toast.error("Login Failed!");
+        },
+      },
+    );
+
+    reset();
+  };
 
   return (
     <div className="bg-custom-login-gradient min-h-dvh">
       <div className="pt-32">
-        <form className="container flex flex-col items-center justify-center gap-2 text-white max-w-[30%] mx-auto shadow-[0_0px_30px_rgba(0,0,0,0.4)] backdrop-filter-md backdrop-blur-[35px] backdrop-brightness-[1.5] rounded-3xl">
-          <div className="pt-12 pb-6 px-4 mt-4">
-            <p className="text-center text-3xl font-semibold"> Welcome!</p>
-          </div>
-          <div className="w-[70%]">
-            <div className="flex flex-row items-center gap-1.5 pl-1 pb-1">
-              <img src={username} alt="username" className="size-5" />
-              <label
-                htmlFor="username"
-                className="block text-left text-[14px] font-medium"
-              >
-                Username
-              </label>
-            </div>
-            <input
-              type="text"
-              name="username"
-              id="username"
-              className="h-13 pb-1 px-3 mb-2 rounded-xl border-[#383838] backdrop-filter-md backdrop-blur-[35px] backdrop-brightness-[6] bg-white/10 placeholder:text-[14px] w-full focus:outline-none"
-              placeholder="Enter your Username ..."
-            />
-          </div>
-          <div className="w-[70%]">
-            <div className="flex flex-row items-center gap-1.5 pl-1 pb-1">
-              <img src={password} alt="password" className="size-4.5" />
+        <form
+          className="container flex flex-col items-center justify-center gap-2 text-white max-w-[30%] mx-auto rounded-3xl shadow-[0_0px_30px_rgba(0,0,0,0.4)] backdrop-filter-md backdrop-blur-[35px] backdrop-brightness-[1.5]"
+          onSubmit={handleSubmit(onSubmit)}
+        >
+          <p className="text-center text-3xl font-semibold pt-12 pb-8 px-4 mt-4">
+            Welcome!
+          </p>
 
-              <label
-                htmlFor="password"
-                className="block text-left text-[14px] font-medium"
-              >
-                Password
-              </label>
-            </div>
-            <div className="relative">
-              <input
-                type={isOpenEye ? "password" : "text"}
-                name="password"
-                id="password"
-                className="h-13 pb-1 px-3 rounded-xl border-[#383838] backdrop-filter-md backdrop-blur-[35px] backdrop-brightness-[6] bg-white/10 placeholder:text-[14px] w-full focus:outline-none"
-                placeholder="Enter your Password ..."
-              />
-              {isOpenEye ? (
-                <img
-                  onClick={() => setIsOpenEye((prev) => !prev)}
-                  src={closeEye}
-                  alt="close-eye"
-                  className="absolute right-4.5 top-4.5 cursor-pointer"
-                />
-              ) : (
-                <img
-                  onClick={() => setIsOpenEye((prev) => !prev)}
-                  src={openEye}
-                  alt="open-eye"
-                  className="absolute right-4.5 top-5 cursor-pointer"
-                />
-              )}
-            </div>
+          {/* Username */}
+          <UsernameInput register={register} error={errors.username} />
+          {/* Password */}
+          <div className="w-[70%]">
+            <PasswordInput register={register} error={errors.password} />
           </div>
 
           <button
-            onClick={() => navigation("/")}
-            className="w-[70%] rounded-xl font-bold px-16 py-3 bg-white text-black mt-14 cursor-pointer hover:bg-gray-200"
+            type="submit"
+            className="w-[70%] rounded-xl font-bold px-16 py-3 bg-white text-black mt-12 cursor-pointer hover:bg-gray-200"
           >
             Login
           </button>
-
-          <p className="mb-12">
+          <p className="mb-14">
             Don't have an account?{" "}
-            <Link to="/register" className="underline hover:text-blue-400">
+            <span
+              className="underline cursor-pointer hover:text-blue-400"
+              onClick={() => navigation("/register")}
+            >
               Register Now
-            </Link>
+            </span>
           </p>
         </form>
       </div>

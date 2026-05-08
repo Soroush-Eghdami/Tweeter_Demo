@@ -1,9 +1,9 @@
+from typing import Any
 from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
 from drf_spectacular.utils import extend_schema_field, OpenApiTypes
 from accounts.models import Follower
-from accounts.services import UserService
 from accounts.selectors import is_following
 
 User = get_user_model()
@@ -13,7 +13,7 @@ User = get_user_model()
 # User Output Serializers
 # =====================================================================
 
-class UserLiteSerializer(serializers.ModelSerializer):
+class UserLiteOutputSerializer(serializers.ModelSerializer):
     """Lightweight user representation for nested use (e.g., in Follower)."""
     is_public = serializers.ReadOnlyField()
 
@@ -23,34 +23,58 @@ class UserLiteSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
 
-class UserSerializer(serializers.ModelSerializer):
+class UserOutputSerializer(serializers.ModelSerializer):
     """Full user output serializer for detail/list views."""
     is_following = serializers.SerializerMethodField()
     is_public = serializers.ReadOnlyField()
+    followers_count = serializers.SerializerMethodField()
+    following_count = serializers.SerializerMethodField()
+    tweets_count = serializers.SerializerMethodField()
+    likes_received = serializers.SerializerMethodField()
+    retweets_made = serializers.SerializerMethodField()
 
     class Meta:
         model = User
         fields = [
             'id', 'username', 'email', 'first_name', 'last_name', 'custom_id',
             'bio', 'is_public_user', 'is_public', 'is_following',
-            'profile_picture', 'profile_banner', 'date_joined'
+            'profile_picture', 'profile_banner', 'date_joined',
+            'followers_count', 'following_count', 'tweets_count', 'likes_received', 'retweets_made'
         ]
-        read_only_fields = [
-            'id', 'custom_id', 'date_joined', 'is_public', 'is_following'
-        ]
+        read_only_fields = fields
 
-    def get_is_following(self, obj):
+    def get_is_following(self, obj: User) -> bool:
         request = self.context.get('request')
         if request:
             return is_following(request.user, obj)
         return False
+
+    def get_followers_count(self, obj: User) -> int:
+        from accounts.selectors.user import get_followers_count
+        return get_followers_count(obj)
+
+    def get_following_count(self, obj: User) -> int:
+        from accounts.selectors.user import get_following_count
+        return get_following_count(obj)
+
+    def get_tweets_count(self, obj: User) -> int:
+        from accounts.selectors.user import get_tweets_count
+        return get_tweets_count(obj)
+
+    def get_likes_received(self, obj: User) -> int:
+        from accounts.selectors.user import get_likes_received_count
+        return get_likes_received_count(obj)
+
+    def get_retweets_made(self, obj: User) -> int:
+        from accounts.selectors.user import get_retweets_made_count
+        return get_retweets_made_count(obj)
 
 
 # =====================================================================
 # User Input Serializers
 # =====================================================================
 
-class UserUpdateSerializer(serializers.ModelSerializer):
+class UserUpdateInputSerializer(serializers.ModelSerializer):
     profile_picture = serializers.ImageField(required=False, allow_null=True, help_text="Optional profile picture")
     profile_banner = serializers.ImageField(required=False, allow_null=True, help_text="Optional profile banner")
 
@@ -60,14 +84,15 @@ class UserUpdateSerializer(serializers.ModelSerializer):
         extra_kwargs = {field: {'required': False} for field in ['username', 'email', 'first_name', 'last_name', 'bio', 'is_public_user']}
 
     @extend_schema_field(OpenApiTypes.BINARY)
-    def get_profile_picture(self, obj):
+    def get_profile_picture(self, obj: Any) -> None:
         pass
 
     @extend_schema_field(OpenApiTypes.BINARY)
-    def get_profile_banner(self, obj):
+    def get_profile_banner(self, obj: Any) -> None:
         pass
 
-class RegisterSerializer(serializers.ModelSerializer):
+
+class RegisterInputSerializer(serializers.ModelSerializer):
     """Input serializer for user registration."""
     password = serializers.CharField(write_only=True, required=True, validators=[validate_password])
     password2 = serializers.CharField(write_only=True, required=True)
@@ -76,37 +101,47 @@ class RegisterSerializer(serializers.ModelSerializer):
         model = User
         fields = ('username', 'password', 'password2', 'email', 'first_name', 'last_name', 'bio')
 
-    def validate(self, attrs):
+    def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
         if attrs['password'] != attrs['password2']:
             raise serializers.ValidationError({"password": "Password fields didn't match."})
         return attrs
 
 
-class PasswordChangeSerializer(serializers.Serializer):
+class PasswordChangeInputSerializer(serializers.Serializer):
     """Input serializer for password change."""
     old_password = serializers.CharField(write_only=True, required=True)
     new_password = serializers.CharField(write_only=True, required=True, validators=[validate_password])
     confirm_new_password = serializers.CharField(write_only=True, required=True)
 
-    def validate(self, attrs):
+    def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
         if attrs['new_password'] != attrs['confirm_new_password']:
             raise serializers.ValidationError({"confirm_new_password": "Passwords do not match."})
         return attrs
 
 
-class LogoutSerializer(serializers.Serializer):
-    """Input serializer for logout."""
-    refresh = serializers.CharField(required=True, write_only=True)
+class LogoutInputSerializer(serializers.Serializer):
+    """Input serializer for logout. Refresh token can come from cookies or body."""
+    refresh = serializers.CharField(required=False, write_only=True, allow_blank=True)
+
+
+class FollowInputSerializer(serializers.Serializer):
+    """Input serializer for following a user."""
+    followee_id = serializers.CharField(required=True, write_only=True)
+
+
+class UnfollowInputSerializer(serializers.Serializer):
+    """Input serializer for unfollowing a user."""
+    followee_id = serializers.CharField(required=True, write_only=True)
 
 
 # =====================================================================
 # Follower Serializers
 # =====================================================================
 
-class FollowerSerializer(serializers.ModelSerializer):
+class FollowerOutputSerializer(serializers.ModelSerializer):
     """Follower relationship output serializer."""
-    follower = UserLiteSerializer(read_only=True)
-    followee = UserLiteSerializer(read_only=True)
+    follower = UserLiteOutputSerializer(read_only=True)
+    followee = UserLiteOutputSerializer(read_only=True)
 
     class Meta:
         model = Follower

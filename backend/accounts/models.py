@@ -15,14 +15,14 @@ class User(AbstractUser):
     email = models.EmailField(unique=True, db_index=True)
 
     @property
-    def is_public(self):
+    def is_public(self) -> bool:
         return self.is_public_user
 
     @property
-    def is_private(self):
+    def is_private(self) -> bool:
         return not self.is_public_user
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"{self.username} | {self.custom_id}"
 
 
@@ -34,7 +34,7 @@ class Follower(models.Model):
     class Meta:
         unique_together = ('follower', 'followee')
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"{self.follower.username} follows {self.followee.username}"
 
 
@@ -47,5 +47,5 @@ class PasswordHistory(models.Model):
         ordering = ['-created_at']
         verbose_name_plural = 'Password histories'
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"{self.user.username} - {self.created_at}"

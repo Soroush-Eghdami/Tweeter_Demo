@@ -1,16 +1,11 @@
-import { create } from "zustand";
+import { useUserProfile } from "../useUserProfile";
 
-interface isLoggedInType {
-  isLoggedIn: boolean;
-  setIsLoggedIn: () => void;
-}
-
-const useIsLoggedIn = create<isLoggedInType>((set) => ({
-  isLoggedIn: false,
-  setIsLoggedIn: () =>
-    set((state) => ({
-      isLoggedIn: !state.isLoggedIn,
-    })),
-}));
+const useIsLoggedIn = () => {
+  const { data, isLoading, error } = useUserProfile();
+  return {
+    isLoggedIn: !!data && !error,
+    isLoading,
+  };
+};
 
 export default useIsLoggedIn;

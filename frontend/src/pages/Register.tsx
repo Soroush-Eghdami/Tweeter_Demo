@@ -1,174 +1,116 @@
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import password from "../assets/icons/login/password.svg";
-import openEye from "../assets/icons/login/opened-eye.svg";
-import closeEye from "../assets/icons/login/closed-eye.svg";
-import username from "../assets/icons/login/username.svg";
-import name from "../assets/icons/login/name.svg";
-import email from "../assets/icons/login/email.svg";
-import repeatPassword from "../assets/icons/login/repeat-password.svg";
+import { useNavigate } from "react-router-dom";
+import { useForm } from "react-hook-form";
+import toast from "react-hot-toast";
+import FirstNameInput from "../components/loginRegister/FirstNameInput";
+import LastNameInput from "../components/loginRegister/LastNameInput";
+import UsernameInput from "../components/loginRegister/UsernameInput";
+import EmailInput from "../components/loginRegister/EmailInput";
+import PasswordInput from "../components/loginRegister/PasswordInput";
+import RepeatPasswordInput from "../components/loginRegister/RepeatPasswordInput";
+import { useRegister } from "../hooks/useRegister";
+import type { RegisterFormType } from "../types/FormTypes";
 
 const Register = () => {
-  const [isOpenEyeLeft, setIsOpenEyeLeft] = useState(true);
-  const [isOpenEyeRight, setIsOpenEyeRight] = useState(true);
+  const {
+    register,
+    handleSubmit,
+    reset,
+    watch,
+    getValues,
+    formState: { errors },
+  } = useForm<RegisterFormType>();
+  const { mutate } = useRegister();
   const navigation = useNavigate();
+
+  const onSubmit = (data: RegisterFormType) => {
+    mutate(
+      {
+        username: data.username,
+        password: data.password,
+        password2: data.repeatPassword,
+        email: data.email,
+        first_name: data.firstName,
+        last_name: data.lastName,
+      },
+      {
+        onSuccess: () => {
+          toast.success("User Registered Successfully!");
+          navigation("/login");
+          reset();
+        },
+        onError: (errors) => {
+          toast.error("Registration Failed!");
+          console.log(errors);
+
+          const currentValues = getValues();
+          reset({
+            ...currentValues,
+            username: "",
+            password: "",
+            repeatPassword: "",
+          });
+        },
+      },
+    );
+  };
 
   return (
     <>
       <div className="bg-custom-login-gradient min-h-dvh">
         <div className="py-25">
-          <form className="container flex flex-col items-center justify-center gap-2 shadow-[0_0px_30px_rgba(0,0,0,0.4)] backdrop-filter-md backdrop-blur-[35px] backdrop-brightness-[1.5] rounded-3xl text-white max-w-[38.5%] mx-auto">
+          <form
+            className="container flex flex-col items-center justify-center gap-2 max-w-[38.5%] mx-auto text-white rounded-3xl shadow-[0_0px_30px_rgba(0,0,0,0.4)] backdrop-filter-md backdrop-blur-[35px] backdrop-brightness-[1.5]"
+            onSubmit={handleSubmit(onSubmit)}
+          >
             <div className="pt-12 pb-6 px-4 mt-4">
               <p className="text-center text-3xl font-semibold">
                 {" "}
                 Create your account
               </p>
             </div>
-            <div className="w-[70%]">
-              <div className="flex flex-row items-center gap-1.5 pl-1 pb-1">
-                <img src={name} alt="name" className="size-3.5" />
-                <label
-                  htmlFor="name"
-                  className="block text-left text-[14px] font-medium"
-                >
-                  Name
-                </label>
-              </div>
-              <input
-                type="text"
-                name="name"
-                id="name"
-                className="h-13 pb-1 px-3 mb-2 rounded-xl border-[#383838] backdrop-filter-md backdrop-blur-[35px] backdrop-brightness-[6] bg-white/10 placeholder:text-[14px] w-full focus:outline-none"
-                placeholder="Enter your Name ..."
-              />
-            </div>
-            <div className="w-[70%]">
-              <div className="flex flex-row items-center gap-1.5 pl-1 pb-1">
-                <img src={username} alt="username" className="size-5" />
-                <label
-                  htmlFor="username"
-                  className="block text-left text-[14px] font-medium"
-                >
-                  Username
-                </label>
-              </div>
-              <input
-                type="text"
-                name="username"
-                id="username"
-                className="h-13 pb-1 px-3 mb-2 rounded-xl border-[#383838] backdrop-filter-md backdrop-blur-[35px] backdrop-brightness-[6] bg-white/10 placeholder:text-[14px] w-full focus:outline-none"
-                placeholder="Enter your Username ..."
-              />
-            </div>
-            <div className="w-[70%]">
-              <div className="flex flex-row items-center gap-1.5 pl-1 pb-1">
-                <img src={email} alt="email" className="size-3.5" />
-                <label
-                  htmlFor="email"
-                  className="block text-left text-[14px] font-medium"
-                >
-                  Email
-                </label>
-              </div>
-              <input
-                type="email"
-                name="email"
-                id="email"
-                className="h-13 pb-1 px-3 mb-2 rounded-xl border-[#383838] backdrop-filter-md backdrop-blur-[35px] backdrop-brightness-[6] bg-white/10 placeholder:text-[14px] w-full focus:outline-none"
-                placeholder="test@example.com"
-              />
-            </div>
-            <div className="flex flex-wrap justify-center items-center gap-6">
-              <div className="w-48">
-                <div className="flex flex-row items-center gap-1.5 pl-1 pb-1">
-                  <img src={password} alt="password" className="size-4.5" />
+            {/* First Name */}
+            <FirstNameInput register={register} error={errors.firstName} />
 
-                  <label
-                    htmlFor="password"
-                    className="block text-left text-[14px] font-medium"
-                  >
-                    Password
-                  </label>
-                </div>
-                <div className="relative">
-                  <input
-                    type={isOpenEyeLeft ? "password" : "text"}
-                    name="password"
-                    id="password"
-                    className="h-13 pb-1 px-3 rounded-xl border-[#383838] backdrop-filter-md backdrop-blur-[35px] backdrop-brightness-[6] bg-white/10 placeholder:text-[14px] w-full focus:outline-none"
-                    placeholder="********"
-                  />
-                  {isOpenEyeLeft ? (
-                    <img
-                      onClick={() => setIsOpenEyeLeft((prev) => !prev)}
-                      src={closeEye}
-                      alt="close-eye"
-                      className="absolute right-4.5 top-4.5 cursor-pointer"
-                    />
-                  ) : (
-                    <img
-                      onClick={() => setIsOpenEyeLeft((prev) => !prev)}
-                      src={openEye}
-                      alt="open-eye"
-                      className="absolute right-4.5 top-5 cursor-pointer"
-                    />
-                  )}
-                </div>
-              </div>
-              <div className="w-48">
-                <div className="flex flex-row items-center gap-1.5 pl-1 pb-1">
-                  <img
-                    src={repeatPassword}
-                    alt="repeat-password"
-                    className="size-4"
-                  />
+            {/* Last Name */}
+            <LastNameInput register={register} error={errors.lastName} />
 
-                  <label
-                    htmlFor="repeatPassword"
-                    className="block text-left text-[14px] font-medium"
-                  >
-                    Repeat password
-                  </label>
-                </div>
-                <div className="relative">
-                  <input
-                    type={isOpenEyeRight ? "password" : "text"}
-                    name="repeatPassword"
-                    id="repeatPassword"
-                    className="h-13 pb-1 px-3 rounded-xl border-[#383838] backdrop-filter-md backdrop-blur-[35px] backdrop-brightness-[6] bg-white/10 placeholder:text-[14px] w-full focus:outline-none"
-                    placeholder="********"
-                  />
-                  {isOpenEyeRight ? (
-                    <img
-                      onClick={() => setIsOpenEyeRight((prev) => !prev)}
-                      src={closeEye}
-                      alt="close-eye"
-                      className="absolute right-4.5 top-4.5 cursor-pointer"
-                    />
-                  ) : (
-                    <img
-                      onClick={() => setIsOpenEyeRight((prev) => !prev)}
-                      src={openEye}
-                      alt="open-eye"
-                      className="absolute right-4.5 top-5 cursor-pointer"
-                    />
-                  )}
-                </div>
+            {/* Username */}
+            <UsernameInput register={register} error={errors.username} />
+
+            {/* Email */}
+            <EmailInput register={register} error={errors.email} />
+
+            <div className="flex flex-wrap justify-start gap-6">
+              {/* Password */}
+              <div className="max-w-48">
+                <PasswordInput register={register} error={errors.password} />
+              </div>
+
+              {/* Repeat Password */}
+              <div className="max-w-48">
+                <RepeatPasswordInput
+                  register={register}
+                  watch={watch}
+                  error={errors.repeatPassword}
+                />
               </div>
             </div>
 
             <button
-              onClick={() => navigation("/login")}
-              className="w-[70%] rounded-xl font-bold px-16 py-3 bg-white text-black mt-14 cursor-pointer hover:bg-gray-200"
+              type="submit"
+              className="w-[70%] rounded-xl font-bold px-16 py-3 bg-white text-black mt-12 cursor-pointer hover:bg-gray-200"
             >
               Register
             </button>
 
             <p className="mb-12">
               Already have an account?{" "}
-              <Link to="/login" className="underline hover:text-blue-400">
+              <span
+                className="underline cursor-pointer hover:text-blue-400"
+                onClick={() => navigation("/login")}
+              >
                 Login
-              </Link>
+              </span>
             </p>
           </form>
         </div>
