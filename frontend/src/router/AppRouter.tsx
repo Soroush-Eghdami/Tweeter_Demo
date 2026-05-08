@@ -2,7 +2,8 @@ import { createBrowserRouter, type RouteObject } from "react-router-dom";
 import Layout from "../layout/Layout";
 import Home from "../pages/Home";
 import CommentPage from "../pages/CommentPage";
-import Profile from "../pages/Profile";
+import MyProfile from "../pages/MyProfile";
+import UserProfile from "../pages/UserProfile";
 import EditProfile from "../pages/EditProfile";
 import Login from "../pages/Login";
 import Register from "../pages/Register";
@@ -27,7 +28,15 @@ const routes: RouteObject[] = [
         path: "profile",
         element: (
           <ProtectedRoute>
-            <Profile />
+            <MyProfile />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "profile/:id",
+        element: (
+          <ProtectedRoute>
+            <UserProfile />
           </ProtectedRoute>
         ),
       },
