@@ -40,9 +40,10 @@ const UserProfile = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
 
+  if (isLoading) return <LoadingPage />;
+
   return (
     <div className="min-h-fit w-full bg-custom-dark-gradient">
-      {isLoading && <LoadingPage />}
       <div>
         <FollowingFollower
           setIsUserListOpen={setIsUserListOpen}
