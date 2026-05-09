@@ -18,7 +18,16 @@ export interface TweetCardInfoType {
   updated_at: string;
 }
 
+export interface PaginatedResponse<T> {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: T[];
+}
 
 export interface TweetCardInfoArrayType {
 results: TweetCardInfoType[]
 }
+export type TweetCardInfoArrayType = PaginatedResponse<TweetCardInfoType>;
+
+
