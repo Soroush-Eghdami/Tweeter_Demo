@@ -9,6 +9,7 @@ import LeftBox from "../components/profile/LeftBox";
 import FollowingFollower from "../components/followingFollowerPopUp/FollowingFollowerPopUp";
 import ProfilePictureEdit from "../components/profilePictureEdit/ProfilePictureEdit";
 import { useMyProfile } from "../hooks/useMyProfile";
+import { useUpdateProfilePicture } from "../hooks/useUpdateProfile";
 import { userTweetInfo } from "../contents/userTweetInfo";
 import { userRetweetInfo } from "../contents/userRetweetInfo";
 import { userInfo } from "../contents/userInfo";
@@ -28,6 +29,8 @@ import LoadingPage from "../components/loading/LoadingPage";
 
 const MyProfile = () => {
   const { data, isLoading } = useMyProfile();
+  const { mutateAsync: picUpdate, isPending: picUpdateLoading } =
+    useUpdateProfilePicture();
   const [isTweetsOpen, setIsTweetsOpen] = useState(true);
   const [isProfilePicOpen, setIsProfilePicOpen] = useState(false);
   const [isBannerOpen, setIsBannerOpen] = useState(false);
@@ -51,6 +54,10 @@ const MyProfile = () => {
         <ProfilePictureEdit
           isOpen={isProfilePicOpen}
           setIsOpen={setIsProfilePicOpen}
+          picUpdateObj={{
+            picUpdate,
+            picUpdateLoading,
+          }}
         />
       </div>
 
