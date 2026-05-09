@@ -24,6 +24,7 @@ from accounts.selectors import (
     get_user_tweets_queryset,
     get_user_followers_queryset,
     get_user_following_queryset,
+    get_user_retweets_queryset,
 )
 from tweets.serializers import TweetSerializer
 
@@ -262,6 +263,29 @@ class UserTweetsView(APIView):
     def get(self, request: Request, user_id: str) -> Response:
         user = get_user_by_id(user_id)
         queryset = get_user_tweets_queryset(user)
+        paginator = PageNumberPagination()
+        page = paginator.paginate_queryset(queryset, request)
+        serializer = TweetSerializer(page, many=True, context={'request': request})
+        return paginator.get_paginated_response(serializer.data)
+
+
+class UserRetweetsView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(name='page', type=int, location=OpenApiParameter.QUERY, description='Page number'),
+            OpenApiParameter(name='page_size', type=int, location=OpenApiParameter.QUERY, description='Items per page'),
+            OpenApiParameter(name='user_id', type=str, location=OpenApiParameter.PATH, description='UUID of the user'),
+        ],
+        summary="User retweets",
+        description="Returns a paginated list of tweets that a specific user has retweeted.",
+        tags=["users"],
+        responses={200: TweetSerializer(many=True)},
+    )
+    def get(self, request: Request, user_id: str) -> Response:
+        user = get_user_by_id(user_id)
+        queryset = get_user_retweets_queryset(user)
         paginator = PageNumberPagination()
         page = paginator.paginate_queryset(queryset, request)
         serializer = TweetSerializer(page, many=True, context={'request': request})

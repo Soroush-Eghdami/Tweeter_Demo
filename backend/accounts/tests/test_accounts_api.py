@@ -354,3 +354,11 @@ class AccountsAPITestCase(TestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data['results']), 1)
         self.assertEqual(response.data['results'][0]['followee']['username'], 'bob')
+
+    def test_user_retweets_endpoint(self):
+        ReTweet.objects.get_or_create(user=self.user1, original_tweet=self.tweet_private)
+        url = reverse('user-retweets', kwargs={'user_id': self.user1.id})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data['results']), 1)
+        self.assertEqual(response.data['results'][0]['message'], 'Private tweet from bob')
