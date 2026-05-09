@@ -9,6 +9,7 @@ import LeftBox from "../components/profile/LeftBox";
 import FollowingFollower from "../components/followingFollowerPopUp/FollowingFollowerPopUp";
 import ProfilePictureEdit from "../components/profilePictureEdit/ProfilePictureEdit";
 import { useUserProfile } from "../hooks/useUserProfile";
+import { useFollow, useUnfollow } from "../hooks/useFollowUnfollow";
 import { userTweetInfo } from "../contents/userTweetInfo";
 import { userRetweetInfo } from "../contents/userRetweetInfo";
 import { userInfo } from "../contents/userInfo";
@@ -29,9 +30,10 @@ import LoadingPage from "../components/loading/LoadingPage";
 const UserProfile = () => {
   const { id } = useParams();
   const { data, isLoading } = useUserProfile(id || "");
+  const { mutate: follow, isPending: followLoading } = useFollow();
+  const { mutate: unfollow, isPending: unfollowLoading } = useUnfollow();
   const [isTweetsOpen, setIsTweetsOpen] = useState(true);
   const [isProfilePicOpen, setIsProfilePicOpen] = useState(false);
-  const [isFollowed, setIsFollowed] = useState(false);
   const [isBannerOpen, setIsBannerOpen] = useState(false);
   const [isUserListOpen, setIsUserListOpen] = useState(false);
   const navigate = useNavigate();
@@ -63,9 +65,16 @@ const UserProfile = () => {
           avatarSrc={data.profile_picture || avatar}
           bannerSrc={data.profile_banner}
           editIconSrc={edit}
-          isFollowed={isFollowed}
+          isFollowed={data.is_following}
+          followObj={{
+            follow,
+            followLoading,
+          }}
+          unfollowObj={{
+            unfollow,
+            unfollowLoading,
+          }}
           onAvatarClick={() => setIsProfilePicOpen((prev) => !prev)}
-          onFollowToggle={() => setIsFollowed((prev) => !prev)}
           onBannerClick={() => setIsBannerOpen(true)}
         />
       </div>
