@@ -1,45 +1,21 @@
 import { useMutation } from "@tanstack/react-query";
 import api from "../api-services/api";
 
-const createTweetApi = async ({
-  content,
-  parent_tweet = 0,
-  // is_private = false,
-}: {
+interface CreateTweetVariables {
   content: string;
   parent_tweet?: number;
-  is_private?: boolean;
-}) => {
+}
+
+const createTweetApi = async (variables: CreateTweetVariables) => {
   const formData = new FormData();
-  formData.append("content", content);
+  formData.append("content", variables.content);
 
-
-  if (parent_tweet !== 0) formData.append("parent_tweet", String(parent_tweet));
-  // formData.append('is_private', String(is_private));
-
-  // get tokennn !!
-  const csrfToken =
-    document.cookie
-      .split("; :")
-      .find((row) => row.startsWith("csrftoken="))
-      ?.split("=")[1] ?? null;
-  const accessToken = localStorage.getItem("access_token");
-
-  const res = await fetch("http://localhost:8000/api/tweets/", {
-    method: "POST",
-    headers: {
-      Accept: "application/json",
-      ...(accessToken && { Authorization: `Bearer ${accessToken}` }),
-      ...(csrfToken && { "X-CSRFTOKEN": csrfToken }),
-    },
-    body: formData,
-  });
-
-  if (!res.ok) {
-    const errData = await res.json().catch(() => ({ error: "can not error" }));
-    throw new Error(errData.error || "error?");
+  if (variables.parent_tweet && variables.parent_tweet !== 0) {
+    formData.append("parent_tweet", String(variables.parent_tweet));
   }
-  return res.json();
+
+  const response = await api.post("/tweets/", formData);
+  return response.data;
 };
 
 export const useCreateTweet = () => {

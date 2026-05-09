@@ -1,7 +1,7 @@
+import { useState, FormEvent } from "react";
 import { useCreateTweet } from "../../hooks/useCreateTweet";
 import userProfile from "../../assets/icons/profile-default.svg";
 import createPost from "../../assets/icons/post.svg";
-import { useState, FormEvent } from "react";
 
 interface CreatePostPropType {
   setIsCreatedPost: (arg0: boolean) => void;
@@ -12,12 +12,10 @@ const CreatePost = ({
   setIsCreatedPost,
   isCreatedPost,
 }: CreatePostPropType) => {
+  
   // for create tweet
   const [content, setContent] = useState("");
   const createTweetMutation = useCreateTweet();
-  // if (!createTweetMutation.isPending) {
-  //   setIsCreatedPost(false);
-  // }
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
@@ -36,9 +34,9 @@ const CreatePost = ({
     );
   };
 
-  const handleClick = () => {
-    setIsCreatedPost(false);
-  };
+  // const handleClick = () => {
+  //   setIsCreatedPost(false);
+  // };
 
 
   return (
