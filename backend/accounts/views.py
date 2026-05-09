@@ -162,10 +162,9 @@ class UnfollowUserView(APIView):
         },
         tags=["follow"]
     )
-    def delete(self, request: Request) -> Response:
+    def post(self, request: Request) -> Response:
         serializer = UnfollowInputSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        
         try:
             UserService.unfollow_delete(
                 request.user,
