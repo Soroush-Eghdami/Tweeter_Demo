@@ -295,14 +295,14 @@ class AccountsAPITestCase(TestCase):
         Follower.objects.create(follower=self.user1, followee=self.user2)
         url = reverse('unfollow-user')
         data = {'followee_id': str(self.user2.id)}
-        response = self.client.delete(url, data, format='json')
+        response = self.client.post(url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertFalse(Follower.objects.filter(follower=self.user1, followee=self.user2).exists())
 
     def test_unfollow_not_following_fails(self):
         url = reverse('unfollow-user')
         data = {'followee_id': str(self.user2.id)}
-        response = self.client.delete(url, data, format='json')
+        response = self.client.post(url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn('not following', response.data['error'])
 
