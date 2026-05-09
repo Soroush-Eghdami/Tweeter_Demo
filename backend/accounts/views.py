@@ -113,7 +113,9 @@ class UserProfileView(APIView):
     )
     def delete(self, request: Request) -> Response:
         UserService.delete_account(request.user)
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        response = Response(status=status.HTTP_204_NO_CONTENT)
+        # Clear the authentication cookies so the browser doesn't keep a stale token
+        return clear_token_cookies(response)
 
 
 # =============================================================================
