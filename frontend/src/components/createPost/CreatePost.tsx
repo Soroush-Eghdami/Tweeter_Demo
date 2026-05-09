@@ -15,7 +15,6 @@ const CreatePost = ({
   // for create tweet
   const [content, setContent] = useState("");
   const createTweetMutation = useCreateTweet();
-  const [mediaFile, setMediaFile] = useState<File | null>(null);
   // if (!createTweetMutation.isPending) {
   //   setIsCreatedPost(false);
   // }
@@ -31,7 +30,6 @@ const CreatePost = ({
         // call backs
         onSuccess: () => {
           setContent("");
-          setMediaFile(null);
           setIsCreatedPost(false);
         },
       },
