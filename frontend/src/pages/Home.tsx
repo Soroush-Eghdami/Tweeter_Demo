@@ -4,7 +4,8 @@ import TweetCard from "../components/TweetCard";
 import HomeSideProfileBox from "../components/homePage/HomeSideProfileBox";
 import CreatePost from "../components/createPost/CreatePost";
 import ForYouFollowing from "../components/homePage/ForYouFollowing";
-import { tweetInfo } from "../contents/tweetInfo";
+import { useTweetsPrivate, useTweetsPublic } from "../hooks/useTweets";
+import type { TweetCardInfoType } from "../types/TweetTypes";
 import newTweet from "../assets/icons/new-tweet.svg";
 
 const Home = () => {
@@ -13,6 +14,11 @@ const Home = () => {
   const [isCreatedPost, setIsCreatedPost] = useState(false);
   const [isSelected, setIsSelected] = useState<1 | 2>(1);
   const [popupVisible, setPopupVisible] = useState(false);
+  const { data: privateData, isLoading: privateLoading } = useTweetsPrivate();
+  const { data: publicData, isLoading: publicLoading } = useTweetsPublic();
+
+  const privateInfo = privateData?.results ?? [];
+  const publicInfo = publicData?.results ?? [];
 
   useEffect(() => {
     if (isCreatedPost) {
@@ -51,6 +57,8 @@ const Home = () => {
   // 3. Dynamic bottom class (your original scroll‑based movement)
   const scrollBottomClass = isScrolled ? "bottom-60" : "bottom-10";
 
+  if (privateLoading || publicLoading) return <div>salam</div>;
+
   return (
     <>
       {popupVisible && (
@@ -68,12 +76,12 @@ const Home = () => {
             setIsSelected={setIsSelected}
           />
           <div>
-            {(isSelected === 1
-              ? tweetInfo.filter((tweet) => tweet.isPrivate)
-              : tweetInfo.filter((tweet) => !tweet.isPrivate)
-            ).map((tweet, index) => (
-              <TweetCard key={index} info={tweet} />
-            ))}
+            
+            {isSelected ?(isSelected === 1 ? publicInfo : privateInfo).map(
+              (tweet: TweetCardInfoType) => (
+                <TweetCard key={tweet.id} info={tweet} />
+              ),
+            )}
           </div>
         </div>
         {/* Home Sidebar */}

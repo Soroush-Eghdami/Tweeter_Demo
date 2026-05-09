@@ -1,4 +1,4 @@
-export interface TweetCardType {
+export interface TweetCardInfoType {
   id: number;
   user: {
     id: string;
@@ -16,4 +16,9 @@ export interface TweetCardType {
   is_liked: boolean;
   created_at: string;
   updated_at: string;
+}
+
+
+export interface TweetCardInfoArrayType {
+results: TweetCardInfoType[]
 }
