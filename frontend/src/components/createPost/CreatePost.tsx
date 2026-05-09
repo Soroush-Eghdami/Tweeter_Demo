@@ -70,19 +70,19 @@ const CreatePost = ({
             <div className="flex flex-row pt-6">
               <div className="pl-12 py-4">
                 {/* checkbox */}
-                <label className="flex items-center gap-2 cursor-pointer select-none">
+                {/* <label className="flex items-center gap-2 cursor-pointer select-none">
                   <input
                     type="checkbox"
                     name="checkbox"
                     id="checkbox"
                     className="peer h-5 w-5 appearance-none rounded border-[1.5px] border-white transition-all hover:scale-105 duration-200 ease-in-out"
-                  />
-                  <label className="text-white font-semibold" htmlFor="checkbox">
+                  /> */}
+                  {/* <label className="text-white font-semibold" htmlFor="checkbox">
                     Private Post
-                  </label>
+                  </label> */}
 
                   {/* Custom checkmark */}
-                  <svg
+                  {/* <svg
                     className="absolute w-5 h-5 text-white opacity-0 peer-checked:opacity-100 transition-opacity"
                     viewBox="0 0 20 20"
                     fill="none"
@@ -95,7 +95,7 @@ const CreatePost = ({
                       strokeLinejoin="round"
                     />
                   </svg>
-                </label>
+                </label> */}
               </div>
               <div className="flex flex-row items-center ml-auto mr-6">
                 <button
