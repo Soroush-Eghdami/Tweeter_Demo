@@ -8,6 +8,6 @@ export interface followObjType {
 }
 
 export interface unfollowObjType {
-  unfollow: () => void;
+  unfollow: (arg0: followFuncType) => void;
   unfollowLoading: boolean;
 }

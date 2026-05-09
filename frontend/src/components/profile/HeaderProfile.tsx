@@ -35,7 +35,10 @@ const HeaderProfile: React.FC<HeaderProfileProps> = ({
   };
 
   const unfollowHandler = () => {
-    unfollowObj?.unfollow();
+    if (id)
+      unfollowObj?.unfollow({
+        followee_id: id,
+      });
   };
 
   return (
