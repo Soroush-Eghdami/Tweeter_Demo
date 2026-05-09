@@ -38,7 +38,7 @@ class TweetListDetailAPITestCase(TestCase):
 
         token_url = reverse('token_obtain_pair')
         resp = self.client.post(token_url, {'username': 'tweeter1', 'password': 'pass'})
-        self.token = resp.data['access']
+        self.token = resp.cookies['access_token'].value
         self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {self.token}')
 
         self.public_tweet = Tweet.objects.create(user=self.user1, content='Public tweet from user1')
@@ -51,7 +51,7 @@ class TweetListDetailAPITestCase(TestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         results = response.data['results']
-        contents = [t['message'] for t in results]
+        contents = [t['content'] for t in results]
         self.assertIn('Public tweet from user1', contents)
         self.assertIn('Private tweet from user2', contents)
         self.assertIn('Another public tweet', contents)
@@ -60,13 +60,17 @@ class TweetListDetailAPITestCase(TestCase):
         url = reverse('tweet-list')
         response = self.client.get(url)
         results = response.data['results']
-        contents = [t['message'] for t in results]
+        contents = [t['content'] for t in results]
         self.assertNotIn('Private tweet from user2', contents)
 
     def test_tweet_detail_visible(self):
         url = reverse('tweet-detail', kwargs={'pk': self.public_tweet.pk})
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn('replies_count', response.data)
+        self.assertIn('is_retweeted', response.data)
+        self.assertEqual(response.data['replies_count'], 0)
+        self.assertFalse(response.data['is_retweeted'])
 
     def test_tweet_detail_inaccessible_if_private_and_not_following(self):
         url = reverse('tweet-detail', kwargs={'pk': self.private_tweet.pk})
@@ -88,7 +92,7 @@ class TweetCreateAPITestCase(TestCase):
 
         token_url = reverse('token_obtain_pair')
         resp = self.client.post(token_url, {'username': 'tweeter1', 'password': 'pass'})
-        self.token = resp.data['access']
+        self.token = resp.cookies['access_token'].value
         self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {self.token}')
 
         self.public_tweet = Tweet.objects.create(user=self.user1, content='Public tweet from user1')
@@ -100,7 +104,7 @@ class TweetCreateAPITestCase(TestCase):
         response = self.client.post(url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(Tweet.objects.filter(user=self.user1).count(), 2)
-        self.assertEqual(response.data['message'], 'A simple tweet')
+        self.assertEqual(response.data['content'], 'A simple tweet')
 
     def test_create_tweet_with_media(self):
         url = reverse('tweet-list')
@@ -140,7 +144,7 @@ class TweetDeleteAPITestCase(TestCase):
 
         token_url = reverse('token_obtain_pair')
         resp = self.client.post(token_url, {'username': 'tweeter1', 'password': 'pass'})
-        self.token = resp.data['access']
+        self.token = resp.cookies['access_token'].value
         self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {self.token}')
 
     def test_delete_own_tweet(self):

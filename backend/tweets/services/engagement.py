@@ -96,8 +96,18 @@ class TweetEngagementService:
         from tweets.services.reply import ReplyService
         from django.core.exceptions import ValidationError
     
-        if parent_tweet and not TweetVisibilityService.is_visible_to(parent_tweet, user):
-            raise ValueError("You cannot reply to a tweet that is not visible to you.")
+        # parent_tweet is an ID (int) from the serializer – fetch the instance
+        if parent_tweet is not None:
+            try:
+                parent_obj = Tweet.objects.get(pk=parent_tweet)
+            except Tweet.DoesNotExist:
+                raise ValueError("Parent tweet does not exist.")
+    
+            if not TweetVisibilityService.is_visible_to(parent_obj, user):
+                raise ValueError("You cannot reply to a tweet that is not visible to you.")
+    
+            # Swap the ID for the actual object
+            parent_tweet = parent_obj
     
         tweet = Tweet(user=user, content=content, media=media, parent_tweet=parent_tweet)
         try:
