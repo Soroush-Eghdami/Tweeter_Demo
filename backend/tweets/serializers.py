@@ -5,6 +5,7 @@ from .models import Tweet, ReTweet
 from accounts.serializers import UserLiteOutputSerializer
 from .services.engagement import TweetEngagementService
 from .services.visibility import TweetVisibilityService
+from tweets.selectors import get_reply_count, is_retweeted_by
 
 User = get_user_model()
 
@@ -15,26 +16,37 @@ User = get_user_model()
 class TweetSerializer(serializers.ModelSerializer):
     """Full tweet output serializer with engagement counts and metadata."""
     user = UserLiteOutputSerializer(read_only=True)
-    message = serializers.CharField(source='content', read_only=True)
     retweet_count = serializers.SerializerMethodField()
     like_count = serializers.SerializerMethodField()
     is_liked = serializers.SerializerMethodField()
     parent_tweet = serializers.SerializerMethodField()
+    replies_count = serializers.SerializerMethodField()
+    is_retweeted = serializers.SerializerMethodField()
 
     class Meta:
         model = Tweet
         fields = [
-            'id', 'user', 'content', 'message', 'media', 'parent_tweet',
+            'id', 'user', 'content', 'media', 'parent_tweet',
             'retweet_count', 'like_count', 'is_liked',
+            'replies_count', 'is_retweeted',
             'created_at', 'updated_at'
         ]
         read_only_fields = fields
-
+    
     def get_retweet_count(self, obj: Tweet) -> int:
         return TweetEngagementService.get_retweet_count(obj)
 
     def get_like_count(self, obj: Tweet) -> int:
         return TweetEngagementService.get_like_count(obj)
+
+    def get_replies_count(self, obj: Tweet) -> int:
+        return get_reply_count(obj)
+
+    def get_is_retweeted(self, obj: Tweet) -> bool:
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            return is_retweeted_by(obj, request.user)
+        return False
 
     def get_is_liked(self, obj: Tweet) -> bool:
         request = self.context.get('request')

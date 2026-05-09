@@ -25,7 +25,7 @@
       }
     },
     {
-      "name": "2. Login",
+      "name": "2. Login (obtain cookies)",
       "request": {
         "method": "POST",
         "header": [{ "key": "Content-Type", "value": "application/json" }],
@@ -34,34 +34,46 @@
           "mode": "raw",
           "raw": "{\"username\":\"testuser\",\"password\":\"SecurePass123!\"}"
         }
-      }
+      },
+      "description": "Login and capture the `access_token` and `refresh_token` cookies. After execution, copy the token values from the response's Set‑Cookie headers into the collection variables `token` and `refresh`."
     },
     {
       "name": "3. Refresh access token",
       "request": {
         "method": "POST",
-        "header": [{ "key": "Content-Type", "value": "application/json" }],
-        "url": "{{base_url}}/api/accounts/refresh/",
-        "body": {
-          "mode": "raw",
-          "raw": "{\"refresh\":\"{{refresh}}\"}"
-        }
-      }
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Cookie", "value": "refresh_token={{refresh}}" }
+        ],
+        "url": "{{base_url}}/api/accounts/refresh/"
+      },
+      "description": "Automatically sends the refresh_token cookie. After success, update the `token` variable with the new access token from the Set‑Cookie header."
     },
     {
       "name": "4. Get own profile",
       "request": {
         "method": "GET",
-        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+        "header": [
+          { "key": "Cookie", "value": "access_token={{token}}" }
+        ],
         "url": "{{base_url}}/api/accounts/profile/"
-      }
+      },
+      "response": [
+        {
+          "name": "Profile with counts",
+          "status": "OK",
+          "code": 200,
+          "header": [{ "key": "Content-Type", "value": "application/json" }],
+          "body": "{\n  \"id\": \"550e8400-e29b-41d4-a716-446655440000\",\n  \"username\": \"johndoe\",\n  \"email\": \"john@example.com\",\n  \"first_name\": \"John\",\n  \"last_name\": \"Doe\",\n  \"custom_id\": \"a1b2c3\",\n  \"bio\": \"Hello, Tweeter!\",\n  \"is_public_user\": true,\n  \"is_public\": true,\n  \"is_following\": false,\n  \"profile_picture\": null,\n  \"profile_banner\": null,\n  \"date_joined\": \"2026-05-04T12:00:00Z\",\n  \"followers_count\": 42,\n  \"following_count\": 100,\n  \"tweets_count\": 300,\n  \"likes_received\": 1024,\n  \"retweets_made\": 50\n}"
+        }
+      ]
     },
     {
       "name": "5. Update profile (PATCH)",
       "request": {
         "method": "PATCH",
         "header": [
-          { "key": "Authorization", "value": "Bearer {{token}}" },
+          { "key": "Cookie", "value": "access_token={{token}}" },
           { "key": "Content-Type", "value": "application/json" }
         ],
         "body": {
@@ -76,7 +88,7 @@
       "request": {
         "method": "POST",
         "header": [
-          { "key": "Authorization", "value": "Bearer {{token}}" },
+          { "key": "Cookie", "value": "access_token={{token}}" },
           { "key": "Content-Type", "value": "application/json" }
         ],
         "body": {
@@ -90,7 +102,9 @@
       "name": "7. Upload profile picture",
       "request": {
         "method": "PATCH",
-        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+        "header": [
+          { "key": "Cookie", "value": "access_token={{token}}" }
+        ],
         "body": {
           "mode": "formdata",
           "formdata": [
@@ -104,7 +118,9 @@
       "name": "8. Upload profile banner",
       "request": {
         "method": "PATCH",
-        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+        "header": [
+          { "key": "Cookie", "value": "access_token={{token}}" }
+        ],
         "body": {
           "mode": "formdata",
           "formdata": [
@@ -118,7 +134,9 @@
       "name": "9. Delete own account",
       "request": {
         "method": "DELETE",
-        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+        "header": [
+          { "key": "Cookie", "value": "access_token={{token}}" }
+        ],
         "url": "{{base_url}}/api/accounts/profile/"
       }
     },
@@ -127,7 +145,7 @@
       "request": {
         "method": "POST",
         "header": [
-          { "key": "Authorization", "value": "Bearer {{token}}" },
+          { "key": "Cookie", "value": "access_token={{token}}" },
           { "key": "Content-Type", "value": "application/json" }
         ],
         "body": {
@@ -141,7 +159,9 @@
       "name": "11. List users",
       "request": {
         "method": "GET",
-        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+        "header": [
+          { "key": "Cookie", "value": "access_token={{token}}" }
+        ],
         "url": "{{base_url}}/api/accounts/users/"
       }
     },
@@ -149,16 +169,27 @@
       "name": "12. Get user by UUID",
       "request": {
         "method": "GET",
-        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+        "header": [
+          { "key": "Cookie", "value": "access_token={{token}}" }
+        ],
         "url": "{{base_url}}/api/accounts/users/{{user_uuid}}/"
-      }
+      },
+      "response": [
+        {
+          "name": "User detail with counts",
+          "status": "OK",
+          "code": 200,
+          "header": [{ "key": "Content-Type", "value": "application/json" }],
+          "body": "{\n  \"id\": \"550e8400-e29b-41d4-a716-446655440000\",\n  \"username\": \"johndoe\",\n  \"email\": \"john@example.com\",\n  \"first_name\": \"John\",\n  \"last_name\": \"Doe\",\n  \"custom_id\": \"a1b2c3\",\n  \"bio\": \"Hello, Tweeter!\",\n  \"is_public_user\": true,\n  \"is_public\": true,\n  \"is_following\": false,\n  \"profile_picture\": null,\n  \"profile_banner\": null,\n  \"date_joined\": \"2026-05-04T12:00:00Z\",\n  \"followers_count\": 42,\n  \"following_count\": 100,\n  \"tweets_count\": 300,\n  \"likes_received\": 1024,\n  \"retweets_made\": 50\n}"
+        }
+      ]
     },
     {
       "name": "13. Follow user",
       "request": {
         "method": "POST",
         "header": [
-          { "key": "Authorization", "value": "Bearer {{token}}" },
+          { "key": "Cookie", "value": "access_token={{token}}" },
           { "key": "Content-Type", "value": "application/json" }
         ],
         "body": {
@@ -173,7 +204,7 @@
       "request": {
         "method": "DELETE",
         "header": [
-          { "key": "Authorization", "value": "Bearer {{token}}" },
+          { "key": "Cookie", "value": "access_token={{token}}" },
           { "key": "Content-Type", "value": "application/json" }
         ],
         "body": {
@@ -187,7 +218,9 @@
       "name": "15. Public timeline",
       "request": {
         "method": "GET",
-        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+        "header": [
+          { "key": "Cookie", "value": "access_token={{token}}" }
+        ],
         "url": "{{base_url}}/api/accounts/timeline/public/?page=1&page_size=10"
       }
     },
@@ -195,7 +228,9 @@
       "name": "16. Private timeline",
       "request": {
         "method": "GET",
-        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+        "header": [
+          { "key": "Cookie", "value": "access_token={{token}}" }
+        ],
         "url": "{{base_url}}/api/accounts/timeline/private/?page=1&page_size=10"
       }
     },
@@ -203,7 +238,9 @@
       "name": "17. User tweets",
       "request": {
         "method": "GET",
-        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+        "header": [
+          { "key": "Cookie", "value": "access_token={{token}}" }
+        ],
         "url": "{{base_url}}/api/accounts/users/{{user_uuid}}/tweets/"
       }
     },
@@ -211,7 +248,9 @@
       "name": "18. Followers",
       "request": {
         "method": "GET",
-        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+        "header": [
+          { "key": "Cookie", "value": "access_token={{token}}" }
+        ],
         "url": "{{base_url}}/api/accounts/users/{{user_uuid}}/followers/"
       }
     },
@@ -219,7 +258,9 @@
       "name": "19. Following",
       "request": {
         "method": "GET",
-        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+        "header": [
+          { "key": "Cookie", "value": "access_token={{token}}" }
+        ],
         "url": "{{base_url}}/api/accounts/users/{{user_uuid}}/following/"
       }
     },
@@ -227,7 +268,9 @@
       "name": "20. List tweets",
       "request": {
         "method": "GET",
-        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+        "header": [
+          { "key": "Cookie", "value": "access_token={{token}}" }
+        ],
         "url": "{{base_url}}/api/tweets/?page=1&page_size=10"
       }
     },
@@ -235,7 +278,9 @@
       "name": "21. Get tweet",
       "request": {
         "method": "GET",
-        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+        "header": [
+          { "key": "Cookie", "value": "access_token={{token}}" }
+        ],
         "url": "{{base_url}}/api/tweets/{{tweet_id}}/"
       }
     },
@@ -244,7 +289,7 @@
       "request": {
         "method": "POST",
         "header": [
-          { "key": "Authorization", "value": "Bearer {{token}}" },
+          { "key": "Cookie", "value": "access_token={{token}}" },
           { "key": "Content-Type", "value": "application/json" }
         ],
         "body": {
@@ -258,7 +303,9 @@
       "name": "23. Create tweet with media",
       "request": {
         "method": "POST",
-        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+        "header": [
+          { "key": "Cookie", "value": "access_token={{token}}" }
+        ],
         "body": {
           "mode": "formdata",
           "formdata": [
@@ -274,7 +321,7 @@
       "request": {
         "method": "POST",
         "header": [
-          { "key": "Authorization", "value": "Bearer {{token}}" },
+          { "key": "Cookie", "value": "access_token={{token}}" },
           { "key": "Content-Type", "value": "application/json" }
         ],
         "body": {
@@ -288,7 +335,9 @@
       "name": "25. Delete tweet",
       "request": {
         "method": "DELETE",
-        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+        "header": [
+          { "key": "Cookie", "value": "access_token={{token}}" }
+        ],
         "url": "{{base_url}}/api/tweets/{{tweet_id}}/"
       }
     },
@@ -296,7 +345,9 @@
       "name": "26. Like tweet",
       "request": {
         "method": "POST",
-        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+        "header": [
+          { "key": "Cookie", "value": "access_token={{token}}" }
+        ],
         "url": "{{base_url}}/api/tweets/{{tweet_id}}/like/"
       }
     },
@@ -304,7 +355,9 @@
       "name": "27. Unlike tweet",
       "request": {
         "method": "POST",
-        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+        "header": [
+          { "key": "Cookie", "value": "access_token={{token}}" }
+        ],
         "url": "{{base_url}}/api/tweets/{{tweet_id}}/unlike/"
       }
     },
@@ -312,7 +365,9 @@
       "name": "28. Retweet",
       "request": {
         "method": "POST",
-        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+        "header": [
+          { "key": "Cookie", "value": "access_token={{token}}" }
+        ],
         "url": "{{base_url}}/api/tweets/{{tweet_id}}/retweet/"
       }
     },
@@ -320,7 +375,9 @@
       "name": "29. Unretweet",
       "request": {
         "method": "POST",
-        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+        "header": [
+          { "key": "Cookie", "value": "access_token={{token}}" }
+        ],
         "url": "{{base_url}}/api/tweets/{{tweet_id}}/unretweet/"
       }
     }

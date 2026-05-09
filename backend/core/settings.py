@@ -60,7 +60,7 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
     ],
-    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'DEFAULT_PAGINATION_CLASS': 'core.pagination.TweeterPagination',
     'PAGE_SIZE': 10,
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
     'EXCEPTION_HANDLER': 'core.exceptions.custom_exception_handler',
@@ -91,6 +91,24 @@ SPECTACULAR_SETTINGS = {
     'SWAGGER_UI_DIST': 'SIDECAR',
     'SWAGGER_UI_TEMPLATE': 'SIDECAR',
     'REDOC_DIST': 'SIDECAR',
+    'SECURITY_SCHEMES': {
+        'cookieAuth': {
+            'type': 'apiKey',
+            'in': 'cookie',
+            'name': 'access_token',
+            'description': 'JWT access token stored in HttpOnly cookie (set during login)'
+        },
+        'Bearer': {
+            'type': 'http',
+            'scheme': 'bearer',
+            'bearerFormat': 'JWT',
+            'description': 'JWT access token via Authorization header (alternative to cookies for mobile/API clients)'
+        }
+    },
+    'DEFAULT_SECURITY': [
+        {'cookieAuth': []},
+        {'Bearer': []}
+    ],
 }
 
 MIDDLEWARE = [

@@ -27,23 +27,47 @@ class UserOutputSerializer(serializers.ModelSerializer):
     """Full user output serializer for detail/list views."""
     is_following = serializers.SerializerMethodField()
     is_public = serializers.ReadOnlyField()
+    followers_count = serializers.SerializerMethodField()
+    following_count = serializers.SerializerMethodField()
+    tweets_count = serializers.SerializerMethodField()
+    likes_received = serializers.SerializerMethodField()
+    retweets_made = serializers.SerializerMethodField()
 
     class Meta:
         model = User
         fields = [
             'id', 'username', 'email', 'first_name', 'last_name', 'custom_id',
             'bio', 'is_public_user', 'is_public', 'is_following',
-            'profile_picture', 'profile_banner', 'date_joined'
+            'profile_picture', 'profile_banner', 'date_joined',
+            'followers_count', 'following_count', 'tweets_count', 'likes_received', 'retweets_made'
         ]
-        read_only_fields = [
-            'id', 'custom_id', 'date_joined', 'is_public', 'is_following'
-        ]
+        read_only_fields = fields
 
     def get_is_following(self, obj: User) -> bool:
         request = self.context.get('request')
         if request:
             return is_following(request.user, obj)
         return False
+
+    def get_followers_count(self, obj: User) -> int:
+        from accounts.selectors.user import get_followers_count
+        return get_followers_count(obj)
+
+    def get_following_count(self, obj: User) -> int:
+        from accounts.selectors.user import get_following_count
+        return get_following_count(obj)
+
+    def get_tweets_count(self, obj: User) -> int:
+        from accounts.selectors.user import get_tweets_count
+        return get_tweets_count(obj)
+
+    def get_likes_received(self, obj: User) -> int:
+        from accounts.selectors.user import get_likes_received_count
+        return get_likes_received_count(obj)
+
+    def get_retweets_made(self, obj: User) -> int:
+        from accounts.selectors.user import get_retweets_made_count
+        return get_retweets_made_count(obj)
 
 
 # =====================================================================
@@ -98,6 +122,16 @@ class PasswordChangeInputSerializer(serializers.Serializer):
 class LogoutInputSerializer(serializers.Serializer):
     """Input serializer for logout. Refresh token can come from cookies or body."""
     refresh = serializers.CharField(required=False, write_only=True, allow_blank=True)
+
+
+class FollowInputSerializer(serializers.Serializer):
+    """Input serializer for following a user."""
+    followee_id = serializers.CharField(required=True, write_only=True)
+
+
+class UnfollowInputSerializer(serializers.Serializer):
+    """Input serializer for unfollowing a user."""
+    followee_id = serializers.CharField(required=True, write_only=True)
 
 
 # =====================================================================

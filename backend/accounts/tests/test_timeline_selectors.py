@@ -6,6 +6,7 @@ from accounts.selectors import (
     get_user_tweets_queryset,
     get_user_followers_queryset,
     get_user_following_queryset,
+    get_user_retweets_queryset,
 )
 
 
@@ -49,4 +50,13 @@ class TestTimelineSelectors(TestCase):
         user = MagicMock()
         mock_filter.return_value.select_related.return_value.order_by.return_value = 'qs'
         qs = get_user_following_queryset(user)
+        self.assertEqual(qs, 'qs')
+
+    @patch('accounts.selectors.timeline.ReTweet.objects.filter')
+    @patch('accounts.selectors.timeline.Tweet.objects.filter')
+    def test_get_user_retweets_queryset(self, mock_tweet_filter, mock_retweet_filter):
+        user = MagicMock()
+        mock_retweet_filter.return_value.values.return_value = []
+        mock_tweet_filter.return_value.select_related.return_value.prefetch_related.return_value.annotate.return_value.order_by.return_value = 'qs'
+        qs = get_user_retweets_queryset(user)
         self.assertEqual(qs, 'qs')

@@ -1,10 +1,10 @@
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
+import { useQueryClient } from "@tanstack/react-query";
 import UsernameInput from "../components/loginRegister/UsernameInput";
 import PasswordInput from "../components/loginRegister/PasswordInput";
 import { useLogin } from "../hooks/useLogin";
-import useIsLoggedIn from "../hooks/global-hooks/useIsLoggedIn";
 import type { LoginFormType } from "../types/FormTypes";
 
 const Login = () => {
@@ -15,8 +15,8 @@ const Login = () => {
     formState: { errors },
   } = useForm<LoginFormType>();
   const { mutate } = useLogin();
-  const { setIsLoggedIn } = useIsLoggedIn();
   const navigation = useNavigate();
+  const queryClient = useQueryClient();
 
   const onSubmit = (data: LoginFormType) => {
     mutate(
@@ -26,8 +26,9 @@ const Login = () => {
       },
       {
         onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: ["myProf"] });
+
           toast.success("User Logged in Successfully!");
-          setIsLoggedIn();
           navigation("/");
         },
         onError: () => {
