@@ -30,7 +30,6 @@ const MyProfile = () => {
   const { data, isLoading } = useMyProfile();
   const [isTweetsOpen, setIsTweetsOpen] = useState(true);
   const [isProfilePicOpen, setIsProfilePicOpen] = useState(false);
-  const [isFollowed, setIsFollowed] = useState(false);
   const [isBannerOpen, setIsBannerOpen] = useState(false);
   const [isUserListOpen, setIsUserListOpen] = useState(false);
   const navigate = useNavigate();
@@ -61,9 +60,7 @@ const MyProfile = () => {
           avatarSrc={data.profile_picture || avatar}
           bannerSrc={data.profile_banner}
           editIconSrc={edit}
-          isFollowed={isFollowed}
           onAvatarClick={() => setIsProfilePicOpen((prev) => !prev)}
-          onFollowToggle={() => setIsFollowed((prev) => !prev)}
           onBannerClick={() => setIsBannerOpen(true)}
         />
       </div>

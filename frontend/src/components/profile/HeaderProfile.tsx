@@ -1,11 +1,16 @@
+import { useParams } from "react-router-dom";
+import Loading from "../loading/Loading";
+import type { followObjType, unfollowObjType } from "../../types/FollowTypes";
+
 interface HeaderProfileProps {
   isMyProfile: boolean;
   avatarSrc: string;
   bannerSrc: string;
   editIconSrc: string;
-  isFollowed: boolean;
+  isFollowed?: boolean;
+  followObj?: followObjType;
+  unfollowObj?: unfollowObjType;
   onAvatarClick: () => void;
-  onFollowToggle: () => void;
   onBannerClick: () => void;
 }
 
@@ -15,10 +20,24 @@ const HeaderProfile: React.FC<HeaderProfileProps> = ({
   bannerSrc,
   editIconSrc,
   isFollowed,
+  followObj,
+  unfollowObj,
   onAvatarClick,
-  onFollowToggle,
   onBannerClick,
 }) => {
+  const { id } = useParams();
+
+  const followHandler = () => {
+    if (id)
+      followObj?.follow({
+        followee_id: id,
+      });
+  };
+
+  const unfollowHandler = () => {
+    unfollowObj?.unfollow();
+  };
+
   return (
     <>
       {/* Banner */}
@@ -63,16 +82,24 @@ const HeaderProfile: React.FC<HeaderProfileProps> = ({
                   (isFollowed ? (
                     <button
                       className="w-50 h-19 text-3xl font-semibold rounded-[9999px] bg-black text-white border-2 border-white hover:bg-[#333] transition-colors cursor-pointer duration-300 text-center"
-                      onClick={onFollowToggle}
+                      onClick={unfollowHandler}
                     >
-                      Unfollow
+                      {unfollowObj?.unfollowLoading ? (
+                        <Loading width="w-10" height="h-10" />
+                      ) : (
+                        "Unfollow"
+                      )}
                     </button>
                   ) : (
                     <button
                       className="w-50 h-19 text-3xl font-semibold rounded-[9999px] bg-white text-black hover:bg-[#ccc] transition-colors cursor-pointer duration-300 text-center"
-                      onClick={onFollowToggle}
+                      onClick={followHandler}
                     >
-                      Follow
+                      {followObj?.followLoading ? (
+                        <Loading width="w-10" height="h-10" />
+                      ) : (
+                        "Follow"
+                      )}
                     </button>
                   ))}
               </div>
