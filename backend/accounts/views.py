@@ -4,11 +4,11 @@ from rest_framework import status, permissions
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.pagination import PageNumberPagination
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from rest_framework_simplejwt.tokens import RefreshToken
 from drf_spectacular.utils import extend_schema, OpenApiResponse, OpenApiParameter
+from core.pagination import TweeterPagination
 from accounts.serializers import (
     UserOutputSerializer, UserUpdateInputSerializer, FollowerOutputSerializer,
     RegisterInputSerializer, LogoutInputSerializer, PasswordChangeInputSerializer,
@@ -49,7 +49,7 @@ class UserListView(APIView):
     )
     def get(self, request: Request) -> Response:
         queryset = get_all_users()
-        paginator = PageNumberPagination()
+        paginator = TweeterPagination()
         page = paginator.paginate_queryset(queryset, request)
         serializer = UserOutputSerializer(page, many=True, context={'request': request})
         return paginator.get_paginated_response(serializer.data)
@@ -219,7 +219,7 @@ class PublicTimelineView(APIView):
     )
     def get(self, request: Request) -> Response:
         queryset = get_public_timeline_queryset(request.user)
-        paginator = PageNumberPagination()
+        paginator = TweeterPagination()
         page = paginator.paginate_queryset(queryset, request)
         serializer = TweetSerializer(page, many=True, context={'request': request})
         return paginator.get_paginated_response(serializer.data)
@@ -240,7 +240,7 @@ class PrivateTimelineView(APIView):
     )
     def get(self, request: Request) -> Response:
         queryset = get_private_timeline_queryset(request.user)
-        paginator = PageNumberPagination()
+        paginator = TweeterPagination()
         page = paginator.paginate_queryset(queryset, request)
         serializer = TweetSerializer(page, many=True, context={'request': request})
         return paginator.get_paginated_response(serializer.data)
@@ -263,7 +263,7 @@ class UserTweetsView(APIView):
     def get(self, request: Request, user_id: str) -> Response:
         user = get_user_by_id(user_id)
         queryset = get_user_tweets_queryset(user)
-        paginator = PageNumberPagination()
+        paginator = TweeterPagination()
         page = paginator.paginate_queryset(queryset, request)
         serializer = TweetSerializer(page, many=True, context={'request': request})
         return paginator.get_paginated_response(serializer.data)
@@ -286,7 +286,7 @@ class UserRetweetsView(APIView):
     def get(self, request: Request, user_id: str) -> Response:
         user = get_user_by_id(user_id)
         queryset = get_user_retweets_queryset(user)
-        paginator = PageNumberPagination()
+        paginator = TweeterPagination()
         page = paginator.paginate_queryset(queryset, request)
         serializer = TweetSerializer(page, many=True, context={'request': request})
         return paginator.get_paginated_response(serializer.data)
@@ -309,7 +309,7 @@ class UserFollowersView(APIView):
     def get(self, request: Request, user_id: str) -> Response:
         user = get_user_by_id(user_id)
         queryset = get_user_followers_queryset(user)
-        paginator = PageNumberPagination()
+        paginator = TweeterPagination()
         page = paginator.paginate_queryset(queryset, request)
         serializer = FollowerOutputSerializer(page, many=True)
         return paginator.get_paginated_response(serializer.data)
@@ -332,7 +332,7 @@ class UserFollowingView(APIView):
     def get(self, request: Request, user_id: str) -> Response:
         user = get_user_by_id(user_id)
         queryset = get_user_following_queryset(user)
-        paginator = PageNumberPagination()
+        paginator = TweeterPagination()
         page = paginator.paginate_queryset(queryset, request)
         serializer = FollowerOutputSerializer(page, many=True)
         return paginator.get_paginated_response(serializer.data)
@@ -387,24 +387,16 @@ class LoginView(TokenObtainPairView):
         }
     )
     def post(self, request: Request, *args: Any, **kwargs: Any) -> Response:
-        # Get tokens from parent class
         response = super().post(request, *args, **kwargs)
-        
-        # If authentication successful, set tokens as HttpOnly cookies
         if response.status_code == 200:
             access_token = response.data.get('access')
             refresh_token = response.data.get('refresh')
-            
-            # Create simple success response (frontend fetches user from /profile endpoint)
             new_response = Response(
                 {'detail': 'Login successful'},
                 status=status.HTTP_200_OK
             )
-            
-            # Set tokens in HttpOnly cookies
             new_response = set_token_cookies(new_response, access_token, refresh_token)
             return new_response
-        
         return response
 
 
@@ -432,53 +424,31 @@ class RefreshAccessTokenView(TokenRefreshView):
         }
     )
     def post(self, request: Request, *args: Any, **kwargs: Any) -> Response:
-        # Try to get refresh token from request data first, then from cookies
         refresh_token = None
-        
-        # Check if refresh token is in request body
         if request.data and 'refresh' in request.data:
             refresh_token = request.data.get('refresh')
-        
-        # If not in body, try to get from HttpOnly cookie
         if not refresh_token:
             refresh_token = request.COOKIES.get('refresh_token')
-        
-        # If we found a refresh token from cookies, add it to request data
         if refresh_token and (not request.data or 'refresh' not in request.data):
-            # Create a mutable copy of request data
             if hasattr(request.data, '_mutable'):
-                # QueryDict - make mutable, add refresh token, make immutable
                 request.data._mutable = True
                 request.data['refresh'] = refresh_token
                 request.data._mutable = False
             else:
-                # Fallback for other dict-like objects
                 request._full_data = dict(request.data or {}) if request.data else {}
                 request._full_data['refresh'] = refresh_token
-        
-        # Get response from parent class
         response = super().post(request, *args, **kwargs)
-        
-        # If refresh successful, set new tokens as HttpOnly cookies
         if response.status_code == 200:
             access_token = response.data.get('access')
             refresh_token_in_response = response.data.get('refresh')
-            
-            # Create new response
             new_response = Response(
                 {'detail': 'Token refreshed successfully'},
                 status=status.HTTP_200_OK
             )
-            
-            # Set access token in cookie
             new_response = set_access_token_cookie(new_response, access_token)
-            
-            # If refresh token was rotated, update it too
             if refresh_token_in_response:
                 new_response = set_refresh_token_cookie(new_response, refresh_token_in_response)
-            
             return new_response
-        
         return response
 
 
@@ -498,26 +468,17 @@ class LogoutView(APIView):
     def post(self, request: Request) -> Response:
         serializer = LogoutInputSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        
         try:
-            # Get refresh token from request body or cookies (cookies take precedence for auto-logout)
             data = cast(dict[str, Any], serializer.validated_data)
             refresh_token = data.get('refresh')
-            
-            # If not provided in body, get from HttpOnly cookie
             if not refresh_token:
                 refresh_token = request.COOKIES.get('refresh_token')
-            
-            # Blacklist refresh token if available (for extra security)
             if refresh_token:
                 try:
                     token = RefreshToken(refresh_token)
                     token.blacklist()
                 except Exception:
-                    # Token might already be invalid or already blacklisted, that's okay
                     pass
-            
-            # Create response and clear cookies
             response = Response(
                 {"detail": "Successfully logged out."},
                 status=status.HTTP_205_RESET_CONTENT
