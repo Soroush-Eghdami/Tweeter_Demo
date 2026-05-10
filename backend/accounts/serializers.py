@@ -19,7 +19,7 @@ class UserLiteOutputSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['id', 'username', 'custom_id', 'is_public', 'profile_picture']
+        fields = ['id', 'username', 'email', 'custom_id', 'is_public', 'profile_picture']
         read_only_fields = fields
 
 
