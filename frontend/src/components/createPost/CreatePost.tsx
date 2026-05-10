@@ -14,17 +14,16 @@ const CreatePost = ({
   setIsCreatedPost,
   isCreatedPost,
 }: CreatePostPropType) => {
-  
   // for create tweet
   const [content, setContent] = useState("");
   const createTweetMutation = useCreateTweet();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!content.trim()) 
-      {toast.error ("Enter your post ")
-        return;
-      }
+    if (!content.trim()) {
+      toast.error("Enter your post ");
+      return;
+    }
     createTweetMutation.mutate(
       {
         content: content.trim(),
@@ -34,16 +33,16 @@ const CreatePost = ({
         onSuccess: () => {
           setContent("");
           setIsCreatedPost(false);
-          toast.success("Post success !")
+          toast.success("Post success !");
         },
-          onError: (error: any) => {
-            const errorMessage = error?.response?.data?.message || "Error to sent post";
-            toast.error(errorMessage);
+        onError: (error: any) => {
+          const errorMessage =
+            error?.response?.data?.message || "Error to sent post";
+          toast.error(errorMessage);
         },
       },
     );
   };
-
 
   return (
     <>
@@ -79,12 +78,12 @@ const CreatePost = ({
                     id="checkbox"
                     className="peer h-5 w-5 appearance-none rounded border-[1.5px] border-white transition-all hover:scale-105 duration-200 ease-in-out"
                   /> */}
-                  {/* <label className="text-white font-semibold" htmlFor="checkbox">
+                {/* <label className="text-white font-semibold" htmlFor="checkbox">
                     Private Post
                   </label> */}
 
-                  {/* Custom checkmark */}
-                  {/* <svg
+                {/* Custom checkmark */}
+                {/* <svg
                     className="absolute w-5 h-5 text-white opacity-0 peer-checked:opacity-100 transition-opacity"
                     viewBox="0 0 20 20"
                     fill="none"
@@ -103,20 +102,25 @@ const CreatePost = ({
                 <button
                   type="submit"
                   disabled={createTweetMutation.isPending}
-                  className="flex flex-row gap-1 text-black bg-white px-4 py-1.5 my-3 rounded-4xl font-bold cursor-pointer hover:bg-[#ddd]"
+                  className="text-black bg-white px-4 py-1.5 my-3 rounded-4xl font-bold cursor-pointer hover:bg-[#ddd]"
                 >
-                  {createTweetMutation.isPending ? (
-                    <Loading width="w-5" height="h-5"/>
-                  ) : (
-                    <>
+                  <div className="grid grid-cols-1 place-items-center">
+                    {createTweetMutation.isPending && (
+                      <div className="col-start-1 row-start-1">
+                        <Loading width="w-5" height="h-5" />
+                      </div>
+                    )}
+                    <div
+                      className={`col-start-1 row-start-1 flex items-center gap-1 ${createTweetMutation.isPending ? "invisible" : ""}`}
+                    >
                       <img
                         src={createPost}
                         alt="create-post"
                         className="size-5 mt-0.5"
                       />
-                      Post
-                    </>
-                  )}
+                      <span>Post</span>
+                    </div>
+                  </div>
                 </button>
               </div>
             </div>
