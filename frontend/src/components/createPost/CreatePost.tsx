@@ -1,4 +1,6 @@
-import { useState, FormEvent } from "react";
+import { useState } from "react";
+import toast from "react-hot-toast";
+import Loading from "../loading/Loading";
 import { useCreateTweet } from "../../hooks/useCreateTweet";
 import userProfile from "../../assets/icons/profile-default.svg";
 import createPost from "../../assets/icons/post.svg";
@@ -17,9 +19,12 @@ const CreatePost = ({
   const [content, setContent] = useState("");
   const createTweetMutation = useCreateTweet();
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!content.trim()) return;
+    if (!content.trim()) 
+      {toast.error ("Enter your post ")
+        return;
+      }
     createTweetMutation.mutate(
       {
         content: content.trim(),
@@ -29,14 +34,15 @@ const CreatePost = ({
         onSuccess: () => {
           setContent("");
           setIsCreatedPost(false);
+          toast.success("Post success !")
+        },
+          onError: (error: any) => {
+            const errorMessage = error?.response?.data?.message || "Error to sent post";
+            toast.error(errorMessage);
         },
       },
     );
   };
-
-  // const handleClick = () => {
-  //   setIsCreatedPost(false);
-  // };
 
 
   return (
@@ -96,12 +102,11 @@ const CreatePost = ({
               <div className="flex flex-row items-center ml-auto mr-6">
                 <button
                   type="submit"
-                  disabled={createTweetMutation.isPending || !content.trim()}
-                  onClick={() => handleClick()}
+                  disabled={createTweetMutation.isPending}
                   className="flex flex-row gap-1 text-black bg-white px-4 py-1.5 my-3 rounded-4xl font-bold cursor-pointer hover:bg-[#ddd]"
                 >
                   {createTweetMutation.isPending ? (
-                    "Posting..."
+                    <Loading width="w-5" height="h-5"/>
                   ) : (
                     <>
                       <img
