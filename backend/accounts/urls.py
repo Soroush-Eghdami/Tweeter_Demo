@@ -20,6 +20,7 @@ urlpatterns = [
     path('timeline/public/', views.PublicTimelineView.as_view(), name='public-timeline'),
     path('timeline/private/', views.PrivateTimelineView.as_view(), name='private-timeline'),
     path('users/<uuid:user_id>/tweets/', views.UserTweetsView.as_view(), name='user-tweets'),
+    path('users/<uuid:user_id>/retweets/', views.UserRetweetsView.as_view(), name='user-retweets'),
     path('users/<uuid:user_id>/followers/', views.UserFollowersView.as_view(), name='user-followers'),
     path('users/<uuid:user_id>/following/', views.UserFollowingView.as_view(), name='user-following'),
 

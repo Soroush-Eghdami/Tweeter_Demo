@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
+import { useQueryClient } from "@tanstack/react-query";
 import useIsLoggedIn from "../hooks/global-hooks/useIsLoggedIn";
 import { useLogout } from "../hooks/useLogout";
 import Search from "./Search";
@@ -16,11 +17,15 @@ const Navbar = () => {
   const { mutate } = useLogout();
   const navigation = useNavigate();
 
+  const queryClient = useQueryClient();
+
   const logoutFunc = () => {
     try {
       mutate();
       toast.success("User Logged Out Successfully!");
       navigation("/login");
+
+      queryClient.clear();
     } catch (error) {
       toast.error("Logging Out Failed!");
     }
