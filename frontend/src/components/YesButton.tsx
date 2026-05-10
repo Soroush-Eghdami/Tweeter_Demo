@@ -22,7 +22,8 @@ const YesButton = ({
     <>
       <button
         onClick={handleClick}
-        className={`${padding} flex items-center justify-center bg-white rounded-[50%] cursor-pointer transition-all hover:scale-105 duration-200 ease-in-out`}
+        disabled={isLoading}
+        className={`${padding} flex items-center justify-center bg-white rounded-[50%] cursor-pointer transition-all hover:scale-105 disabled:cursor-not-allowed disabled:bg-[#999] duration-200 ease-in-out`}
       >
         {isLoading ? (
           <Loading width="w-6.25" height="h-6.25" />

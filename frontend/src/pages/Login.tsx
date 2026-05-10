@@ -6,6 +6,7 @@ import UsernameInput from "../components/loginRegister/UsernameInput";
 import PasswordInput from "../components/loginRegister/PasswordInput";
 import { useLogin } from "../hooks/useLogin";
 import type { LoginFormType } from "../types/FormTypes";
+import Loading from "../components/loading/Loading";
 
 const Login = () => {
   const {
@@ -14,7 +15,7 @@ const Login = () => {
     reset,
     formState: { errors },
   } = useForm<LoginFormType>();
-  const { mutate } = useLogin();
+  const { mutate, isPending } = useLogin();
   const navigation = useNavigate();
   const queryClient = useQueryClient();
 
@@ -60,9 +61,10 @@ const Login = () => {
 
           <button
             type="submit"
-            className="w-[70%] rounded-xl font-bold px-16 py-3 bg-white text-black mt-12 cursor-pointer hover:bg-gray-200"
+            disabled={isPending}
+            className="w-[70%] rounded-xl font-bold px-16 py-3 bg-white text-black mt-12 cursor-pointer hover:bg-gray-200 disabled:cursor-not-allowed"
           >
-            Login
+            {isPending ? <Loading width="w-6" height="h-6" /> : "Login"}
           </button>
           <p className="mb-14">
             Don't have an account?{" "}
