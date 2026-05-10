@@ -4,9 +4,9 @@ import toast from "react-hot-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import UsernameInput from "../components/loginRegister/UsernameInput";
 import PasswordInput from "../components/loginRegister/PasswordInput";
+import Loading from "../components/loading/Loading";
 import { useLogin } from "../hooks/useLogin";
 import type { LoginFormType } from "../types/FormTypes";
-import Loading from "../components/loading/Loading";
 
 const Login = () => {
   const {

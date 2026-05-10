@@ -8,6 +8,7 @@ import RightBox from "../components/profile/RightBox";
 import LeftBox from "../components/profile/LeftBox";
 import FollowingFollower from "../components/followingFollowerPopUp/FollowingFollowerPopUp";
 import ProfilePictureEdit from "../components/profilePictureEdit/ProfilePictureEdit";
+import LoadingPage from "../components/loading/LoadingPage";
 import { useMyProfile } from "../hooks/useMyProfile";
 import { useUpdateProfilePicture } from "../hooks/useUpdateProfile";
 import { userTweetInfo } from "../contents/userTweetInfo";
@@ -25,7 +26,6 @@ import bio from "../assets/icons/profile/bio.svg";
 import retweet from "../assets/icons/profile/retweet.svg";
 import retweetGreen from "../assets/icons/profile/repeat.svg";
 import editUser from "../assets/icons/profile/edit-username.svg";
-import LoadingPage from "../components/loading/LoadingPage";
 
 const MyProfile = () => {
   const { data, isLoading } = useMyProfile();
@@ -46,6 +46,7 @@ const MyProfile = () => {
       {isLoading && <LoadingPage />}
       <div>
         <FollowingFollower
+          userId={data.id}
           setIsUserListOpen={setIsUserListOpen}
           isUserListOpen={isUserListOpen}
         />
