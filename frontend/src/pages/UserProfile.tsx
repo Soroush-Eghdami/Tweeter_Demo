@@ -43,6 +43,7 @@ const UserProfile = () => {
     <div className="min-h-fit w-full bg-custom-dark-gradient">
       <div>
         <FollowingFollower
+          userId={id || ""}
           setIsUserListOpen={setIsUserListOpen}
           isUserListOpen={isUserListOpen}
         />

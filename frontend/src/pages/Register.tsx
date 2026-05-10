@@ -7,9 +7,9 @@ import UsernameInput from "../components/loginRegister/UsernameInput";
 import EmailInput from "../components/loginRegister/EmailInput";
 import PasswordInput from "../components/loginRegister/PasswordInput";
 import RepeatPasswordInput from "../components/loginRegister/RepeatPasswordInput";
+import Loading from "../components/loading/Loading";
 import { useRegister } from "../hooks/useRegister";
 import type { RegisterFormType } from "../types/FormTypes";
-import Loading from "../components/loading/Loading";
 
 const Register = () => {
   const {
