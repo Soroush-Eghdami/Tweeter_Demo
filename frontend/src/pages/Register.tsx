@@ -9,6 +9,7 @@ import PasswordInput from "../components/loginRegister/PasswordInput";
 import RepeatPasswordInput from "../components/loginRegister/RepeatPasswordInput";
 import { useRegister } from "../hooks/useRegister";
 import type { RegisterFormType } from "../types/FormTypes";
+import Loading from "../components/loading/Loading";
 
 const Register = () => {
   const {
@@ -19,7 +20,7 @@ const Register = () => {
     getValues,
     formState: { errors },
   } = useForm<RegisterFormType>();
-  const { mutate } = useRegister();
+  const { mutate, isPending } = useRegister();
   const navigation = useNavigate();
 
   const onSubmit = (data: RegisterFormType) => {
@@ -98,9 +99,10 @@ const Register = () => {
 
             <button
               type="submit"
-              className="w-[70%] rounded-xl font-bold px-16 py-3 bg-white text-black mt-12 cursor-pointer hover:bg-gray-200"
+              disabled={isPending}
+              className="w-[70%] rounded-xl font-bold px-16 py-3 bg-white text-black mt-12 cursor-pointer hover:bg-gray-200 disabled:cursor-not-allowed"
             >
-              Register
+              {isPending ? <Loading width="w-6" height="h-6" /> : "Register"}
             </button>
 
             <p className="mb-12">
