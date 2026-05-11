@@ -11,7 +11,8 @@ export const useMyProfile = () => {
   return useQuery({
     queryKey: ["myProf"],
     queryFn: MyProfileInfo,
-    staleTime: 15 * 60 * 1000, // 15 min
+    staleTime: 0,
+    // staleTime: 15 * 60 * 1000, // 15 min
     // refetchOnMount: false,
     refetchOnWindowFocus: false,
     retry: (failureCount, error) => {

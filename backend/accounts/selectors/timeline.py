@@ -1,4 +1,5 @@
-from django.db.models import Prefetch, Q, QuerySet
+from django.db import models
+from django.db.models import Prefetch, Q, QuerySet, Max
 from ..models import Follower, User
 from tweets.models import ReTweet, Tweet
 
@@ -61,3 +62,13 @@ def get_user_following_queryset(user: User) -> QuerySet[Follower]:
         .select_related("followee")
         .order_by("-created_at")
     )
+
+
+def get_user_retweets_queryset(user: User) -> QuerySet[Tweet]:
+    return Tweet.objects.filter(  # type: ignore[union-attr]
+        id__in=ReTweet.objects.filter(user=user).values('original_tweet_id')  # type: ignore[union-attr]
+    ).select_related('user').prefetch_related(
+        Prefetch('retweet_set', queryset=ReTweet.objects.select_related('user'))
+    ).annotate(
+        retweet_date=Max('retweet__created_at', filter=models.Q(retweet__user=user))
+    ).order_by('-retweet_date')

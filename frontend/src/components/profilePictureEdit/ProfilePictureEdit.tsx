@@ -5,16 +5,19 @@ import NoButton from "../NoButton";
 import YesButton from "../YesButton";
 import MirrorButton from "./MirrorButton";
 import RotateButton from "./RotateButton";
+import type { picUpdateObjType } from "../../types/UpdateProfileTypes";
 import folder from "../../assets/icons/profile/folder.svg";
 
 interface ProfilePictureEditPropsType {
   isOpen: boolean;
   setIsOpen: (arg0: boolean) => void;
+  picUpdateObj?: picUpdateObjType;
 }
 
 const ProfilePictureEdit = ({
   isOpen,
   setIsOpen,
+  picUpdateObj,
 }: ProfilePictureEditPropsType) => {
   const [pic, setPic] = useState<string | null>(null);
   const [crop, setCrop] = useState({ x: 0, y: 0 });
@@ -43,6 +46,15 @@ const ProfilePictureEdit = ({
     [],
   );
 
+  const resetStates = () => {
+    setPic(null);
+    setCrop({ x: 0, y: 0 });
+    setZoom(1);
+    setRotation(0);
+    setCroppedAreaPixels(null);
+    if (fileInput.current) fileInput.current.value = "";
+  };
+
   const handleSave = async () => {
     if (!pic || !croppedAreaPixels) {
       console.warn("No image or crop area selected");
@@ -56,9 +68,13 @@ const ProfilePictureEdit = ({
         rotation,
         false,
       );
+
       if (finalImageFile) {
-        const previewUrl = URL.createObjectURL(finalImageFile);
-        window.open(previewUrl, "_blank");
+        const formData = new FormData();
+        formData.append("profile_picture", finalImageFile);
+        if (picUpdateObj) await picUpdateObj.picUpdate(formData);
+        setIsOpen(false);
+        setTimeout(() => resetStates(), 500);
       }
     } catch (error) {
       console.log(error);
@@ -113,21 +129,20 @@ const ProfilePictureEdit = ({
                 className="hidden"
               />
             </div>
-            {
-              <div className="flex flex-col items-center gap-5 w-fit">
-                <RotateButton pic={pic} setRotation={setRotation} />
-                <MirrorButton pic={pic} setPic={setPic} />
-              </div>
-            }
+            <div className="flex flex-col items-center gap-5 w-fit">
+              <RotateButton pic={pic} setRotation={setRotation} />
+              <MirrorButton pic={pic} setPic={setPic} />
+            </div>
             <div className="flex gap-3">
               <NoButton
                 setIsOpenPopUp={setIsOpen}
+                resetState={resetStates}
                 size="size-7"
                 padding="p-4"
               />
               <div onClick={handleSave}>
                 <YesButton
-                  setIsOpenPopUp={setIsOpen}
+                  isLoading={picUpdateObj?.picUpdateLoading}
                   size="size-7"
                   padding="p-4"
                 />

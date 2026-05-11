@@ -8,7 +8,9 @@ import RightBox from "../components/profile/RightBox";
 import LeftBox from "../components/profile/LeftBox";
 import FollowingFollower from "../components/followingFollowerPopUp/FollowingFollowerPopUp";
 import ProfilePictureEdit from "../components/profilePictureEdit/ProfilePictureEdit";
+import LoadingPage from "../components/loading/LoadingPage";
 import { useMyProfile } from "../hooks/useMyProfile";
+import { useUpdateProfilePicture } from "../hooks/useUpdateProfile";
 import { userTweetInfo } from "../contents/userTweetInfo";
 import { userRetweetInfo } from "../contents/userRetweetInfo";
 import { userInfo } from "../contents/userInfo";
@@ -24,13 +26,13 @@ import bio from "../assets/icons/profile/bio.svg";
 import retweet from "../assets/icons/profile/retweet.svg";
 import retweetGreen from "../assets/icons/profile/repeat.svg";
 import editUser from "../assets/icons/profile/edit-username.svg";
-import LoadingPage from "../components/loading/LoadingPage";
 
 const MyProfile = () => {
   const { data, isLoading } = useMyProfile();
+  const { mutateAsync: picUpdate, isPending: picUpdateLoading } =
+    useUpdateProfilePicture();
   const [isTweetsOpen, setIsTweetsOpen] = useState(true);
   const [isProfilePicOpen, setIsProfilePicOpen] = useState(false);
-  const [isFollowed, setIsFollowed] = useState(false);
   const [isBannerOpen, setIsBannerOpen] = useState(false);
   const [isUserListOpen, setIsUserListOpen] = useState(false);
   const navigate = useNavigate();
@@ -44,6 +46,7 @@ const MyProfile = () => {
       {isLoading && <LoadingPage />}
       <div>
         <FollowingFollower
+          userId={data.id}
           setIsUserListOpen={setIsUserListOpen}
           isUserListOpen={isUserListOpen}
         />
@@ -52,6 +55,10 @@ const MyProfile = () => {
         <ProfilePictureEdit
           isOpen={isProfilePicOpen}
           setIsOpen={setIsProfilePicOpen}
+          picUpdateObj={{
+            picUpdate,
+            picUpdateLoading,
+          }}
         />
       </div>
 
@@ -61,9 +68,7 @@ const MyProfile = () => {
           avatarSrc={data.profile_picture || avatar}
           bannerSrc={data.profile_banner}
           editIconSrc={edit}
-          isFollowed={isFollowed}
           onAvatarClick={() => setIsProfilePicOpen((prev) => !prev)}
-          onFollowToggle={() => setIsFollowed((prev) => !prev)}
           onBannerClick={() => setIsBannerOpen(true)}
         />
       </div>

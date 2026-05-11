@@ -29,7 +29,7 @@ class TweetRetweetAPITestCase(TestCase):
 
         token_url = reverse('token_obtain_pair')
         resp = self.client.post(token_url, {'username': 'tweeter1', 'password': 'pass'})
-        self.token = resp.data['access']
+        self.token = resp.cookies['access_token'].value
         self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {self.token}')
 
         self.public_tweet = Tweet.objects.create(user=self.user1, content='Public tweet')
@@ -91,7 +91,7 @@ class TweetLikeAPITestCase(TestCase):
 
         token_url = reverse('token_obtain_pair')
         resp = self.client.post(token_url, {'username': 'tweeter1', 'password': 'pass'})
-        self.token = resp.data['access']
+        self.token = resp.cookies['access_token'].value
         self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {self.token}')
 
         self.public_tweet = Tweet.objects.create(user=self.user1, content='Public tweet')
@@ -165,7 +165,7 @@ class TweetQueryOptimizationTestCase(TestCase):
 
         token_url = reverse('token_obtain_pair')
         resp = self.client.post(token_url, {'username': 'tweeter1', 'password': 'pass'})
-        self.token = resp.data['access']
+        self.token = resp.cookies['access_token'].value
         self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {self.token}')
 
         self.public_tweet = Tweet.objects.create(user=self.user1, content='Public tweet')

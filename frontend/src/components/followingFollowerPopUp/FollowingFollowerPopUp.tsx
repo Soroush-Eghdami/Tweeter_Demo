@@ -1,19 +1,71 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useFollowingList } from "../../hooks/useFollowingFollowerList";
 import Follower from "./Follower";
 import Following from "./Following";
 import ExitButton from "./ExitButton";
+import Loading from "../loading/Loading";
+import type { FollowingListType } from "../../types/FollowingFollowerType";
 import user from "../../assets/icons/profile/follower-following-counter.svg";
 
 interface FollowingFollowerPropsType {
+  userId: string;
   setIsUserListOpen: (arg0: boolean) => void;
   isUserListOpen: boolean;
 }
 
 const FollowingFollower = ({
+  userId,
   setIsUserListOpen,
   isUserListOpen,
 }: FollowingFollowerPropsType) => {
   const [isFollowing, setIsFollowing] = useState(true);
+  const {
+    data: followingData,
+    fetchNextPage: followingFetchNextPage,
+    hasNextPage: followingHasNextPage,
+    isFetchingNextPage: followingIsFetchNextPage,
+    isLoading: followingListLoading,
+  } = useFollowingList(userId, 5, { enabled: isUserListOpen });
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const loadMoreRef = useRef<HTMLDivElement>(null);
+
+  const followingList =
+    followingData?.pages.flatMap((page) => page.results) ?? [];
+
+  // Scroll Handling for fetching new data
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    const loadMore = loadMoreRef.current;
+    if (
+      !container ||
+      !loadMore ||
+      !followingHasNextPage ||
+      followingIsFetchNextPage
+    ) {
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          followingFetchNextPage();
+        }
+      },
+      { root: container, rootMargin: "0px 0px 100px 0px" },
+    );
+
+    observer.observe(loadMore);
+    return () => observer.disconnect();
+  }, [followingHasNextPage, followingIsFetchNextPage, followingFetchNextPage]);
+
+  // Track the last element
+  const handleLast = (index: number) => {
+    if (!followingHasNextPage && index === followingList.length - 1) {
+      return true;
+    } else {
+      return false;
+    }
+  };
 
   return (
     <>
@@ -55,8 +107,8 @@ const FollowingFollower = ({
             </button>
           </div>
 
-          {/* <div className="rounded-b-2xl flex-1 min-h-0 overflow-hidden"> */}
           <div
+            ref={scrollContainerRef}
             className="rounded-b-2xl flex-1 min-h-0 overflow-y-auto mb-1.5
                     [&::-webkit-scrollbar]:w-1.5
                     [&::-webkit-scrollbar-track]:bg-white/10
@@ -68,15 +120,30 @@ const FollowingFollower = ({
           >
             {isFollowing ? (
               <div>
-                <Following />
-                <Following />
-                <Following />
-                <Following />
-                <Following />
-                <Following />
-                <Following />
-                <Following />
-                <Following />
+                {/* Initial Loading */}
+                {followingListLoading && (
+                  <div className="my-46">
+                    <Loading />
+                  </div>
+                )}
+                {/* Mapping Through Each Following */}
+                {followingList.map((following: FollowingListType, index) => (
+                  <Following
+                    key={following.id}
+                    info={following}
+                    isLast={handleLast(index)}
+                  />
+                ))}
+                {/* Simple Space Use for Observer to when fetch more data */}
+                {followingHasNextPage && (
+                  <div ref={loadMoreRef} className="h-5" />
+                )}
+                {/* Loading when it's going to next page */}
+                {followingIsFetchNextPage && (
+                  <div className="flex justify-center py-10">
+                    <Loading width="w-10" height="h-10" />
+                  </div>
+                )}
               </div>
             ) : (
               <div>

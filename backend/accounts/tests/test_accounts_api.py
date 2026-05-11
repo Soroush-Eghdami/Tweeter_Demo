@@ -295,14 +295,14 @@ class AccountsAPITestCase(TestCase):
         Follower.objects.create(follower=self.user1, followee=self.user2)
         url = reverse('unfollow-user')
         data = {'followee_id': str(self.user2.id)}
-        response = self.client.delete(url, data, format='json')
+        response = self.client.post(url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertFalse(Follower.objects.filter(follower=self.user1, followee=self.user2).exists())
 
     def test_unfollow_not_following_fails(self):
         url = reverse('unfollow-user')
         data = {'followee_id': str(self.user2.id)}
-        response = self.client.delete(url, data, format='json')
+        response = self.client.post(url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn('not following', response.data['error'])
 
@@ -313,7 +313,7 @@ class AccountsAPITestCase(TestCase):
         url = reverse('public-timeline')
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        contents = [t['message'] for t in response.data['results']]
+        contents = [t['content'] for t in response.data['results']]
         self.assertIn('Public tweet from alice', contents)
         self.assertNotIn('Private tweet from bob', contents)
 
@@ -321,7 +321,7 @@ class AccountsAPITestCase(TestCase):
         Follower.objects.create(follower=self.user1, followee=self.user2)
         url = reverse('public-timeline')
         response = self.client.get(url)
-        contents = [t['message'] for t in response.data['results']]
+        contents = [t['content'] for t in response.data['results']]
         self.assertIn('Private tweet from bob', contents)
 
     def test_private_timeline_shows_only_followed(self):
@@ -329,7 +329,7 @@ class AccountsAPITestCase(TestCase):
         url = reverse('private-timeline')
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        contents = [t['message'] for t in response.data['results']]
+        contents = [t['content'] for t in response.data['results']]
         self.assertIn('Private tweet from bob', contents)
         self.assertNotIn('Public tweet from alice', contents)
 
@@ -338,6 +338,13 @@ class AccountsAPITestCase(TestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data['results']), 1)
+
+    def test_user_retweets_endpoint(self):
+        url = reverse('user-retweets', kwargs={'user_id': self.user1.id})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data['results']), 1)
+        self.assertEqual(response.data['results'][0]['content'], 'Private tweet from bob')
 
     def test_user_followers_endpoint(self):
         Follower.objects.create(follower=self.user2, followee=self.user1)

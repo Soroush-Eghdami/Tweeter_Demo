@@ -2,16 +2,14 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import UserTweet from "../components/profile/UserTweet";
 import UserRetweet from "../components/profile/UserRetweet";
-import EditBanner from "../components/profileBannerEdit/EditBanner";
 import HeaderProfile from "../components/profile/HeaderProfile";
 import RightBox from "../components/profile/RightBox";
 import LeftBox from "../components/profile/LeftBox";
 import FollowingFollower from "../components/followingFollowerPopUp/FollowingFollowerPopUp";
-import ProfilePictureEdit from "../components/profilePictureEdit/ProfilePictureEdit";
 import { useUserProfile } from "../hooks/useUserProfile";
+import { useFollow, useUnfollow } from "../hooks/useFollowUnfollow";
 import { userTweetInfo } from "../contents/userTweetInfo";
 import { userRetweetInfo } from "../contents/userRetweetInfo";
-import { userInfo } from "../contents/userInfo";
 import tweet from "../assets/icons/profile/tweet.svg";
 import tweetBlue from "../assets/icons/profile/peace_pigeon.svg";
 import avatar from "../assets/icons/profile-default.svg";
@@ -29,10 +27,9 @@ import LoadingPage from "../components/loading/LoadingPage";
 const UserProfile = () => {
   const { id } = useParams();
   const { data, isLoading } = useUserProfile(id || "");
+  const { mutate: follow, isPending: followLoading } = useFollow();
+  const { mutate: unfollow, isPending: unfollowLoading } = useUnfollow();
   const [isTweetsOpen, setIsTweetsOpen] = useState(true);
-  const [isProfilePicOpen, setIsProfilePicOpen] = useState(false);
-  const [isFollowed, setIsFollowed] = useState(false);
-  const [isBannerOpen, setIsBannerOpen] = useState(false);
   const [isUserListOpen, setIsUserListOpen] = useState(false);
   const navigate = useNavigate();
 
@@ -46,27 +43,26 @@ const UserProfile = () => {
     <div className="min-h-fit w-full bg-custom-dark-gradient">
       <div>
         <FollowingFollower
+          userId={id || ""}
           setIsUserListOpen={setIsUserListOpen}
           isUserListOpen={isUserListOpen}
         />
       </div>
-      <div>
-        <ProfilePictureEdit
-          isOpen={isProfilePicOpen}
-          setIsOpen={setIsProfilePicOpen}
-        />
-      </div>
-
       <div className="w-full">
         <HeaderProfile
           isMyProfile={false}
           avatarSrc={data.profile_picture || avatar}
           bannerSrc={data.profile_banner}
           editIconSrc={edit}
-          isFollowed={isFollowed}
-          onAvatarClick={() => setIsProfilePicOpen((prev) => !prev)}
-          onFollowToggle={() => setIsFollowed((prev) => !prev)}
-          onBannerClick={() => setIsBannerOpen(true)}
+          isFollowed={data.is_following}
+          followObj={{
+            follow,
+            followLoading,
+          }}
+          unfollowObj={{
+            unfollow,
+            unfollowLoading,
+          }}
         />
       </div>
 
@@ -107,15 +103,6 @@ const UserProfile = () => {
             </div>
           )}
         </RightBox>
-      </div>
-      <div>
-        <EditBanner
-          isOpen={isBannerOpen}
-          onClose={() => setIsBannerOpen(false)}
-          username={userInfo.name}
-          email={userInfo.email}
-          bio={userInfo.bio}
-        />
       </div>
     </div>
   );
