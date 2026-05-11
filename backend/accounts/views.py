@@ -259,7 +259,7 @@ class UserTweetsView(APIView):
         summary="User tweets",
         description="Returns a paginated list of tweets by a specific user.",
         tags=["users"],
-        responses={200: TweeterPagination(many=True)},
+        responses={200: TweetOutputSerializer(many=True)},
     )
     def get(self, request: Request, user_id: str) -> Response:
         user = get_user_by_id(user_id)
@@ -282,7 +282,7 @@ class UserRetweetsView(APIView):
         summary="User retweets",
         description="Returns a paginated list of tweets that a specific user has retweeted.",
         tags=["users"],
-        responses={200: TweeterPagination(many=True)},
+        responses={200: TweetOutputSerializer(many=True)},
     )
     def get(self, request: Request, user_id: str) -> Response:
         user = get_user_by_id(user_id)
