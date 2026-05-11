@@ -14,8 +14,13 @@ interface FolloweeType {
   profile_picture: string;
 }
 
-export interface FollowingListType {
+export interface FollowingFollowerListType {
   id: string;
   follower: FollowerType;
   followee: FolloweeType;
+}
+
+export interface FollowingFollowerPropsType {
+  info: FollowingFollowerListType;
+  isLast: boolean;
 }
