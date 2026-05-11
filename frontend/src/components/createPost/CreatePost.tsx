@@ -66,7 +66,10 @@ const CreatePost = ({
                   <Loading width="w-6" height="h-6"/>
                 </div>
               ) : (
-                <img src="{userProfile}" alt="user-profile" className="size-18 rounded-full object-cover"/>
+                <img 
+                key={profile?.profile_picture}
+                src={profile?.profile_picture || userProfile}
+                alt="user-profile" className="size-18 rounded-full object-cover"/>
               )}
               {/* username */}
               {profileLoading ? (
