@@ -56,7 +56,7 @@ class TweetReplyDepthLimitTestCase(TestCase):
         data = {'content': 'Too deep', 'parent_tweet': parent.pk}
         response = self.client.post(url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn('cannot exceed', str(response.data['detail']).lower())
+        self.assertIn('cannot exceed', str(response.data['error']).lower())
 
 
 class TweetCircularReferenceTestCase(TestCase):

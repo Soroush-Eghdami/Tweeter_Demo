@@ -127,7 +127,7 @@ class TweetCreateAPITestCase(TestCase):
         data = {'content': 'Cannot reply', 'parent_tweet': self.private_tweet.pk}
         response = self.client.post(url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn('not visible', response.data['detail']['error'])
+        self.assertIn('not visible', response.data['error'])
 
 
 class TweetDeleteAPITestCase(TestCase):
