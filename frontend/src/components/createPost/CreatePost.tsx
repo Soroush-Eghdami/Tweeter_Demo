@@ -1,6 +1,7 @@
 import { useState } from "react";
 import toast from "react-hot-toast";
 import Loading from "../loading/Loading";
+import NoButton from "../NoButton";
 import { useCreateTweet } from "../../hooks/useCreateTweet";
 import { useMyProfile } from "../../hooks/useMyProfile";
 import userProfile from "../../assets/icons/profile-default.svg";
@@ -60,7 +61,6 @@ const CreatePost = ({
           <form onSubmit={handleSubmit}>
             <div className="flex flex-row gap-3 pt-9 px-10">
               {/* <img src={userProfile} alt="user-profile" className="size-18" /> */}
-
               {profileLoading ? (
                 <div className="size-18 flex items-center justify-center">
                   <Loading width="w-6" height="h-6"/>
@@ -73,9 +73,9 @@ const CreatePost = ({
               )}
               {/* username */}
               {profileLoading ? (
-                <div className="h-6 w-32 bg-gray-600 animate-pulse rounded"></div>
+                <div className="h-6 w-32 ml-2 mt-3 bg-gray-600 animate-pulse rounded"></div>
               ) : (
-                <p className="text-white font-semibold text-lg">{displayName}</p>
+                <p className="text-white font-semibold text-lg ml-2 mt-2">{displayName}</p>
               )}
 
             </div>
@@ -83,8 +83,8 @@ const CreatePost = ({
               <textarea
                 name="create-tweet"
                 id="create-tweet"
-                className="h-35 text-[#f4f4f4] placeholder:text-[#939393] resize-none py-3 px-4 mb-2 rounded-xl w-full focus:outline-none"
-                placeholder="Write your tweet here"
+                className="h-35 mt-2 text-[#f4f4f4] placeholder:text-[#939393] resize-none py-3 px-4 mb-2 rounded-xl w-full focus:outline-none"
+                placeholder="Write your tweet here ..."
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
                 disabled={createTweetMutation.isPending}
