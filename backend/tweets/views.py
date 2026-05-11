@@ -43,7 +43,9 @@ class TweetListView(APIView):
     @extend_schema(
         summary="Create tweet",
         description="Create a new tweet. Supports multipart/form-data for media upload.",
-        request=CreateTweetInputSerializer,
+        request={
+            'multipart/form-data': CreateTweetInputSerializer,
+        },
         responses={
             201: TweetOutputSerializer,
             400: OpenApiResponse(description='Invalid input'),
@@ -53,10 +55,14 @@ class TweetListView(APIView):
     def post(self, request: Request) -> Response:
         input_serializer = CreateTweetInputSerializer(data=request.data)
         input_serializer.is_valid(raise_exception=True)
+        data = input_serializer.validated_data
+        
         try:
             tweet = TweetEngagementService.create_tweet(
                 user=request.user,
-                **input_serializer.validated_data
+                content=data['content'],
+                media=data.get('media'),          # may be None / empty
+                parent_tweet=data.get('parent_tweet'),  # may be None / integer
             )
         except ValueError as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)

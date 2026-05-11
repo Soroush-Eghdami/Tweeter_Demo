@@ -94,7 +94,9 @@ class UserProfileView(APIView):
         summary="Update profile",
         description="Update own profile fields (email, name, bio, privacy, profile picture, banner).",
         tags=["profile"],
-        request=UserUpdateInputSerializer,
+        request={
+            'multipart/form-data': UserUpdateInputSerializer,
+        },
         responses={200: UserOutputSerializer},
     )
     def patch(self, request: Request) -> Response:
@@ -114,7 +116,6 @@ class UserProfileView(APIView):
     def delete(self, request: Request) -> Response:
         UserService.delete_account(request.user)
         response = Response(status=status.HTTP_204_NO_CONTENT)
-        # Clear the authentication cookies so the browser doesn't keep a stale token
         return clear_token_cookies(response)
 
 
