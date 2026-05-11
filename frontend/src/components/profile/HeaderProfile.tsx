@@ -45,7 +45,7 @@ const HeaderProfile: React.FC<HeaderProfileProps> = ({
     <>
       {/* Banner */}
       <div
-        className={`${isMyProfile ? "cursor-pointer" : ""} relative h-36 w-full overflow-hidden group`}
+        className={`${isMyProfile ? "cursor-pointer" : ""} relative h-38 w-full pt-1.25 overflow-hidden group`}
         onClick={() => {
           if (isMyProfile) onBannerClick?.();
         }}
@@ -54,7 +54,7 @@ const HeaderProfile: React.FC<HeaderProfileProps> = ({
           <img
             src={bannerSrc}
             alt="Profile-Banner"
-            className="flex items-center justify-center h-full w-full"
+            className="flex items-center justify-center h-full w-full object-cover"
           />
         ) : (
           <div
@@ -62,7 +62,7 @@ const HeaderProfile: React.FC<HeaderProfileProps> = ({
           ></div>
         )}
         {isMyProfile && (
-          <div className="absolute inset-0 bg-black/30 opacity-0 transition-opacity duration-300 group-hover:opacity-100 flex items-center justify-center">
+          <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
             <img src={editIconSrc} alt="Edit" className="w-25 h-25" />
           </div>
         )}
