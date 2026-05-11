@@ -58,6 +58,13 @@ class TweetOutputSerializer(serializers.ModelSerializer):
         if obj.parent_tweet_id is None:
             return None
         parent = obj.parent_tweet
+        
+        # Check if parent tweet is visible to the requesting user
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            if not TweetVisibilityService.is_visible_to(parent, request.user):
+                return None  # Don't expose parent tweet if not visible
+        
         return {
             'id': parent.id,
             'content': parent.content,

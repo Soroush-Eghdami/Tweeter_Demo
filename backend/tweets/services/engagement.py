@@ -94,16 +94,28 @@ class TweetEngagementService:
         """Create a tweet with validation."""
         from tweets.services.visibility import TweetVisibilityService
         from tweets.services.reply import ReplyService
+        from tweets.selectors import get_visible_tweets
         from django.core.exceptions import ValidationError
+        from django.shortcuts import get_object_or_404
     
         # parent_tweet is an ID (int) from the serializer – fetch the instance
         if parent_tweet is not None:
+            # Fetch parent tweet and check visibility
             try:
-                parent_obj = Tweet.objects.get(pk=parent_tweet)
+                parent_obj = Tweet.objects.select_related('user').get(pk=parent_tweet)
             except Tweet.DoesNotExist:
                 raise ValueError("Parent tweet does not exist.")
-    
-            if not TweetVisibilityService.is_visible_to(parent_obj, user):
+            
+            # DEBUG: Print what we're checking
+            print(f"DEBUG: parent_obj.user = {parent_obj.user}")
+            print(f"DEBUG: parent_obj.user.is_public_user = {parent_obj.user.is_public_user}")
+            print(f"DEBUG: user = {user}")
+            print(f"DEBUG: parent_obj.user == user: {parent_obj.user == user}")
+            visibility_result = TweetVisibilityService.is_visible_to(parent_obj, user)
+            print(f"DEBUG: is_visible_to result = {visibility_result}")
+            
+            # Verify the tweet is visible to the user
+            if not visibility_result:
                 raise ValueError("You cannot reply to a tweet that is not visible to you.")
     
             # Swap the ID for the actual object
