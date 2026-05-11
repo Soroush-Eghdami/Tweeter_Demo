@@ -77,7 +77,7 @@ const ProfilePictureEdit = ({
         setTimeout(() => resetStates(), 500);
       }
     } catch (error) {
-      console.log(error);
+      console.log("Upload Failed:", error);
     }
   };
 
@@ -143,6 +143,8 @@ const ProfilePictureEdit = ({
               <div onClick={handleSave}>
                 <YesButton
                   isLoading={picUpdateObj?.picUpdateLoading}
+                  loadingWidth="w-7"
+                  loadingHeight="h-7"
                   size="size-7"
                   padding="p-4"
                 />
