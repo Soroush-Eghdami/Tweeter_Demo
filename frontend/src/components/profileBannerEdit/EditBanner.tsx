@@ -1,23 +1,29 @@
 import { useEffect, useState, useRef } from "react";
 import YesButton from "../YesButton";
 import NoButton from "../NoButton";
+import type { bannerUpdateObjType } from "../../types/UpdateProfileTypes";
 import avatar from "../../assets/icons/profile-default.svg";
 
 interface EditBannerProps {
   isOpen: boolean;
+  bannerUpdateObj?: bannerUpdateObjType;
   username: string;
   email: string;
   bio: string;
+  bannerPic: string;
   onClose: () => void;
 }
 
 const EditBanner = ({
   isOpen,
-  onClose,
+  bannerUpdateObj,
   username,
   email,
   bio,
+  bannerPic,
+  onClose,
 }: EditBannerProps) => {
+  const [bannerFile, setBannerFile] = useState<File | null>(null);
   const [bannerPreview, setBannerPreview] = useState<string | null>(null);
   const bannerInputRef = useRef<HTMLInputElement>(null);
 
@@ -25,24 +31,46 @@ const EditBanner = ({
     bannerInputRef.current?.click();
   };
 
+  // File Selector + URL Maker
   const handleBannerChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] ?? null;
+    if (!file) return;
 
-    if (bannerPreview) {
-      URL.revokeObjectURL(bannerPreview);
-    }
-
+    setBannerFile(file);
     setBannerPreview(file ? URL.createObjectURL(file) : null);
   };
 
-  useEffect(() => {
-    return () => {
-      if (bannerPreview) {
-        URL.revokeObjectURL(bannerPreview);
-      }
-    };
-  }, [bannerPreview]);
+  // On Save
+  const handleYesClick = async () => {
+    if (!bannerFile || !bannerUpdateObj) return;
 
+    const formData = new FormData();
+    formData.append("profile_banner", bannerFile);
+    try {
+      await bannerUpdateObj.bannerUpdate(formData);
+      onClose();
+    } catch (err) {
+      console.error("Upload failed", err);
+    }
+  };
+
+  const handleNoClick = () => {
+    onClose();
+  };
+
+  // Clean Up
+  useEffect(() => {
+    if (!isOpen) {
+      setTimeout(() => {
+        if (bannerPreview) URL.revokeObjectURL(bannerPreview);
+        setBannerFile(null);
+        setBannerPreview(null);
+        if (bannerInputRef.current) bannerInputRef.current.value = "";
+      }, 500);
+    }
+  }, [isOpen, bannerPreview]);
+
+  // Close Pop up using ESC key on keyboard
   useEffect(() => {
     if (!isOpen) return;
 
@@ -51,20 +79,10 @@ const EditBanner = ({
     };
 
     document.addEventListener("keydown", handleEscape);
-
     return () => {
       document.removeEventListener("keydown", handleEscape);
-      document.body.style.overflow = "unset";
     };
   }, [isOpen, onClose]);
-
-  const handleYesClick = () => {
-    onClose();
-  };
-
-  const handleNoClick = () => {
-    onClose();
-  };
 
   return (
     <div
@@ -77,7 +95,15 @@ const EditBanner = ({
           style={{
             backgroundImage: bannerPreview ? `url(${bannerPreview})` : "none",
           }}
-        ></div>
+        >
+          {bannerPic && !bannerPreview && (
+            <img
+              src={bannerPic}
+              alt="Banner-Picture"
+              className="w-full h-full object-cover"
+            />
+          )}
+        </div>
 
         {/* Avatar  */}
         <div className="relative mt-0 mb-20 flex-1">
@@ -86,21 +112,19 @@ const EditBanner = ({
             <div className="relative group/avatar size-40 rounded-full border-2 border-white overflow-hidden bg-black">
               <img
                 src={avatar}
-                alt="Profile"
+                alt="Profile-Default"
                 className="w-full h-full object-cover"
               />
             </div>
-
             <input
+              type="file"
               id="banner-upload"
               name="banner-upload"
-              type="file"
               accept="image/*"
               className="hidden"
               ref={bannerInputRef}
               onChange={handleBannerChange}
             />
-
             <div className="mt-4 relative left-5 top-2">
               <p className="text-white text-2xl mb-2 font-semibold">
                 {username}
@@ -119,8 +143,19 @@ const EditBanner = ({
         </div>
 
         <div className="flex justify-end right-9 gap-4 p-6">
-          <NoButton setIsOpenPopUp={() => handleNoClick()} />
-          <YesButton setIsOpenPopUp={() => handleYesClick()} />
+          <NoButton
+            setIsOpenPopUp={handleNoClick}
+            size="size-8"
+            padding="p-6"
+          />
+          <YesButton
+            setIsOpenPopUp={handleYesClick}
+            isLoading={bannerUpdateObj?.bannerUpdateLoading}
+            loadingWidth="w-8"
+            loadingHeight="h-8"
+            size="size-8"
+            padding="p-6"
+          />
         </div>
       </div>
     </div>

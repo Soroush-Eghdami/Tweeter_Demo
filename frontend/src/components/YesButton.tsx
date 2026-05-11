@@ -4,6 +4,8 @@ import Loading from "./loading/Loading";
 interface WarningPopUpPropType {
   setIsOpenPopUp?: (arg0: boolean) => void;
   isLoading?: boolean;
+  loadingWidth?: string;
+  loadingHeight?: string;
   size?: string;
   padding?: string;
 }
@@ -11,6 +13,8 @@ interface WarningPopUpPropType {
 const YesButton = ({
   setIsOpenPopUp,
   isLoading,
+  loadingWidth = "w-6.25",
+  loadingHeight = "h-6.25",
   size = "size-9",
   padding = "p-4.5",
 }: WarningPopUpPropType) => {
@@ -26,7 +30,7 @@ const YesButton = ({
         className={`${padding} flex items-center justify-center bg-white rounded-[50%] cursor-pointer transition-all hover:scale-105 disabled:cursor-not-allowed disabled:bg-[#999] duration-200 ease-in-out`}
       >
         {isLoading ? (
-          <Loading width="w-6.25" height="h-6.25" />
+          <Loading width={loadingWidth} height={loadingHeight} />
         ) : (
           <img src={Yes} alt="yes-button" className={size} />
         )}

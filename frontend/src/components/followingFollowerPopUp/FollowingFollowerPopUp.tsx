@@ -1,10 +1,13 @@
 import { useEffect, useRef, useState } from "react";
-import { useFollowingList } from "../../hooks/useFollowingFollowerList";
+import {
+  useFollowerList,
+  useFollowingList,
+} from "../../hooks/useFollowingFollowerList";
 import Follower from "./Follower";
 import Following from "./Following";
 import ExitButton from "./ExitButton";
 import Loading from "../loading/Loading";
-import type { FollowingListType } from "../../types/FollowingFollowerType";
+import type { FollowingFollowerListType } from "../../types/FollowingFollowerType";
 import user from "../../assets/icons/profile/follower-following-counter.svg";
 
 interface FollowingFollowerPropsType {
@@ -25,30 +28,47 @@ const FollowingFollower = ({
     hasNextPage: followingHasNextPage,
     isFetchingNextPage: followingIsFetchNextPage,
     isLoading: followingListLoading,
-  } = useFollowingList(userId, 5, { enabled: isUserListOpen });
+  } = useFollowingList(userId, 5, { enabled: isUserListOpen && isFollowing });
+  const {
+    data: followerData,
+    fetchNextPage: followerFetchNextPage,
+    hasNextPage: followerHasNextPage,
+    isFetchingNextPage: followerIsFetchNextPage,
+    isLoading: followerListLoading,
+  } = useFollowerList(userId, 5, { enabled: isUserListOpen && !isFollowing });
   const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const loadMoreRef = useRef<HTMLDivElement>(null);
+  const loadMoreRefFollowing = useRef<HTMLDivElement>(null);
+  const loadMoreRefFollower = useRef<HTMLDivElement>(null);
 
   const followingList =
     followingData?.pages.flatMap((page) => page.results) ?? [];
+  const followerList =
+    followerData?.pages.flatMap((page) => page.results) ?? [];
 
   // Scroll Handling for fetching new data
   useEffect(() => {
     const container = scrollContainerRef.current;
-    const loadMore = loadMoreRef.current;
-    if (
-      !container ||
-      !loadMore ||
-      !followingHasNextPage ||
-      followingIsFetchNextPage
-    ) {
+    const loadMore = isFollowing
+      ? loadMoreRefFollowing.current
+      : loadMoreRefFollower.current;
+    const hasNextPage = isFollowing
+      ? followingHasNextPage
+      : followerHasNextPage;
+    const isFetching = isFollowing
+      ? followingIsFetchNextPage
+      : followerIsFetchNextPage;
+    const fetchNext = isFollowing
+      ? followingFetchNextPage
+      : followerFetchNextPage;
+
+    if (!container || !loadMore || !hasNextPage || isFetching) {
       return;
     }
 
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
-          followingFetchNextPage();
+          fetchNext();
         }
       },
       { root: container, rootMargin: "0px 0px 100px 0px" },
@@ -56,14 +76,30 @@ const FollowingFollower = ({
 
     observer.observe(loadMore);
     return () => observer.disconnect();
-  }, [followingHasNextPage, followingIsFetchNextPage, followingFetchNextPage]);
+  }, [
+    isFollowing,
+    followingHasNextPage,
+    followingIsFetchNextPage,
+    followingFetchNextPage,
+    followerHasNextPage,
+    followerIsFetchNextPage,
+    followerFetchNextPage,
+  ]);
 
   // Track the last element
   const handleLast = (index: number) => {
-    if (!followingHasNextPage && index === followingList.length - 1) {
-      return true;
+    if (isFollowing) {
+      if (!followingHasNextPage && index === followingList.length - 1) {
+        return true;
+      } else {
+        return false;
+      }
     } else {
-      return false;
+      if (!followerHasNextPage && index === followerList.length - 1) {
+        return true;
+      } else {
+        return false;
+      }
     }
   };
 
@@ -109,7 +145,7 @@ const FollowingFollower = ({
 
           <div
             ref={scrollContainerRef}
-            className="rounded-b-2xl flex-1 min-h-0 overflow-y-auto mb-1.5
+            className="rounded-b-2xl flex-1 min-h-114.75 overflow-y-auto mb-1.5
                     [&::-webkit-scrollbar]:w-1.5
                     [&::-webkit-scrollbar-track]:bg-white/10
                     [&::-webkit-scrollbar-track]:rounded-br-xl
@@ -119,6 +155,7 @@ const FollowingFollower = ({
                     [&::-webkit-scrollbar-thumb]:hover:bg-white/50"
           >
             {isFollowing ? (
+              // Following
               <div>
                 {/* Initial Loading */}
                 {followingListLoading && (
@@ -127,16 +164,24 @@ const FollowingFollower = ({
                   </div>
                 )}
                 {/* Mapping Through Each Following */}
-                {followingList.map((following: FollowingListType, index) => (
-                  <Following
-                    key={following.id}
-                    info={following}
-                    isLast={handleLast(index)}
-                  />
-                ))}
+                {!followingListLoading && followingList.length === 0 ? (
+                  <p className="text-center font-medium text-lg text-[#555] my-52">
+                    You haven't follow anyone yet.
+                  </p>
+                ) : (
+                  followingList.map(
+                    (following: FollowingFollowerListType, index) => (
+                      <Following
+                        key={following.id}
+                        info={following}
+                        isLast={handleLast(index)}
+                      />
+                    ),
+                  )
+                )}
                 {/* Simple Space Use for Observer to when fetch more data */}
                 {followingHasNextPage && (
-                  <div ref={loadMoreRef} className="h-5" />
+                  <div ref={loadMoreRefFollowing} className="h-5" />
                 )}
                 {/* Loading when it's going to next page */}
                 {followingIsFetchNextPage && (
@@ -146,16 +191,40 @@ const FollowingFollower = ({
                 )}
               </div>
             ) : (
+              // Follower
               <div>
-                <Follower />
-                <Follower />
-                <Follower />
-                <Follower />
-                <Follower />
-                <Follower />
-                <Follower />
-                <Follower />
-                <Follower />
+                {/* Initial Loading */}
+                {followerListLoading && (
+                  <div className="my-46">
+                    <Loading />
+                  </div>
+                )}
+                {/* Mapping Through Each Follower */}
+                {!followerListLoading && followerList.length === 0 ? (
+                  <p className="text-center font-medium text-lg text-[#555] my-52">
+                    No one has follow you yet.
+                  </p>
+                ) : (
+                  followerList.map(
+                    (follower: FollowingFollowerListType, index) => (
+                      <Follower
+                        key={follower.id}
+                        info={follower}
+                        isLast={handleLast(index)}
+                      />
+                    ),
+                  )
+                )}
+                {/* Simple Space Use for Observer to when fetch more data */}
+                {followerHasNextPage && (
+                  <div ref={loadMoreRefFollower} className="h-5" />
+                )}
+                {/* Loading when it's going to next page */}
+                {followerIsFetchNextPage && (
+                  <div className="flex justify-center py-10">
+                    <Loading width="w-10" height="h-10" />
+                  </div>
+                )}
               </div>
             )}
           </div>
