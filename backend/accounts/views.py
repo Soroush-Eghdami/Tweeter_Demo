@@ -266,7 +266,7 @@ class UserTweetsView(APIView):
         queryset = get_user_tweets_queryset(user)
         paginator = TweeterPagination()
         page = paginator.paginate_queryset(queryset, request)
-        serializer = TweeterPagination(page, many=True, context={'request': request})
+        serializer = TweetOutputSerializer(page, many=True, context={'request': request})
         return paginator.get_paginated_response(serializer.data)
 
 
