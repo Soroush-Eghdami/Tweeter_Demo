@@ -2,31 +2,20 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useFollow, useUnfollow } from "../../hooks/useFollowUnfollow";
 import Loading from "../loading/Loading";
-import type { FollowingListType } from "../../types/FollowingFollowerType";
+import type { FollowingFollowerPropsType } from "../../types/FollowingFollowerType";
 import userProfile from "../../assets/icons/profile-default.svg";
+import {
+  followHandler,
+  unfollowHandler,
+} from "../../utils/followUnfollowHandler";
 
-interface FollowingPropsType {
-  info: FollowingListType;
-  isLast: boolean;
-}
-
-const Following = ({ info, isLast }: FollowingPropsType) => {
+const Following = ({ info, isLast }: FollowingFollowerPropsType) => {
   const { mutate: follow, isPending: isFollowPending } = useFollow();
   const { mutate: unfollow, isPending: isUnfollowPending } = useUnfollow();
   const [isFollowed, setIsFollowed] = useState(true);
   const navigation = useNavigate();
 
   const userId = info.followee.id;
-
-  const followHandler = () => {
-    follow({ followee_id: userId });
-    setIsFollowed(true);
-  };
-
-  const unfollowHandler = () => {
-    unfollow({ followee_id: userId });
-    setIsFollowed(false);
-  };
 
   return (
     <>
@@ -49,7 +38,7 @@ const Following = ({ info, isLast }: FollowingPropsType) => {
             )}
             <div className="flex flex-col gap-3">
               <button
-                className="text-3xl text-left font-semibold mt-2 hover:underline cursor-pointer"
+                className="text-3xl text-left font-semibold mt-2 cursor-pointer hover:underline"
                 onClick={() => navigation(`/profile/${userId}`)}
               >
                 {info.followee.username}
@@ -63,7 +52,7 @@ const Following = ({ info, isLast }: FollowingPropsType) => {
               <button
                 className={`text-xl px-12 py-3 rounded-3xl text-white border-2 border-white hover:bg-[#333] disabled:cursor-not-allowed disabled:hover:bg-[#1c1c1c]/90 transition-colors cursor-pointer duration-300`}
                 disabled={isUnfollowPending}
-                onClick={unfollowHandler}
+                onClick={() => unfollowHandler(unfollow, userId, setIsFollowed)}
               >
                 {isUnfollowPending ? (
                   <div className="w-19.5">
@@ -77,7 +66,7 @@ const Following = ({ info, isLast }: FollowingPropsType) => {
               <button
                 className={`text-xl font-semibold px-12 py-3 rounded-3xl bg-white text-black hover:bg-[#ccc] disabled:cursor-not-allowed disabled:hover:bg-white transition-colors cursor-pointer duration-300`}
                 disabled={isFollowPending}
-                onClick={followHandler}
+                onClick={() => followHandler(follow, userId, setIsFollowed)}
               >
                 {isFollowPending ? (
                   <div className="w-14.75">
