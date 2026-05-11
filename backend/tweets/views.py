@@ -1,14 +1,11 @@
-from django.core.exceptions import ValidationError
 from rest_framework import generics, permissions, status, serializers
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from drf_spectacular.utils import extend_schema, OpenApiResponse, OpenApiParameter
-from .models import Tweet, ReTweet, Like
-from .serializers import TweetSerializer, CreateTweetSerializer, ReTweetSerializer
+from .serializers import TweetOutputSerializer, CreateTweetInputSerializer, ReTweetOutputSerializer
 from .services.engagement import TweetEngagementService
 from .services.visibility import TweetVisibilityService
-from .services.reply import ReplyService
 from .selectors import get_visible_tweets, get_tweet_by_id
 
 
@@ -18,8 +15,8 @@ class TweetListView(generics.ListCreateAPIView):
 
     def get_serializer_class(self):
         if self.request.method == 'POST':
-            return CreateTweetSerializer
-        return TweetSerializer
+            return CreateTweetInputSerializer
+        return TweetOutputSerializer
 
     def get_queryset(self):
         return get_visible_tweets(self.request.user)
@@ -49,9 +46,9 @@ class TweetListView(generics.ListCreateAPIView):
     @extend_schema(
         summary="Create tweet",
         description="Create a new tweet. Supports multipart/form-data for media upload.",
-        request=CreateTweetSerializer,
+        request=CreateTweetInputSerializer,
         responses={
-            201: TweetSerializer,
+            201: TweetOutputSerializer,
             400: OpenApiResponse(description='Invalid input'),
         },
         tags=["tweets"]
@@ -63,13 +60,13 @@ class TweetListView(generics.ListCreateAPIView):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         instance = self.perform_create(serializer)
-        output_serializer = TweetSerializer(instance, context={'request': request})
+        output_serializer = TweetOutputSerializer(instance, context={'request': request})
         headers = self.get_success_headers(output_serializer.data)
         return Response(output_serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
 
 class TweetDetailView(generics.RetrieveDestroyAPIView):
-    serializer_class = TweetSerializer
+    serializer_class = TweetOutputSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
@@ -110,7 +107,7 @@ class RetweetView(APIView):
         description="Retweet a tweet. The original tweet must be visible to the authenticated user.",
         request=None,
         responses={
-            201: ReTweetSerializer,
+            201: ReTweetOutputSerializer,
             200: OpenApiResponse(description='Already retweeted'),
             400: OpenApiResponse(description='Cannot retweet own tweet'),
             403: OpenApiResponse(description='Tweet not accessible'),
@@ -129,7 +126,7 @@ class RetweetView(APIView):
         except ValueError as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-        serializer = ReTweetSerializer(retweet)
+        serializer = ReTweetOutputSerializer(retweet)
         if created:
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         else:

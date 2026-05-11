@@ -10,10 +10,10 @@ from tweets.selectors import get_reply_count, is_retweeted_by
 User = get_user_model()
 
 # =====================================================================
-# Tweet Output Serializers
+# Output Serializers
 # =====================================================================
 
-class TweetSerializer(serializers.ModelSerializer):
+class TweetOutputSerializer(serializers.ModelSerializer):
     """Full tweet output serializer with engagement counts and metadata."""
     user = UserLiteOutputSerializer(read_only=True)
     retweet_count = serializers.SerializerMethodField()
@@ -70,11 +70,21 @@ class TweetSerializer(serializers.ModelSerializer):
         }
 
 
+class ReTweetOutputSerializer(serializers.ModelSerializer):
+    """ReTweet output serializer."""
+    user = UserLiteOutputSerializer(read_only=True)
+    original_tweet = TweetOutputSerializer(read_only=True)
+
+    class Meta:
+        model = ReTweet
+        fields = ['id', 'user', 'original_tweet', 'created_at']
+        read_only_fields = fields
+
 # =====================================================================
-# Tweet Input Serializers
+# Input Serializers
 # =====================================================================
 
-class CreateTweetSerializer(serializers.ModelSerializer):
+class CreateTweetInputSerializer(serializers.ModelSerializer):
     # Explicit fields to control what Swagger UI shows
     media = serializers.FileField(required=False, allow_null=True, help_text="Optional image or video")
     parent_tweet = serializers.IntegerField(required=False, allow_null=True, help_text="ID of the tweet you are replying to")
@@ -99,18 +109,3 @@ class CreateTweetSerializer(serializers.ModelSerializer):
             parent = get_object_or_404(TweetModel, pk=parent_id)
             validated_data['parent_tweet'] = parent
         return Tweet.objects.create(**validated_data)
-
-
-# =====================================================================
-# ReTweet Serializers
-# =====================================================================
-
-class ReTweetSerializer(serializers.ModelSerializer):
-    """ReTweet output serializer."""
-    user = UserLiteOutputSerializer(read_only=True)
-    original_tweet = TweetSerializer(read_only=True)
-
-    class Meta:
-        model = ReTweet
-        fields = ['id', 'user', 'original_tweet', 'created_at']
-        read_only_fields = fields

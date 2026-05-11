@@ -26,7 +26,7 @@ from accounts.selectors import (
     get_user_following_queryset,
     get_user_retweets_queryset,
 )
-from tweets.serializers import TweetSerializer
+from tweets.serializers import TweetOutputSerializer
 
 User = get_user_model()
 
@@ -216,13 +216,13 @@ class PublicTimelineView(APIView):
         summary="Public timeline",
         description="Returns a paginated list of tweets visible to the authenticated user (public tweets + tweets from followed private users).",
         tags=["timelines"],
-        responses={200: TweetSerializer(many=True)},
+        responses={200: TweetOutputSerializer(many=True)},
     )
     def get(self, request: Request) -> Response:
         queryset = get_public_timeline_queryset(request.user)
         paginator = TweeterPagination()
         page = paginator.paginate_queryset(queryset, request)
-        serializer = TweetSerializer(page, many=True, context={'request': request})
+        serializer = TweetOutputSerializer(page, many=True, context={'request': request})
         return paginator.get_paginated_response(serializer.data)
 
 
@@ -237,13 +237,13 @@ class PrivateTimelineView(APIView):
         summary="Private timeline",
         description="Returns a paginated list of tweets only from users the authenticated user follows.",
         tags=["timelines"],
-        responses={200: TweetSerializer(many=True)},
+        responses={200: TweetOutputSerializer(many=True)},
     )
     def get(self, request: Request) -> Response:
         queryset = get_private_timeline_queryset(request.user)
         paginator = TweeterPagination()
         page = paginator.paginate_queryset(queryset, request)
-        serializer = TweetSerializer(page, many=True, context={'request': request})
+        serializer = TweetOutputSerializer(page, many=True, context={'request': request})
         return paginator.get_paginated_response(serializer.data)
 
 
@@ -259,14 +259,14 @@ class UserTweetsView(APIView):
         summary="User tweets",
         description="Returns a paginated list of tweets by a specific user.",
         tags=["users"],
-        responses={200: TweetSerializer(many=True)},
+        responses={200: TweeterPagination(many=True)},
     )
     def get(self, request: Request, user_id: str) -> Response:
         user = get_user_by_id(user_id)
         queryset = get_user_tweets_queryset(user)
         paginator = TweeterPagination()
         page = paginator.paginate_queryset(queryset, request)
-        serializer = TweetSerializer(page, many=True, context={'request': request})
+        serializer = TweeterPagination(page, many=True, context={'request': request})
         return paginator.get_paginated_response(serializer.data)
 
 
@@ -282,14 +282,14 @@ class UserRetweetsView(APIView):
         summary="User retweets",
         description="Returns a paginated list of tweets that a specific user has retweeted.",
         tags=["users"],
-        responses={200: TweetSerializer(many=True)},
+        responses={200: TweeterPagination(many=True)},
     )
     def get(self, request: Request, user_id: str) -> Response:
         user = get_user_by_id(user_id)
         queryset = get_user_retweets_queryset(user)
         paginator = TweeterPagination()
         page = paginator.paginate_queryset(queryset, request)
-        serializer = TweetSerializer(page, many=True, context={'request': request})
+        serializer = TweetOutputSerializer(page, many=True, context={'request': request})
         return paginator.get_paginated_response(serializer.data)
 
 
