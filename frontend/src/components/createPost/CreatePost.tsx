@@ -2,6 +2,7 @@ import { useState } from "react";
 import toast from "react-hot-toast";
 import Loading from "../loading/Loading";
 import { useCreateTweet } from "../../hooks/useCreateTweet";
+import { useMyProfile } from "../../hooks/useMyProfile";
 import userProfile from "../../assets/icons/profile-default.svg";
 import createPost from "../../assets/icons/post.svg";
 
@@ -17,11 +18,17 @@ const CreatePost = ({
   // for create tweet
   const [content, setContent] = useState("");
   const createTweetMutation = useCreateTweet();
+  const {data: profile, isLoading: profileLoading} = useMyProfile({
+    enabled: isCreatedPost
+  });
+  // when is in loading or without data
+  const profilePic = profile?.profile_picture || userProfile;
+  const displayName = profile?.username || profile?.custom_id || "User";
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!content.trim()) {
-      toast.error("Enter your post ");
+      toast.error("Enter your Tweet");
       return;
     }
     createTweetMutation.mutate(
@@ -33,11 +40,11 @@ const CreatePost = ({
         onSuccess: () => {
           setContent("");
           setIsCreatedPost(false);
-          toast.success("Post success !");
+          toast.success("Tweet create successfully!");
         },
         onError: (error: any) => {
           const errorMessage =
-            error?.response?.data?.message || "Error to sent post";
+            error?.response?.data?.message || "Error to sent Tweet";
           toast.error(errorMessage);
         },
       },
@@ -52,15 +59,29 @@ const CreatePost = ({
         <div className="pt-3 pb-3 z-50 max-w-[45%] mx-auto bg-[#1c1c1c]/90 rounded-2xl shadow-[0_0px_30px_rgba(0,0,0,0.4)]">
           <form onSubmit={handleSubmit}>
             <div className="flex flex-row gap-3 pt-9 px-10">
-              <img src={userProfile} alt="user-profile" className="size-18" />
-              <p className="text-white font-semibold text-lg">Khargoosh</p>
+              {/* <img src={userProfile} alt="user-profile" className="size-18" /> */}
+
+              {profileLoading ? (
+                <div className="size-18 flex items-center justify-center">
+                  <Loading width="w-6" height="h-6"/>
+                </div>
+              ) : (
+                <img src="{userProfile}" alt="user-profile" className="size-18 rounded-full object-cover"/>
+              )}
+              {/* username */}
+              {profileLoading ? (
+                <div className="h-6 w-32 bg-gray-600 animate-pulse rounded"></div>
+              ) : (
+                <p className="text-white font-semibold text-lg">{displayName}</p>
+              )}
+
             </div>
             <div className="relative ml-30 mr-8 -top-10">
               <textarea
-                name="create-post"
-                id="create-post"
+                name="create-tweet"
+                id="create-tweet"
                 className="h-35 text-[#f4f4f4] placeholder:text-[#939393] resize-none py-3 px-4 mb-2 rounded-xl w-full focus:outline-none"
-                placeholder="write your post here"
+                placeholder="Write your tweet here"
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
                 disabled={createTweetMutation.isPending}
@@ -107,7 +128,7 @@ const CreatePost = ({
                   <div className="grid grid-cols-1 place-items-center">
                     {createTweetMutation.isPending && (
                       <div className="col-start-1 row-start-1">
-                        <Loading width="w-5" height="h-5" />
+                        <Loading width="w-5" height="h-5"/>
                       </div>
                     )}
                     <div
@@ -115,10 +136,10 @@ const CreatePost = ({
                     >
                       <img
                         src={createPost}
-                        alt="create-post"
+                        alt="create-tweet"
                         className="size-5 mt-0.5"
                       />
-                      <span>Post</span>
+                      <span>Tweet</span>
                     </div>
                   </div>
                 </button>
