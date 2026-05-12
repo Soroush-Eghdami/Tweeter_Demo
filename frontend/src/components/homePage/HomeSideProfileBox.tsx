@@ -28,7 +28,19 @@ const HomeSideProfileBox = () => {
           </div>
           <div className="grid grid-cols-2 grid-rows-2 gap-4 px-8">
             <HomeProfileFilled
-              title="Post"
+              title="Followers"
+              number={8}
+              textColor="text-white"
+              bgColor="bg-black"
+            />
+            <HomeProfileFilled
+              title="Following"
+              number={12}
+              textColor="text-[#333]"
+              bgColor="bg-[#f4f4f4]"
+            />
+            <HomeProfileFilled
+              title="Tweet"
               number={20}
               textColor="text-white"
               bgColor="bg-black"
@@ -36,18 +48,6 @@ const HomeSideProfileBox = () => {
             <HomeProfileFilled
               title="Retweet"
               number={6}
-              textColor="text-[#333]"
-              bgColor="bg-[#f4f4f4]"
-            />
-            <HomeProfileFilled
-              title="Followers"
-              number={8}
-              textColor="text-white"
-              bgColor="bg-black"
-            />
-            <HomeProfileFilled
-              title="Followings"
-              number={12}
               textColor="text-[#333]"
               bgColor="bg-[#f4f4f4]"
             />
