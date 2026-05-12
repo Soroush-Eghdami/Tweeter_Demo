@@ -8,10 +8,14 @@ import RightBox from "../components/profile/RightBox";
 import LeftBox from "../components/profile/LeftBox";
 import FollowingFollower from "../components/followingFollowerPopUp/FollowingFollowerPopUp";
 import ProfilePictureEdit from "../components/profilePictureEdit/ProfilePictureEdit";
+import LoadingPage from "../components/loading/LoadingPage";
 import { useMyProfile } from "../hooks/useMyProfile";
+import {
+  useUpdateBannerPicture,
+  useUpdateProfilePicture,
+} from "../hooks/useUpdateProfile";
 import { userTweetInfo } from "../contents/userTweetInfo";
 import { userRetweetInfo } from "../contents/userRetweetInfo";
-import { userInfo } from "../contents/userInfo";
 import tweet from "../assets/icons/profile/tweet.svg";
 import tweetBlue from "../assets/icons/profile/peace_pigeon.svg";
 import avatar from "../assets/icons/profile-default.svg";
@@ -24,10 +28,13 @@ import bio from "../assets/icons/profile/bio.svg";
 import retweet from "../assets/icons/profile/retweet.svg";
 import retweetGreen from "../assets/icons/profile/repeat.svg";
 import editUser from "../assets/icons/profile/edit-username.svg";
-import LoadingPage from "../components/loading/LoadingPage";
 
 const MyProfile = () => {
   const { data, isLoading } = useMyProfile();
+  const { mutateAsync: picUpdate, isPending: picUpdateLoading } =
+    useUpdateProfilePicture();
+  const { mutateAsync: bannerUpdate, isPending: bannerUpdateLoading } =
+    useUpdateBannerPicture();
   const [isTweetsOpen, setIsTweetsOpen] = useState(true);
   const [isProfilePicOpen, setIsProfilePicOpen] = useState(false);
   const [isBannerOpen, setIsBannerOpen] = useState(false);
@@ -41,19 +48,40 @@ const MyProfile = () => {
   return (
     <div className="min-h-fit w-full bg-custom-dark-gradient">
       {isLoading && <LoadingPage />}
+      {/* Following / Follower List */}
       <div>
         <FollowingFollower
+          userId={data.id}
           setIsUserListOpen={setIsUserListOpen}
           isUserListOpen={isUserListOpen}
         />
       </div>
+      {/* Profile Picture Edit */}
       <div>
         <ProfilePictureEdit
           isOpen={isProfilePicOpen}
           setIsOpen={setIsProfilePicOpen}
+          picUpdateObj={{
+            picUpdate,
+            picUpdateLoading,
+          }}
         />
       </div>
-
+      {/* Banner Picture Edit */}
+      <div>
+        <EditBanner
+          isOpen={isBannerOpen}
+          bannerUpdateObj={{
+            bannerUpdate,
+            bannerUpdateLoading,
+          }}
+          username={data.username}
+          email={data.email}
+          bio={data.bio || "----"}
+          bannerPic={data.profile_banner}
+          onClose={() => setIsBannerOpen(false)}
+        />
+      </div>
       <div className="w-full">
         <HeaderProfile
           isMyProfile={true}
@@ -102,15 +130,6 @@ const MyProfile = () => {
             </div>
           )}
         </RightBox>
-      </div>
-      <div>
-        <EditBanner
-          isOpen={isBannerOpen}
-          onClose={() => setIsBannerOpen(false)}
-          username={userInfo.name}
-          email={userInfo.email}
-          bio={userInfo.bio}
-        />
       </div>
     </div>
   );

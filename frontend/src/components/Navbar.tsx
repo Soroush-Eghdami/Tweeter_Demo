@@ -14,7 +14,7 @@ import login from "../assets/icons/login.svg";
 const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const { isLoggedIn } = useIsLoggedIn();
-  const { mutate } = useLogout();
+  const { mutate, isPending } = useLogout();
   const navigation = useNavigate();
 
   const queryClient = useQueryClient();
@@ -23,9 +23,11 @@ const Navbar = () => {
     try {
       mutate();
       toast.success("User Logged Out Successfully!");
-      navigation("/login");
 
-      queryClient.clear();
+      if (!isPending) {
+        navigation("/login");
+        queryClient.clear();
+      }
     } catch (error) {
       toast.error("Logging Out Failed!");
     }
@@ -69,7 +71,7 @@ const Navbar = () => {
               className="size-7.5 cursor-pointer hover:scale-115 transition-all duration-100 ease-in-out"
               onClick={() => navigation("/profile")}
             />
-            {!isLoggedIn ? (
+            {!isLoggedIn && !isPending ? (
               <img
                 src={login}
                 alt="Login"
