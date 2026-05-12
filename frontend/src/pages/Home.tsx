@@ -6,6 +6,7 @@ import TweetCard from "../components/TweetCard";
 import HomeSideProfileBox from "../components/homePage/HomeSideProfileBox";
 import CreatePost from "../components/createPost/CreatePost";
 import ForYouFollowing from "../components/homePage/ForYouFollowing";
+import useIsLoggedIn from "../hooks/global-hooks/useIsLoggedIn";
 import { useTweetsPrivate, useTweetsPublic } from "../hooks/useTweets";
 import type { TweetCardInfoType } from "../types/TweetTypes";
 import newTweet from "../assets/icons/new-tweet.svg";
@@ -17,27 +18,33 @@ const Home = () => {
   const [isSelected, setIsSelected] = useState<1 | 2>(1);
   const [popupVisible, setPopupVisible] = useState(false);
 
+  const { isLoggedIn, isLoading: isAuthLoading } = useIsLoggedIn();
+
   const {
     data: privateData,
     fetchNextPage: fetchNextPrivate,
     hasNextPage: hasNextPrivate,
     isFetchingNextPage: isFetchingNextPrivate,
-    isLoading: privateLoading,
-  } = useTweetsPrivate();
+  } = useTweetsPrivate({
+    enabled: isLoggedIn && isSelected === 2,
+  });
 
   const {
     data: publicData,
     fetchNextPage: fetchNextPublic,
     hasNextPage: hasNextPublic,
     isFetchingNextPage: isFetchingNextPublic,
-    isLoading: publicLoading,
-  } = useTweetsPublic();
+  } = useTweetsPublic({
+    enabled: isSelected === 1,
+  });
 
   const privateTweets =
     privateData?.pages.flatMap((page) => page.results) ?? [];
   const publicTweets = publicData?.pages.flatMap((page) => page.results) ?? [];
 
-  const tweets = (isSelected === 1 ? publicTweets : privateTweets).filter(tweet => tweet?.user != null);;
+  const tweets = (isSelected === 1 ? publicTweets : privateTweets).filter(
+    (tweet) => tweet?.user != null,
+  );
   const hasNextPage = isSelected === 1 ? hasNextPublic : hasNextPrivate;
   const fetchNextPage = isSelected === 1 ? fetchNextPublic : fetchNextPrivate;
   const isFetchingNext =
@@ -64,7 +71,7 @@ const Home = () => {
     const loadMoreOnIntersect = (entries: IntersectionObserverEntry[]) => {
       const [entry] = entries;
       if (entry.isIntersecting && hasNextPage && !isFetchingNext) {
-        fetchNextPage();
+        fetchNextPage(); 
       }
     };
 
@@ -91,7 +98,7 @@ const Home = () => {
 
   const scrollBottomClass = isScrolled ? "bottom-60" : "bottom-10";
 
-  if (privateLoading || publicLoading) return <LoadingPage/>;
+  if (isAuthLoading) return <LoadingPage />;
 
   return (
     <>
@@ -108,7 +115,12 @@ const Home = () => {
             setIsSelected={setIsSelected}
           />
           <div>
-            {tweets.length === 0 ? (
+            {/* NEW: Show login message when trying to view Followings without being logged in */}
+            {isSelected === 2 && !isLoggedIn ? (
+              <div className="text-center text-gray-500 mt-50 text-lg">
+                Please log in to see tweets from people you follow.
+              </div>
+            ) : tweets.length === 0 ? (
               <div className="text-center text-gray-500 mt-50 text-lg">
                 No tweets to display.
               </div>
@@ -120,7 +132,7 @@ const Home = () => {
             {/* Optional: Show a loading indicator at the bottom */}
             {isFetchingNext && (
               <div className="text-center p-4 text-gray-500">
-                <Loading/>
+                <Loading />
               </div>
             )}
           </div>
