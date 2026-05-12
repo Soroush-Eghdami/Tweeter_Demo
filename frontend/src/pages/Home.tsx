@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { observerFunction, scrollFunction } from "../utils/scrollFunction";
+import LoadingPage from "../components/loading/LoadingPage";
+import Loading from "../components/loading/Loading";
 import TweetCard from "../components/TweetCard";
 import HomeSideProfileBox from "../components/homePage/HomeSideProfileBox";
 import CreatePost from "../components/createPost/CreatePost";
@@ -35,7 +37,7 @@ const Home = () => {
     privateData?.pages.flatMap((page) => page.results) ?? [];
   const publicTweets = publicData?.pages.flatMap((page) => page.results) ?? [];
 
-  const tweets = isSelected === 1 ? publicTweets : privateTweets;
+  const tweets = (isSelected === 1 ? publicTweets : privateTweets).filter(tweet => tweet?.user != null);;
   const hasNextPage = isSelected === 1 ? hasNextPublic : hasNextPrivate;
   const fetchNextPage = isSelected === 1 ? fetchNextPublic : fetchNextPrivate;
   const isFetchingNext =
@@ -89,7 +91,7 @@ const Home = () => {
 
   const scrollBottomClass = isScrolled ? "bottom-60" : "bottom-10";
 
-  if (privateLoading || publicLoading) return <div>Loading tweets...</div>;
+  if (privateLoading || publicLoading) return <LoadingPage/>;
 
   return (
     <>
@@ -118,7 +120,7 @@ const Home = () => {
             {/* Optional: Show a loading indicator at the bottom */}
             {isFetchingNext && (
               <div className="text-center p-4 text-gray-500">
-                Loading more tweets...
+                <Loading/>
               </div>
             )}
           </div>
