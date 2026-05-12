@@ -25,9 +25,9 @@ export interface PaginatedResponse<T> {
   results: T[];
 }
 
-export interface TweetCardInfoArrayType {
-results: TweetCardInfoType[]
-}
+// export interface TweetCardInfoArrayType {
+// results: TweetCardInfoType[]
+// }
 export type TweetCardInfoArrayType = PaginatedResponse<TweetCardInfoType>;
 
 
