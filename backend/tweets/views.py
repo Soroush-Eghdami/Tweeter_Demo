@@ -23,12 +23,16 @@ from .selectors import (
 
 
 class TweetListView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser, JSONParser]
+
+    def get_permissions(self):
+        if self.request.method == 'POST':
+            return [permissions.IsAuthenticated()]
+        return [permissions.AllowAny()]
 
     @extend_schema(
         summary="List tweets",
-        description="Returns a paginated list of tweets visible to the authenticated user.",
+        description="Returns a paginated list of tweets visible to the current user (authenticated or anonymous).",
         parameters=[
             OpenApiParameter(name='page', type=int, location=OpenApiParameter.QUERY, description='Page number'),
             OpenApiParameter(name='page_size', type=int, location=OpenApiParameter.QUERY, description='Items per page'),
@@ -45,7 +49,7 @@ class TweetListView(APIView):
 
     @extend_schema(
         summary="Create tweet",
-        description="Create a new tweet. Supports multipart/form-data for media upload.",
+        description="Create a new tweet (requires authentication). Supports multipart/form-data for media upload.",
         request={
             "multipart/form-data": {
                 "type": "object",
@@ -84,16 +88,17 @@ class TweetListView(APIView):
                 **input_serializer.validated_data,
             )
         except ValueError as e:
-            # Mirror the old behaviour – raise a ValidationError so the
-            # custom exception handler produces the expected format.
             raise serializers.ValidationError({"error": str(e)})
 
         output_serializer = TweetSerializer(tweet, context={'request': request})
         return Response(output_serializer.data, status=status.HTTP_201_CREATED)
 
-
 class TweetDetailView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+
+    def get_permissions(self):
+        if self.request.method == 'DELETE':
+            return [permissions.IsAuthenticated()]
+        return [permissions.AllowAny()]
 
     @extend_schema(
         summary="Get tweet details",
@@ -107,7 +112,7 @@ class TweetDetailView(APIView):
 
     @extend_schema(
         summary="Delete tweet",
-        description="Delete own tweet. Returns 204 on success.",
+        description="Delete own tweet (requires authentication). Returns 204 on success.",
         responses={
             204: OpenApiResponse(description='Tweet deleted successfully'),
             403: OpenApiResponse(description='You can only delete your own tweets'),
@@ -116,7 +121,7 @@ class TweetDetailView(APIView):
         tags=["tweets"],
     )
     def delete(self, request, pk):
-        tweet = get_tweet_detail(pk=pk, user=request.user)   # raises 404 if not visible
+        tweet = get_tweet_detail(pk=pk, user=request.user)
 
         if tweet.user != request.user:
             return Response(
@@ -126,7 +131,6 @@ class TweetDetailView(APIView):
 
         TweetEngagementService.delete_tweet(tweet)
         return Response(status=status.HTTP_204_NO_CONTENT)
-
 
 # -------------------------------------------------------------------------
 # The following views are already plain APIViews and stay exactly as they

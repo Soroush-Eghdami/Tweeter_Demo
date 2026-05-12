@@ -7,11 +7,20 @@ from tweets.models import Tweet, ReTweet
 def _build_visible_tweets_queryset(user: User) -> QuerySet[Tweet]:
     """
     Return a QuerySet of tweets visible to the given user.
-    Includes:
-    - All public tweets
-    - Tweets from followed users
-    - User's own tweets
+    - Authenticated: public tweets + followed users' tweets + own tweets
+    - Anonymous:      public tweets only
     """
+    if not user.is_authenticated:
+        return (
+            Tweet.objects.filter(user__is_public_user=True)
+            .select_related('user', 'parent_tweet__user')
+            .prefetch_related(
+                Prefetch('retweet_set', queryset=ReTweet.objects.select_related('user')),
+                'likes__user',
+            )
+            .order_by('-created_at')
+        )
+
     followed_ids = Follower.objects.filter(follower=user).values_list('followee_id', flat=True)
     return (
         Tweet.objects.filter(
@@ -24,7 +33,6 @@ def _build_visible_tweets_queryset(user: User) -> QuerySet[Tweet]:
         )
         .order_by('-created_at')
     )
-
 
 def get_visible_tweets(user: User) -> QuerySet[Tweet]:
     """Return a queryset of tweets visible to the given user."""
