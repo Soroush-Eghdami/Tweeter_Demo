@@ -107,7 +107,7 @@ const LeftBox: React.FC<LeftBoxProps> = ({
               <span className="font-bold text-lg text-white">
                 {profile.retweets_made}
               </span>
-              <span className="text-xs text-white">Re-tweet</span>
+              <span className="text-xs text-white">Retweet</span>
             </div>
           </div>
         </div>
