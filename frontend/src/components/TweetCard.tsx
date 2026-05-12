@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import type { TweetCardInfoType } from "../types/TweetTypes"
+import { joinedDate } from "../utils/joinedDate"
 import profilePicture from "../assets/icons/profile-default.svg";
 import like from "../assets/icons/heart.svg";
 import likeFilled from "../assets/icons/filled-heart.svg";
@@ -20,6 +21,8 @@ const TweetCard = ({ isPinned, info , defaultRetweeted = false}: TweetCardPropsT
   const [retweeted, setRetweeted] = useState(defaultRetweeted);
   const navigation = useNavigate();
 
+  const formattedJoinDate = joinedDate(info.created_at)
+
   if (!info) return null;
 
   return (
@@ -36,9 +39,9 @@ const TweetCard = ({ isPinned, info , defaultRetweeted = false}: TweetCardPropsT
           className="font-semibold text-xl cursor-pointer hover:text-[#ddd] hover:underline"
           onClick={() => navigation("/profile")}
         >
-          {info.user.username}
+          {info.user?.username}
         </h2>
-        <h5 className="text-md text-[#ddd]">{info.created_at}</h5>
+        <h5 className="text-md text-[#ddd]">{formattedJoinDate}</h5>
       </div>
       <p className="font-medium mb-9 pl-12">{info.content}</p>
       <div className="flex items-center gap-9 pl-6">
@@ -81,7 +84,7 @@ const TweetCard = ({ isPinned, info , defaultRetweeted = false}: TweetCardPropsT
               onClick={() => navigation("/comment")}
             />
           )}
-          <p className="text-[#ddd] text-sm">{info.is_liked}</p>  {/* {need to change this after} */}
+          <p className="text-[#ddd] text-sm">{info.replies_count}</p>  {/* {need to change this after} */}
         </div>
         {/* Retweet Button */}
         <div

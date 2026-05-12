@@ -1,8 +1,8 @@
 export interface TweetCardInfoType {
   id: number;
-  user: {
+  user?: {
     id: string;
-    username: string;
+    username?: string;
     custom_id: string;
     is_public: true;
     profile_picture?: string;
@@ -11,6 +11,7 @@ export interface TweetCardInfoType {
   message: string;
   media?: string;
   parent_tweet: string;
+  replies_count: number;
   retweet_count: number;
   like_count: number;
   is_liked: boolean;
@@ -25,9 +26,7 @@ export interface PaginatedResponse<T> {
   results: T[];
 }
 
-export interface TweetCardInfoArrayType {
-results: TweetCardInfoType[]
-}
+// export interface TweetCardInfoArrayType {
+// results: TweetCardInfoType[]
+// }
 export type TweetCardInfoArrayType = PaginatedResponse<TweetCardInfoType>;
-
-

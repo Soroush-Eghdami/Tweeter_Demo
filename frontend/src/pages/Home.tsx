@@ -1,6 +1,7 @@
-// Home.tsx
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { observerFunction, scrollFunction } from "../utils/scrollFunction";
+import LoadingPage from "../components/loading/LoadingPage";
+import Loading from "../components/loading/Loading";
 import TweetCard from "../components/TweetCard";
 import HomeSideProfileBox from "../components/homePage/HomeSideProfileBox";
 import CreatePost from "../components/createPost/CreatePost";
@@ -16,7 +17,6 @@ const Home = () => {
   const [isSelected, setIsSelected] = useState<1 | 2>(1);
   const [popupVisible, setPopupVisible] = useState(false);
 
-  // Infinite queries
   const {
     data: privateData,
     fetchNextPage: fetchNextPrivate,
@@ -33,16 +33,16 @@ const Home = () => {
     isLoading: publicLoading,
   } = useTweetsPublic();
 
-  // Flatten all pages into one array of tweets
-  const privateTweets = privateData?.pages.flatMap(page => page.results) ?? [];
-  const publicTweets = publicData?.pages.flatMap(page => page.results) ?? [];
+  const privateTweets =
+    privateData?.pages.flatMap((page) => page.results) ?? [];
+  const publicTweets = publicData?.pages.flatMap((page) => page.results) ?? [];
 
-  const tweets = isSelected === 1 ? publicTweets : privateTweets;
+  const tweets = (isSelected === 1 ? publicTweets : privateTweets).filter(tweet => tweet?.user != null);;
   const hasNextPage = isSelected === 1 ? hasNextPublic : hasNextPrivate;
   const fetchNextPage = isSelected === 1 ? fetchNextPublic : fetchNextPrivate;
-  const isFetchingNext = isSelected === 1 ? isFetchingNextPublic : isFetchingNextPrivate;
+  const isFetchingNext =
+    isSelected === 1 ? isFetchingNextPublic : isFetchingNextPrivate;
 
-  // Existing scroll & footer observer for the floating button
   useEffect(() => {
     const handleScroll = scrollFunction(setIsScrolled);
     window.addEventListener("scroll", handleScroll);
@@ -57,33 +57,29 @@ const Home = () => {
     return () => observer.disconnect();
   }, []);
 
-  // NEW: Observe footer to load more tweets when it becomes visible
   useEffect(() => {
     const footer = document.querySelector("#footer");
     if (!footer) return;
 
     const loadMoreOnIntersect = (entries: IntersectionObserverEntry[]) => {
       const [entry] = entries;
-      // When footer becomes visible AND there are more pages AND we are not already fetching
       if (entry.isIntersecting && hasNextPage && !isFetchingNext) {
         fetchNextPage();
       }
     };
 
     const observer = new IntersectionObserver(loadMoreOnIntersect, {
-      threshold: 0.1, // Trigger when at least 10% of footer is visible
+      threshold: 0.1,
     });
     observer.observe(footer);
 
     return () => observer.disconnect();
   }, [hasNextPage, isFetchingNext, fetchNextPage]);
 
-  // Scroll to top on mount
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
 
-  // Popup animation for new post
   useEffect(() => {
     if (isCreatedPost) {
       setPopupVisible(true);
@@ -95,7 +91,7 @@ const Home = () => {
 
   const scrollBottomClass = isScrolled ? "bottom-60" : "bottom-10";
 
-  if (privateLoading || publicLoading) return <div>Loading tweets...</div>;
+  if (privateLoading || publicLoading) return <LoadingPage/>;
 
   return (
     <>
@@ -124,7 +120,7 @@ const Home = () => {
             {/* Optional: Show a loading indicator at the bottom */}
             {isFetchingNext && (
               <div className="text-center p-4 text-gray-500">
-                Loading more tweets...
+                <Loading/>
               </div>
             )}
           </div>
