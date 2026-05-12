@@ -25,6 +25,7 @@ const Home = () => {
     fetchNextPage: fetchNextPrivate,
     hasNextPage: hasNextPrivate,
     isFetchingNextPage: isFetchingNextPrivate,
+    isLoading: privateLoading,
   } = useTweetsPrivate({
     enabled: isLoggedIn && isSelected === 2,
   });
@@ -34,6 +35,7 @@ const Home = () => {
     fetchNextPage: fetchNextPublic,
     hasNextPage: hasNextPublic,
     isFetchingNextPage: isFetchingNextPublic,
+    isLoading: publicLoading,
   } = useTweetsPublic({
     enabled: isSelected === 1,
   });
@@ -71,7 +73,7 @@ const Home = () => {
     const loadMoreOnIntersect = (entries: IntersectionObserverEntry[]) => {
       const [entry] = entries;
       if (entry.isIntersecting && hasNextPage && !isFetchingNext) {
-        fetchNextPage(); 
+        fetchNextPage(); // only called if the active query is enabled and has next page
       }
     };
 
@@ -115,12 +117,7 @@ const Home = () => {
             setIsSelected={setIsSelected}
           />
           <div>
-            {/* NEW: Show login message when trying to view Followings without being logged in */}
-            {isSelected === 2 && !isLoggedIn ? (
-              <div className="text-center text-gray-500 mt-50 text-lg">
-                Please log in to see tweets from people you follow.
-              </div>
-            ) : tweets.length === 0 ? (
+            {tweets.length === 0 ? (
               <div className="text-center text-gray-500 mt-50 text-lg">
                 No tweets to display.
               </div>

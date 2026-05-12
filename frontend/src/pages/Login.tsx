@@ -1,7 +1,5 @@
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
-import toast from "react-hot-toast";
-import { useQueryClient } from "@tanstack/react-query";
 import UsernameInput from "../components/loginRegister/UsernameInput";
 import PasswordInput from "../components/loginRegister/PasswordInput";
 import Loading from "../components/loading/Loading";
@@ -17,27 +15,12 @@ const Login = () => {
   } = useForm<LoginFormType>();
   const { mutate, isPending } = useLogin();
   const navigation = useNavigate();
-  const queryClient = useQueryClient();
 
   const onSubmit = (data: LoginFormType) => {
-    mutate(
-      {
-        username: data.username,
-        password: data.password,
-      },
-      {
-        onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: ["myProf"] });
-
-          toast.success("User Logged in Successfully!");
-          navigation("/");
-        },
-        onError: () => {
-          toast.error("Login Failed!");
-        },
-      },
-    );
-
+    mutate({
+      username: data.username,
+      password: data.password,
+    });
     reset();
   };
 
@@ -52,9 +35,7 @@ const Login = () => {
             Welcome!
           </p>
 
-          {/* Username */}
           <UsernameInput register={register} error={errors.username} />
-          {/* Password */}
           <div className="w-[70%]">
             <PasswordInput register={register} error={errors.password} />
           </div>
