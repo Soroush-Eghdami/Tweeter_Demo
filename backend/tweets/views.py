@@ -46,10 +46,31 @@ class TweetListView(APIView):
     @extend_schema(
         summary="Create tweet",
         description="Create a new tweet. Supports multipart/form-data for media upload.",
-        request=CreateTweetSerializer,
+        request={
+            "multipart/form-data": {
+                "type": "object",
+                "properties": {
+                    "content": {
+                        "type": "string",
+                        "description": "Tweet content (max 280 characters)",
+                    },
+                    "media": {
+                        "type": "string",
+                        "format": "binary",
+                        "description": "Optional image or video file",
+                    },
+                    "parent_tweet": {
+                        "type": "integer",
+                        "nullable": True,
+                        "description": "ID of the tweet you are replying to",
+                    },
+                },
+                "required": ["content"],
+            }
+        },
         responses={
             201: TweetSerializer,
-            400: OpenApiResponse(description='Invalid input'),
+            400: OpenApiResponse(description="Invalid input"),
         },
         tags=["tweets"],
     )

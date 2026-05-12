@@ -91,11 +91,33 @@ class UserProfileView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     @extend_schema(
-        summary="Update profile",
-        description="Update own profile fields (email, name, bio, privacy, profile picture, banner).",
-        tags=["profile"],
-        request=UserUpdateInputSerializer,
-        responses={200: UserOutputSerializer},
+    summary="Update profile",
+    description="Update own profile fields. Supports multipart/form-data for image uploads.",
+    request={
+        "multipart/form-data": {
+            "type": "object",
+            "properties": {
+                "username": {"type": "string", "description": "New username (optional)"},
+                "email": {"type": "string", "format": "email", "description": "New email (optional)"},
+                "first_name": {"type": "string", "description": "First name (optional)"},
+                "last_name": {"type": "string", "description": "Last name (optional)"},
+                "bio": {"type": "string", "description": "Short bio (optional)"},
+                "is_public_user": {"type": "boolean", "description": "Profile visibility (optional)"},
+                "profile_picture": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "New profile picture",
+                },
+                "profile_banner": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "New profile banner",
+                },
+            },
+        }
+    },
+    responses={200: UserOutputSerializer},
+    tags=["profile"],
     )
     def patch(self, request: Request) -> Response:
         input_ser = UserUpdateInputSerializer(data=request.data, context={'request': request})
