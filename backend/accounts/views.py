@@ -228,7 +228,7 @@ class SearchUsersView(APIView):
 # Timelines (class‑based)
 # =============================================================================
 class PublicTimelineView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.AllowAny]
 
     @extend_schema(
         parameters=[

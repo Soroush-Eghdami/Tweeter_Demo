@@ -7,17 +7,27 @@ from tweets.models import ReTweet, Tweet
 
 # Functions
 def get_public_timeline_queryset(user: User) -> QuerySet[Tweet]:
-    followed_user_ids = Follower.objects.filter(follower=user).values_list( # type: ignore[union-attr]
+    if not user.is_authenticated:
+        return (
+            Tweet.objects.filter(user__is_public_user=True)
+            .select_related("user")
+            .prefetch_related(
+                Prefetch("retweet_set", queryset=ReTweet.objects.select_related("user"))
+            )
+            .order_by("-created_at")
+        )
+
+    followed_user_ids = Follower.objects.filter(follower=user).values_list(
         "followee_id", flat=True
     )
     visible_user_ids = list(followed_user_ids) + [user.id]
     return (
-        Tweet.objects.filter( # type: ignore[union-attr]
+        Tweet.objects.filter(
             Q(user__is_public_user=True) | Q(user_id__in=visible_user_ids)
         )
         .select_related("user")
         .prefetch_related(
-            Prefetch("retweet_set", queryset=ReTweet.objects.select_related("user")) # type: ignore[union-attr]
+            Prefetch("retweet_set", queryset=ReTweet.objects.select_related("user"))
         )
         .order_by("-created_at")
     )
