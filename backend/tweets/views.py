@@ -143,7 +143,6 @@ class TweetRepliesView(APIView):
         parameters=[
             OpenApiParameter(name='page', type=int, location=OpenApiParameter.QUERY, description='Page number'),
             OpenApiParameter(name='page_size', type=int, location=OpenApiParameter.QUERY, description='Items per page'),
-            OpenApiParameter(name='pk', type=int, location=OpenApiParameter.PATH, description='Tweet ID'),
         ],
         responses={200: TweetSerializer(many=True)},
         tags=["tweets"],
