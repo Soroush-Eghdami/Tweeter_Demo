@@ -34,6 +34,39 @@ def _build_visible_tweets_queryset(user: User) -> QuerySet[Tweet]:
         .order_by('-created_at')
     )
 
+
+def get_replies_queryset(tweet: Tweet, user: User) -> QuerySet[Tweet]:
+    """
+    Return visible replies to a tweet.
+    For authenticated users, apply full visibility rules;
+    for anonymous users, only public tweets.
+    """
+    if not user.is_authenticated:
+        return (
+            Tweet.objects.filter(parent_tweet=tweet, user__is_public_user=True)
+            .select_related('user')
+            .prefetch_related(
+                Prefetch('retweet_set', queryset=ReTweet.objects.select_related('user')),
+                'likes__user',
+            )
+            .order_by('created_at')
+        )
+
+    followed_ids = Follower.objects.filter(follower=user).values_list('followee_id', flat=True)
+    return (
+        Tweet.objects.filter(
+            Q(user__is_public_user=True) | Q(user_id__in=followed_ids) | Q(user=user),
+            parent_tweet=tweet,
+        )
+        .select_related('user')
+        .prefetch_related(
+            Prefetch('retweet_set', queryset=ReTweet.objects.select_related('user')),
+            'likes__user',
+        )
+        .order_by('created_at')
+    )
+
+
 def get_visible_tweets(user: User) -> QuerySet[Tweet]:
     """Return a queryset of tweets visible to the given user."""
     return _build_visible_tweets_queryset(user)

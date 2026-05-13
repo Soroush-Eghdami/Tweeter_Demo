@@ -56,19 +56,19 @@ class UserListView(APIView):
 
 
 class UserDetailView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.AllowAny]
 
     @extend_schema(
         parameters=[
-            OpenApiParameter(name='pk', type=str, location=OpenApiParameter.PATH, description='UUID of the user'),
+            OpenApiParameter(name='id', type=str, location=OpenApiParameter.PATH, description='UUID of the user'),
         ],
         summary="Get user details",
         description="Retrieve a specific user's profile by UUID.",
         tags=["users"],
         responses={200: UserOutputSerializer},
     )
-    def get(self, request: Request, pk: str) -> Response:
-        user = get_user_by_id(pk)
+    def get(self, request: Request, id: str) -> Response:
+        user = get_user_by_id(id)
         serializer = UserOutputSerializer(user, context={'request': request})
         return Response(serializer.data, status=status.HTTP_200_OK)
 
