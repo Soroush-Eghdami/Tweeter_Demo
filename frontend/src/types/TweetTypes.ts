@@ -15,6 +15,7 @@ export interface TweetCardInfoType {
   retweet_count: number;
   like_count: number;
   is_liked: boolean;
+  is_retweeted:boolean;
   created_at: string;
   updated_at: string;
 }
