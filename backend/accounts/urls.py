@@ -5,7 +5,7 @@ from .views import LoginView, RefreshAccessTokenView
 urlpatterns = [
     # Users
     path('users/', views.UserListView.as_view(), name='user-list'),
-    path('users/<uuid:pk>/', views.UserDetailView.as_view(), name='user-detail'),
+    path('users/<uuid:id>/', views.UserDetailView.as_view(), name='user-detail'),
     path('profile/', views.UserProfileView.as_view(), name='user-profile'),
     path('profile/change-password/', views.PasswordChangeView.as_view(), name='password-change'),
 
