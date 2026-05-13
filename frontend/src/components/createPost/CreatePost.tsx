@@ -22,7 +22,6 @@ const CreatePost = ({
     enabled: isCreatedPost
   });
   // when is in loading or without data
-  const profilePic = profile?.profile_picture || userProfile;
   const displayName = profile?.username || profile?.custom_id || "User";
 
   const handleSubmit = (e: React.FormEvent) => {
