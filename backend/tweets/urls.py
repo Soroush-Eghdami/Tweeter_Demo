@@ -4,6 +4,7 @@ from . import views
 urlpatterns = [
     path('tweets/', views.TweetListView.as_view(), name='tweet-list'),
     path('tweets/<int:pk>/', views.TweetDetailView.as_view(), name='tweet-detail'),
+    path('tweets/<int:pk>/replies/', views.TweetRepliesView.as_view(), name='tweet-replies'),
     path('tweets/<int:pk>/retweet/', views.RetweetView.as_view(), name='retweet'),
     path('tweets/<int:pk>/unretweet/', views.UnretweetView.as_view(), name='unretweet'),
     path('tweets/<int:pk>/like/', views.LikeView.as_view(), name='like-tweet'),
