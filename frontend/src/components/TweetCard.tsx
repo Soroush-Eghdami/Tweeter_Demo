@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import type { TweetCardInfoType } from "../types/TweetTypes"
-import { joinedDate } from "../utils/joinedDate"
+import type { TweetCardInfoType } from "../types/TweetTypes";
+import { joinedDate } from "../utils/joinedDate";
 import profilePicture from "../assets/icons/profile-default.svg";
 import like from "../assets/icons/heart.svg";
 import likeFilled from "../assets/icons/filled-heart.svg";
@@ -17,11 +17,15 @@ interface TweetCardPropsType {
   defaultRetweeted?: boolean;
 }
 
-const TweetCard = ({ isPinned, info , defaultRetweeted = false}: TweetCardPropsType) => {
+const TweetCard = ({
+  isPinned,
+  info,
+  defaultRetweeted = false,
+}: TweetCardPropsType) => {
   const [retweeted, setRetweeted] = useState(defaultRetweeted);
   const navigation = useNavigate();
 
-  const formattedJoinDate = joinedDate(info.created_at)
+  const formattedJoinDate = joinedDate(info.created_at);
 
   if (!info) return null;
 
@@ -34,10 +38,19 @@ const TweetCard = ({ isPinned, info , defaultRetweeted = false}: TweetCardPropsT
       )}
       {/* Tweet Info */}
       <div className="flex items-center gap-3.5 mb-8">
-        <img src={profilePicture} alt="User-Profile" />
+        <img
+          src={info.user?.profile_picture || profilePicture}
+          alt="User-Profile"
+          className="rounded-full w-14 h-14"
+          onError={(e) => {
+            const target = e.target as HTMLImageElement;
+            target.onerror = null; // prevent infinite loop
+            target.src = profilePicture;
+          }}
+        />
         <h2
           className="font-semibold text-xl cursor-pointer hover:text-[#ddd] hover:underline"
-          onClick={() => navigation("/profile")}
+          onClick={() => navigation(`/profile/${info.user.id}`)}
         >
           {info.user?.username}
         </h2>
@@ -84,7 +97,8 @@ const TweetCard = ({ isPinned, info , defaultRetweeted = false}: TweetCardPropsT
               onClick={() => navigation("/comment")}
             />
           )}
-          <p className="text-[#ddd] text-sm">{info.replies_count}</p>  {/* {need to change this after} */}
+          <p className="text-[#ddd] text-sm">{info.replies_count}</p>{" "}
+          {/* {need to change this after} */}
         </div>
         {/* Retweet Button */}
         <div
