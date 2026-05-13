@@ -143,17 +143,17 @@ class TweetRepliesView(APIView):
         parameters=[
             OpenApiParameter(name='page', type=int, location=OpenApiParameter.QUERY, description='Page number'),
             OpenApiParameter(name='page_size', type=int, location=OpenApiParameter.QUERY, description='Items per page'),
-            OpenApiParameter(name='id', type=int, location=OpenApiParameter.PATH, description='Tweet ID'),
+            OpenApiParameter(name='pk', type=int, location=OpenApiParameter.PATH, description='Tweet ID'),
         ],
         responses={200: TweetSerializer(many=True)},
         tags=["tweets"],
     )
-    def get(self, request, id):
+    def get(self, request, pk):
         # First get the parent tweet without visibility check (or use get_tweet_detail? 
         # We want to show replies even if the parent itself is not visible? Usually if parent is visible, we use get_tweet_detail to ensure it's visible.
         # But we can simply fetch the tweet and then get replies; if parent is not visible, replies should be hidden too? Let's ensure parent is visible first.
         from .selectors import get_tweet_detail
-        parent_tweet = get_tweet_detail(id=id, user=request.user)  # raises 404 if not visible
+        parent_tweet = get_tweet_detail(pk=pk, user=request.user)  # raises 404 if not visible
         replies = get_replies_queryset(parent_tweet, request.user)
         paginator = TweeterPagination()
         page = paginator.paginate_queryset(replies, request)
