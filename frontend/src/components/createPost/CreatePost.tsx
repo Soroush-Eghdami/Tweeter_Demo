@@ -1,7 +1,6 @@
 import { useState } from "react";
 import toast from "react-hot-toast";
 import Loading from "../loading/Loading";
-import NoButton from "../NoButton";
 import { useCreateTweet } from "../../hooks/useCreateTweet";
 import { useMyProfile } from "../../hooks/useMyProfile";
 import userProfile from "../../assets/icons/profile-default.svg";
