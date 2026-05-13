@@ -58,7 +58,6 @@ const CreatePost = ({
         <div className="pt-3 pb-3 z-50 max-w-[45%] mx-auto bg-[#1c1c1c]/90 rounded-2xl shadow-[0_0px_30px_rgba(0,0,0,0.4)]">
           <form onSubmit={handleSubmit}>
             <div className="flex flex-row gap-3 pt-9 px-10">
-              {/* <img src={userProfile} alt="user-profile" className="size-18" /> */}
               {profileLoading ? (
                 <div className="size-18 flex items-center justify-center">
                   <Loading width="w-6" height="h-6"/>
