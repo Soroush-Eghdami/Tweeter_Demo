@@ -1,9 +1,9 @@
 import { useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import type { TweetCardInfoType } from "../types/TweetTypes";
-import { joinedDate } from "../utils/joinedDate";
 import { useLikeMutation } from "../hooks/useToggleLike";
 import { useRetweetMutation } from "../hooks/useToggleRetweet";
+import { joinedDate } from "../utils/joinedDate";
+import type { TweetCardInfoType } from "../types/TweetTypes";
 import profilePicture from "../assets/icons/profile-default.svg";
 import like from "../assets/icons/heart.svg";
 import likeFilled from "../assets/icons/filled-heart.svg";
@@ -20,12 +20,10 @@ interface TweetCardPropsType {
 }
 
 const TweetCard = ({ isPinned, info }: TweetCardPropsType) => {
-  const navigation = useNavigate();
-  const formattedJoinDate = joinedDate(info.created_at);
-
   const likeMutation = useLikeMutation(info.id);
   const retweetMutation = useRetweetMutation(info.id);
-
+  const formattedJoinDate = joinedDate(info.created_at);
+  const navigation = useNavigate();
   const lastLikeClick = useRef(0);
   const lastRetweetClick = useRef(0);
 
