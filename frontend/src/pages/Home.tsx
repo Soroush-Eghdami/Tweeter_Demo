@@ -11,13 +11,12 @@ import type { TweetCardInfoType } from "../types/TweetTypes";
 import newTweet from "../assets/icons/new-tweet.svg";
 
 const Home = () => {
+  const { isLoggedIn } = useIsLoggedIn();
   const [isScrolled, setIsScrolled] = useState(false);
   const [iconBottom, setIconBottom] = useState(28);
   const [isCreatedPost, setIsCreatedPost] = useState(false);
   const [isSelected, setIsSelected] = useState<1 | 2>(1);
   const [popupVisible, setPopupVisible] = useState(false);
-
-  const { isLoggedIn } = useIsLoggedIn();
 
   const {
     data: privateData,
@@ -103,7 +102,7 @@ const publicTweets = publicData?.pages.flatMap((page) => page.results) ?? [];
 
   const scrollBottomClass = isScrolled ? "bottom-60" : "bottom-10";
 
-  // if (isAuthLoading) return <LoadingPage />;
+  if (isAuthLoading) return <LoadingPage />;
 
   return (
     <>
