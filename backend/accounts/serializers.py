@@ -10,13 +10,28 @@ User = get_user_model()
 
 
 # =====================================================================
+# Absolute URL for Image Fields
+# =====================================================================
+
+class AbsoluteURLImageField(serializers.ImageField):
+    """Returns absolute URLs for image fields when request context is available."""
+    def to_representation(self, value):
+        url = super().to_representation(value)
+        if url and self.context.get('request'):
+            return self.context['request'].build_absolute_uri(url)
+        return url
+
+
+
+# =====================================================================
 # User Output Serializers
 # =====================================================================
 
 class UserLiteOutputSerializer(serializers.ModelSerializer):
     """Lightweight user representation for nested use (e.g., in Follower)."""
     is_public = serializers.ReadOnlyField()
-
+    profile_picture = AbsoluteURLImageField(read_only=True)
+    
     class Meta:
         model = User
         fields = ['id', 'username', 'email', 'custom_id', 'is_public', 'profile_picture']
@@ -27,6 +42,8 @@ class UserOutputSerializer(serializers.ModelSerializer):
     """Full user output serializer for detail/list views."""
     is_following = serializers.SerializerMethodField()
     is_public = serializers.ReadOnlyField()
+    profile_picture = AbsoluteURLImageField(read_only=True)
+    profile_banner = AbsoluteURLImageField(read_only=True)
     followers_count = serializers.SerializerMethodField()
     following_count = serializers.SerializerMethodField()
     tweets_count = serializers.SerializerMethodField()
@@ -133,6 +150,10 @@ class UnfollowInputSerializer(serializers.Serializer):
     """Input serializer for unfollowing a user."""
     followee_id = serializers.CharField(required=True, write_only=True)
 
+
+class RemoveFollowerInputSerializer(serializers.Serializer):
+    """Input serializer for removing a follower."""
+    follower_id = serializers.CharField(required=True, write_only=True)
 
 # =====================================================================
 # Follower Serializers
