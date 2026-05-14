@@ -5,13 +5,14 @@ import TweetCard from "../components/TweetCard";
 import HomeSideProfileBox from "../components/homePage/HomeSideProfileBox";
 import CreatePost from "../components/createPost/CreatePost";
 import ForYouFollowing from "../components/homePage/ForYouFollowing";
+import LoadingPage from "../components/loading/LoadingPage";
 import useIsLoggedIn from "../hooks/global-hooks/useIsLoggedIn";
 import { useTweetsPrivate, useTweetsPublic } from "../hooks/useTweets";
 import type { TweetCardInfoType } from "../types/TweetTypes";
 import newTweet from "../assets/icons/new-tweet.svg";
 
 const Home = () => {
-  const { isLoggedIn } = useIsLoggedIn();
+  const { isLoggedIn, isLoading: isAuthLoading } = useIsLoggedIn();
   const [isScrolled, setIsScrolled] = useState(false);
   const [iconBottom, setIconBottom] = useState(28);
   const [isCreatedPost, setIsCreatedPost] = useState(false);
