@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { observerFunction, scrollFunction } from "../utils/scrollFunction";
-import LoadingPage from "../components/loading/LoadingPage";
 import Loading from "../components/loading/Loading";
 import TweetCard from "../components/TweetCard";
 import HomeSideProfileBox from "../components/homePage/HomeSideProfileBox";
@@ -18,13 +17,14 @@ const Home = () => {
   const [isSelected, setIsSelected] = useState<1 | 2>(1);
   const [popupVisible, setPopupVisible] = useState(false);
 
-  const { isLoggedIn, isLoading: isAuthLoading } = useIsLoggedIn();
+  const { isLoggedIn } = useIsLoggedIn();
 
   const {
     data: privateData,
     fetchNextPage: fetchNextPrivate,
     hasNextPage: hasNextPrivate,
     isFetchingNextPage: isFetchingNextPrivate,
+    isLoading: isLoadingPrivate, 
   } = useTweetsPrivate({
     enabled: isLoggedIn && isSelected === 2,
   });
@@ -34,13 +34,13 @@ const Home = () => {
     fetchNextPage: fetchNextPublic,
     hasNextPage: hasNextPublic,
     isFetchingNextPage: isFetchingNextPublic,
+    isLoading: isLoadingPublic, 
   } = useTweetsPublic({
     enabled: isSelected === 1,
   });
 
-  const privateTweets =
-    privateData?.pages.flatMap((page) => page.results) ?? [];
-  const publicTweets = publicData?.pages.flatMap((page) => page.results) ?? [];
+const privateTweets = privateData?.pages.flatMap((page) => page.results) ?? [];
+const publicTweets = publicData?.pages.flatMap((page) => page.results) ?? [];
 
   const tweets = (isSelected === 1 ? publicTweets : privateTweets).filter(
     (tweet) => tweet?.user != null,
@@ -49,6 +49,11 @@ const Home = () => {
   const fetchNextPage = isSelected === 1 ? fetchNextPublic : fetchNextPrivate;
   const isFetchingNext =
     isSelected === 1 ? isFetchingNextPublic : isFetchingNextPrivate;
+
+  // Determine if the current tab is loading its initial data
+  const isTweetsLoading =
+    (isSelected === 1 && isLoadingPublic) ||
+    (isSelected === 2 && isLoadingPrivate);
 
   useEffect(() => {
     const handleScroll = scrollFunction(setIsScrolled);
@@ -71,7 +76,7 @@ const Home = () => {
     const loadMoreOnIntersect = (entries: IntersectionObserverEntry[]) => {
       const [entry] = entries;
       if (entry.isIntersecting && hasNextPage && !isFetchingNext) {
-        fetchNextPage(); // only called if the active query is enabled and has next page
+        fetchNextPage();
       }
     };
 
@@ -98,7 +103,7 @@ const Home = () => {
 
   const scrollBottomClass = isScrolled ? "bottom-60" : "bottom-10";
 
-  if (isAuthLoading) return <LoadingPage />;
+  // if (isAuthLoading) return <LoadingPage />;
 
   return (
     <>
@@ -115,7 +120,12 @@ const Home = () => {
             setIsSelected={setIsSelected}
           />
           <div>
-            {tweets.length === 0 ? (
+            {/* Show loading indicator while fetching tweets for the current tab */}
+            {isTweetsLoading ? (
+              <div className="flex justify-center items-center mt-50">
+                <Loading />
+              </div>
+            ) : tweets.length === 0 ? (
               <div className="text-center text-gray-500 mt-50 text-lg">
                 No tweets to display.
               </div>
@@ -124,7 +134,7 @@ const Home = () => {
                 <TweetCard key={tweet.id} info={tweet} />
               ))
             )}
-            {/* Optional: Show a loading indicator at the bottom */}
+            {/* Show loading indicator at the bottom when fetching more pages */}
             {isFetchingNext && (
               <div className="text-center p-4 text-gray-500">
                 <Loading />

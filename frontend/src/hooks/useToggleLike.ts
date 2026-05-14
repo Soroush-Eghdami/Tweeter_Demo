@@ -110,13 +110,13 @@ export const useLikeMutation = (tweetId: number) => {
       }
     },
 
-    onSuccess: (_, shouldLike: boolean) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tweetsPrivate"] });
       queryClient.invalidateQueries({ queryKey: ["tweetsPublic"] });
-      toast.success(shouldLike ? "Liked!" : "Unliked", {
-        id: toastIdRef.current || undefined,
-      });
-      if (!toastIdRef.current) toastIdRef.current = "like-toast";
+      // toast.success(shouldLike ? "Liked!" : "Unliked", {
+      //   id: toastIdRef.current || undefined,
+      // });
+      // if (!toastIdRef.current) toastIdRef.current = "like-toast";
     },
   });
 };

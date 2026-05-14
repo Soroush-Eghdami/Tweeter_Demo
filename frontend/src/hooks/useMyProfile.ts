@@ -15,8 +15,8 @@ export const useMyProfile = () => {
   return useQuery({
     queryKey: ["myProf"],
     queryFn: MyProfileInfo,
-    staleTime: Infinity,
-    refetchOnMount: false,
+    staleTime: 0,
+    // refetchOnMount: false,
     refetchOnWindowFocus: false,
     enabled,
     retry: (failureCount, error) => {

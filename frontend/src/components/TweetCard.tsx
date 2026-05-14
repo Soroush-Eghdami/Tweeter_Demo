@@ -31,7 +31,7 @@ const TweetCard = ({ isPinned, info }: TweetCardPropsType) => {
 
   const handleLikeClick = () => {
     const now = Date.now();
-    if (now - lastLikeClick.current < 300) return; // 300ms cooldown
+    if (now - lastLikeClick.current < 300) return; // 300ms 
     lastLikeClick.current = now;
     likeMutation.mutate(!info.is_liked);
   };
@@ -66,7 +66,7 @@ const TweetCard = ({ isPinned, info }: TweetCardPropsType) => {
         />
         <h2
           className="font-semibold text-xl cursor-pointer hover:text-[#ddd] hover:underline"
-          onClick={() => navigation(`/profile/${info.user.id}`)}
+          onClick={() => navigation(`/profile/${info.user?.id}`)}
         >
           {info.user?.username}
         </h2>
@@ -97,7 +97,7 @@ const TweetCard = ({ isPinned, info }: TweetCardPropsType) => {
         {/* Comment Button */}
         <div
           className="flex items-center gap-2.5 cursor-pointer"
-          onClick={() => navigation("/comment")}
+          onClick={() => navigation("/comment")}  // need to be changed later
         >
           {isPinned ? (
             <img
@@ -113,8 +113,7 @@ const TweetCard = ({ isPinned, info }: TweetCardPropsType) => {
               onClick={() => navigation("/comment")}
             />
           )}
-          <p className="text-[#ddd] text-sm">{info.replies_count}</p>{" "}
-          {/* {need to change this after} */}
+          <p className="text-[#ddd] text-sm">{info.replies_count}</p>
         </div>
         {/* Retweet Button */}
         <div
