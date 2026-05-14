@@ -2,25 +2,18 @@ import { useInfiniteQuery } from "@tanstack/react-query";
 import api from "../api-services/api";
 import type { PaginatedResponse, TweetCardInfoType } from "../types/TweetTypes";
 
+// private tweet
 const TweetsInfoPrivate = async ({
   pageParam = 1,
 }: {
   pageParam: number;
 }): Promise<PaginatedResponse<TweetCardInfoType>> => {
-  const response = await api.get(
-    `accounts/timeline/private/?page=${pageParam}`,
-  );
+  const response = await api.get(`accounts/timeline/private/?page=${pageParam}`);
   return response.data;
 };
 
 export const useTweetsPrivate = (options?: { enabled?: boolean }) => {
-  return useInfiniteQuery<
-    PaginatedResponse<TweetCardInfoType>, // TData
-    Error, // TError
-    PaginatedResponse<TweetCardInfoType>, // TData (again for infinite data)
-    [string], // TQueryKey
-    number // TPageParam
-  >({
+  return useInfiniteQuery({
     queryKey: ["tweetsPrivate"],
     queryFn: TweetsInfoPrivate,
     initialPageParam: 1,
@@ -36,6 +29,7 @@ export const useTweetsPrivate = (options?: { enabled?: boolean }) => {
   });
 };
 
+// public tweet
 const TweetsInfoPublic = async ({
   pageParam = 1,
 }: {
@@ -46,13 +40,7 @@ const TweetsInfoPublic = async ({
 };
 
 export const useTweetsPublic = (options?: { enabled?: boolean }) => {
-  return useInfiniteQuery<
-    PaginatedResponse<TweetCardInfoType>, // TData
-    Error, // TError
-    PaginatedResponse<TweetCardInfoType>, // TData (again for infinite data)
-    [string], // TQueryKey
-    number // TPageParam
-  >({
+  return useInfiniteQuery({
     queryKey: ["tweetsPublic"],
     queryFn: TweetsInfoPublic,
     initialPageParam: 1,

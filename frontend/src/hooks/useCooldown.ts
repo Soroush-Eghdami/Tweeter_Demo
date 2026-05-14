@@ -1,18 +1,15 @@
-// ✅ CORRECT: do not read ref.current during render
-import { useState, useRef, useCallback } from "react";
+import { useRef } from "react";
 
 export const useCooldown = (delayMs = 500) => {
-  const [isCoolingDown, setIsCoolingDown] = useState(false);
-  const timerRef = useRef<number | null>(null);
+  const lastRunRef = useRef(0);
 
-  const startCooldown = useCallback(() => {
-    if (isCoolingDown) return;
-    setIsCoolingDown(true);
-    timerRef.current = setTimeout(() => {
-      setIsCoolingDown(false);
-      timerRef.current = null;
-    }, delayMs);
-  }, [delayMs, isCoolingDown]);
+  const run = (callback: () => void) => {
+    const now = Date.now();
+    if (now - lastRunRef.current >= delayMs) {
+      lastRunRef.current = now;
+      callback();
+    }
+  };
 
-  return { isCoolingDown, startCooldown };
+  return { run };
 };

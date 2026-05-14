@@ -20,10 +20,11 @@ export const useRetweetMutation = (tweetId: number) => {
       return shouldRetweet ? retweet(tweetId) : unretweet(tweetId);
     },
 
-    onSuccess: (_, shouldRetweet) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tweetsPrivate"] });
       queryClient.invalidateQueries({ queryKey: ["tweetsPublic"] });
-      toast.success(shouldRetweet ? "Retweeted!" : "Unretweeted");
+      queryClient.invalidateQueries({ queryKey: ["myProf"] });
+      // toast.success(shouldRetweet ? "Retweeted!" : "Unretweeted");
     },
 
     onError: (_, shouldRetweet) => {

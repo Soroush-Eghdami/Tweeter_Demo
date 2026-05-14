@@ -1,10 +1,9 @@
 import { useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import type { TweetCardInfoType } from "../types/TweetTypes";
-import { joinedDate } from "../utils/joinedDate";
 import { useLikeMutation } from "../hooks/useToggleLike";
 import { useRetweetMutation } from "../hooks/useToggleRetweet";
-import { useCooldown } from "../hooks/useCooldown";
+import { joinedDate } from "../utils/joinedDate";
+import type { TweetCardInfoType } from "../types/TweetTypes";
 import profilePicture from "../assets/icons/profile-default.svg";
 import like from "../assets/icons/heart.svg";
 import likeFilled from "../assets/icons/filled-heart.svg";
@@ -21,25 +20,25 @@ interface TweetCardPropsType {
 }
 
 const TweetCard = ({ isPinned, info }: TweetCardPropsType) => {
-  const navigation = useNavigate();
-  const formattedJoinDate = joinedDate(info.created_at);
-
   const likeMutation = useLikeMutation(info.id);
   const retweetMutation = useRetweetMutation(info.id);
-
-  const { isCoolingDown: likeCooldown, startCooldown: startLikeCooldown } = useCooldown(500);
-  const { isCoolingDown: retweetCooldown, startCooldown: startRetweetCooldown } = useCooldown(500);
+  const formattedJoinDate = joinedDate(info.created_at);
+  const navigation = useNavigate();
+  const lastLikeClick = useRef(0);
+  const lastRetweetClick = useRef(0);
 
   const handleLikeClick = () => {
-  if (likeMutation.isPending || likeCooldown) return;
-  startLikeCooldown();
-  likeMutation.mutate(!info.is_liked);
+    const now = Date.now();
+    if (now - lastLikeClick.current < 300) return; // 300ms 
+    lastLikeClick.current = now;
+    likeMutation.mutate(!info.is_liked);
   };
 
   const handleRetweetClick = () => {
-  if (retweetMutation.isPending || retweetCooldown) return;
-  startRetweetCooldown();
-  retweetMutation.mutate(!info.is_retweeted);
+    const now = Date.now();
+    if (now - lastRetweetClick.current < 300) return;
+    lastRetweetClick.current = now;
+    retweetMutation.mutate(!info.is_retweeted);
   };
 
   if (!info) return null;
@@ -65,7 +64,7 @@ const TweetCard = ({ isPinned, info }: TweetCardPropsType) => {
         />
         <h2
           className="font-semibold text-xl cursor-pointer hover:text-[#ddd] hover:underline"
-          onClick={() => navigation(`/profile/${info.user.id}`)}
+          onClick={() => navigation(`/profile/${info.user?.id}`)}
         >
           {info.user?.username}
         </h2>
@@ -96,7 +95,7 @@ const TweetCard = ({ isPinned, info }: TweetCardPropsType) => {
         {/* Comment Button */}
         <div
           className="flex items-center gap-2.5 cursor-pointer"
-          onClick={() => navigation("/comment")}
+          onClick={() => navigation("/comment")}  // need to be changed later
         >
           {isPinned ? (
             <img
@@ -112,8 +111,7 @@ const TweetCard = ({ isPinned, info }: TweetCardPropsType) => {
               onClick={() => navigation("/comment")}
             />
           )}
-          <p className="text-[#ddd] text-sm">{info.replies_count}</p>{" "}
-          {/* {need to change this after} */}
+          <p className="text-[#ddd] text-sm">{info.replies_count}</p>
         </div>
         {/* Retweet Button */}
         <div
