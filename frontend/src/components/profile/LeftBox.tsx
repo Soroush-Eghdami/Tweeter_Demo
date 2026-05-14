@@ -2,9 +2,11 @@ import { joinedDate } from "../../utils/joinedDate";
 import type { ProfileType } from "../../types/ProfileType";
 
 interface LeftBoxProps {
+  isPublic: boolean;
   isMyProfile: boolean;
   profile: ProfileType;
   editUserIcon: string;
+  usernameIcon: string;
   emailIcon: string;
   calendarIcon: string;
   bioIcon: string;
@@ -15,9 +17,11 @@ interface LeftBoxProps {
 }
 
 const LeftBox: React.FC<LeftBoxProps> = ({
+  isPublic,
   isMyProfile,
   profile,
   editUserIcon,
+  usernameIcon,
   emailIcon,
   calendarIcon,
   bioIcon,
@@ -28,19 +32,28 @@ const LeftBox: React.FC<LeftBoxProps> = ({
 }) => {
   return (
     <div className="bg-white/10 backdrop-filter-md h-fit flex-1 backdrop-filter backdrop-blur-[35px] backdrop-brightness-[0.6] rounded-2xl shadow-xl border-2 border-white p-7 space-y-4">
+      {/* User Info */}
       <div className="flex items-center gap-2 text-xl font-bold text-gray-900">
         <img src={editUserIcon} alt="User" className="w-6 h-6" />
-        <span className="text-white">{`${profile.first_name} ${profile.last_name}`}</span>
+        <span className="text-white">
+          {profile.first_name && profile.last_name
+            ? `${profile.first_name} ${profile.last_name}`
+            : "----"}
+        </span>
+      </div>
+      <div className="flex items-center gap-2 text-gray-800">
+        <img src={usernameIcon} alt="Username" className="w-5 h-5" />
+        <span className="text-white">{profile.username}</span>
       </div>
       <div className="flex items-center gap-2 text-gray-800">
         <img src={emailIcon} alt="Email" className="w-5 h-5" />
-        <span className="text-white">{profile.email}</span>
+        <span className="text-white">{isPublic ? profile.email : "----"}</span>
       </div>
 
       <div className="flex items-center gap-2 text-gray-800">
         <img src={calendarIcon} alt="Calendar" className="w-5 h-5" />
-        <span className="text-sm text-white">
-          {joinedDate(profile.date_joined)}
+        <span className="text-white">
+          {isPublic ? joinedDate(profile.date_joined) : "----"}
         </span>
       </div>
 
@@ -49,6 +62,7 @@ const LeftBox: React.FC<LeftBoxProps> = ({
         <p className="text-white">{profile.bio ? profile.bio : "----"}</p>
       </div>
 
+      {/* Followers, Following, Tweet, Retweet Info */}
       <div className="flex-1 min-w-35 bg-white/15 backdrop-filter-md backdrop-blur-[35px] backdrop-brightness-[1.5] rounded-xl p-3 border border-white/40">
         <div className="flex justify-around">
           <div className="flex items-center gap-2">
@@ -59,7 +73,7 @@ const LeftBox: React.FC<LeftBoxProps> = ({
             />
             <div className="flex flex-col items-center">
               <span className="font-bold text-lg text-white">
-                {profile.followers_count}
+                {isPublic ? profile.followers_count : "-"}
               </span>
               <span className="text-xs text-white">Followers</span>
             </div>
@@ -73,7 +87,7 @@ const LeftBox: React.FC<LeftBoxProps> = ({
             />
             <div className="flex flex-col items-center">
               <span className="font-bold text-lg text-white">
-                {profile.following_count}
+                {isPublic ? profile.following_count : "-"}
               </span>
               <span className="text-xs text-white">Following</span>
             </div>
@@ -91,7 +105,7 @@ const LeftBox: React.FC<LeftBoxProps> = ({
             />
             <div className="flex flex-col items-center">
               <span className="font-bold text-lg text-white">
-                {profile.tweets_count}
+                {isPublic ? profile.tweets_count : "-"}
               </span>
               <span className="text-xs text-white">Tweet</span>
             </div>
@@ -105,7 +119,7 @@ const LeftBox: React.FC<LeftBoxProps> = ({
             />
             <div className="flex flex-col items-center">
               <span className="font-bold text-lg text-white">
-                {profile.retweets_made}
+                {isPublic ? profile.retweets_made : "-"}
               </span>
               <span className="text-xs text-white">Retweet</span>
             </div>

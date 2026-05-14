@@ -25,7 +25,7 @@ const Follower = ({ info, isLast }: FollowingFollowerPropsType) => {
             {/* Profile Picture */}
             {info.follower.profile_picture ? (
               <img
-                src={`http://127.0.0.1:8000${info.follower.profile_picture}`}
+                src={`http://127.0.0.1:8000${info.follower.profile_picture}`} // backend
                 alt="profile-picture"
                 className="size-22 rounded-[50%]"
               />
@@ -55,11 +55,11 @@ const Follower = ({ info, isLast }: FollowingFollowerPropsType) => {
                 onClick={() => unfollowHandler(unfollow, userId, setIsFollowed)}
               >
                 {isUnfollowPending ? (
-                  <div className="w-19.5">
+                  <div className="w-17.75">
                     <Loading width="w-7" height="h-7" />
                   </div>
                 ) : (
-                  "Unfollow"
+                  "Remove"
                 )}
               </button>
             ) : (
@@ -69,11 +69,11 @@ const Follower = ({ info, isLast }: FollowingFollowerPropsType) => {
                 onClick={() => followHandler(follow, userId, setIsFollowed)}
               >
                 {isFollowPending ? (
-                  <div className="w-14.75">
+                  <div className="w-26.75">
                     <Loading width="w-7" height="h-7" />
                   </div>
                 ) : (
-                  "Follow"
+                  "Follow Back"
                 )}
               </button>
             )}
