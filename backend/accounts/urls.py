@@ -12,6 +12,7 @@ urlpatterns = [
     # Follow/Unfollow
     path('follow/', views.FollowUserView.as_view(), name='follow-user'),
     path('unfollow/', views.UnfollowUserView.as_view(), name='unfollow-user'),
+    path('remove-follower/', views.RemoveFollowerView.as_view(), name='remove-follower'),
     
     # Search
     path('search/', views.SearchUsersView.as_view(), name='search-users'),

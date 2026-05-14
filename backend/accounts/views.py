@@ -12,7 +12,7 @@ from core.pagination import TweeterPagination
 from accounts.serializers import (
     UserOutputSerializer, UserUpdateInputSerializer, FollowerOutputSerializer,
     RegisterInputSerializer, LogoutInputSerializer, PasswordChangeInputSerializer,
-    FollowInputSerializer, UnfollowInputSerializer
+    FollowInputSerializer, UnfollowInputSerializer, RemoveFollowerInputSerializer,
 )
 from accounts.services import UserService
 from accounts.auth_utils import set_token_cookies, clear_token_cookies, set_access_token_cookie, set_refresh_token_cookie
@@ -199,6 +199,33 @@ class UnfollowUserView(APIView):
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
+class RemoveFollowerView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    @extend_schema(
+        summary="Remove a follower",
+        description="Remove a user from your followers list. Provide the follower's UUID.",
+        request=RemoveFollowerInputSerializer,
+        responses={
+            200: OpenApiResponse(description="Follower removed successfully"),
+            400: OpenApiResponse(description="Bad request (e.g., user does not follow you)"),
+            404: OpenApiResponse(description="User not found")
+        },
+        tags=["follow"]
+    )
+    def post(self, request: Request) -> Response:
+        serializer = RemoveFollowerInputSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        try:
+            UserService.remove_follower(
+                request.user,
+                serializer.validated_data['follower_id']
+            )
+            return Response({'message': 'Follower removed successfully'}, status=status.HTTP_200_OK)
+        except ValueError as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
 # =============================================================================
 # Search
 # =============================================================================
@@ -334,7 +361,7 @@ class UserFollowersView(APIView):
         queryset = get_user_followers_queryset(user)
         paginator = TweeterPagination()
         page = paginator.paginate_queryset(queryset, request)
-        serializer = FollowerOutputSerializer(page, many=True)
+        serializer = FollowerOutputSerializer(page, many=True, context={'request': request})
         return paginator.get_paginated_response(serializer.data)
 
 
@@ -357,7 +384,7 @@ class UserFollowingView(APIView):
         queryset = get_user_following_queryset(user)
         paginator = TweeterPagination()
         page = paginator.paginate_queryset(queryset, request)
-        serializer = FollowerOutputSerializer(page, many=True)
+        serializer = FollowerOutputSerializer(page, many=True, context={'request': request})
         return paginator.get_paginated_response(serializer.data)
 
 

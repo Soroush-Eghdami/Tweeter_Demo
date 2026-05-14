@@ -87,3 +87,14 @@ class UserService:
         deleted, _ = Follower.objects.filter(follower=follower, followee=followee).delete()
         if not deleted:
             raise ValueError("You are not following this user.")
+        
+    @staticmethod
+    def remove_follower(followee: User, follower_id: str) -> None:
+        """Remove a follower by their ID. Raises ValueError if they are not a follower."""
+        if not follower_id or not follower_id.strip():
+            raise ValueError("follower_id is required")
+        from accounts.selectors import get_user_by_id
+        follower = get_user_by_id(follower_id)
+        deleted, _ = Follower.objects.filter(follower=follower, followee=followee).delete()
+        if not deleted:
+            raise ValueError("This user does not follow you.")
