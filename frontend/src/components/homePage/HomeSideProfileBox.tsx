@@ -1,27 +1,32 @@
 import { useNavigate } from "react-router-dom";
 import HomeProfileFilled from "./HomeProfileFilled";
-import LoadingPage from "../loading/LoadingPage";
 import useIsLoggedIn from "../../hooks/global-hooks/useIsLoggedIn";
+import { useMyProfile } from "../../hooks/useMyProfile"; 
 import profilePicture from "../../assets/icons/profile-default.svg";
 
 const HomeSideProfileBox = () => {
-  const { isLoggedIn, isLoading } = useIsLoggedIn();
+  const { isLoggedIn } = useIsLoggedIn();
   const navigation = useNavigate();
+  const { data: profile } = useMyProfile(); 
 
-  // if (isLoading) return <LoadingPage />;
+  // If logged in but profile hasn't loaded yet, show nothing (prevents flash of old data)
+  if (isLoggedIn && !profile) {
+    return null;
+  }
 
   return (
     <div className="relative h-fit">
-      {isLoading && <LoadingPage />}
       {isLoggedIn ? (
         <div className="border-2 border-white bg-white/10 backdrop-filter-md backdrop-blur-[35px] backdrop-brightness-[1.5] rounded-3xl py-7 h-fit">
           <div className="mb-11 px-26">
             <img
-              src={profilePicture}
-              alt="Default-Profile"
-              className="mx-auto mb-2"
+              src={profile?.profile_picture || profilePicture}
+              alt="Profile"
+              className="mx-auto mb-2 size-16 rounded-full object-cover"
             />
-            <h2 className="font-bold text-lg text-center mb-2">Khargoosh</h2>
+            <h2 className="font-bold text-lg text-center mb-2">
+              {profile?.username}
+            </h2>
             <h5 className="font-light text-sm text-center text-[#ccc]">
               Welcome!
             </h5>
@@ -29,25 +34,25 @@ const HomeSideProfileBox = () => {
           <div className="grid grid-cols-2 grid-rows-2 gap-4 px-8">
             <HomeProfileFilled
               title="Followers"
-              number={8}
+              number={profile?.followers_count ?? 0}
               textColor="text-white"
               bgColor="bg-black"
             />
             <HomeProfileFilled
               title="Following"
-              number={12}
+              number={profile?.following_count ?? 0}
               textColor="text-[#333]"
               bgColor="bg-[#f4f4f4]"
             />
             <HomeProfileFilled
               title="Tweet"
-              number={20}
+              number={profile?.tweets_count ?? 0}
               textColor="text-white"
               bgColor="bg-black"
             />
             <HomeProfileFilled
               title="Retweet"
-              number={6}
+              number={profile?.retweets_made ?? 0}
               textColor="text-[#333]"
               bgColor="bg-[#f4f4f4]"
             />

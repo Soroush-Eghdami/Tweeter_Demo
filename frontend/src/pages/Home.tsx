@@ -25,7 +25,6 @@ const Home = () => {
     fetchNextPage: fetchNextPrivate,
     hasNextPage: hasNextPrivate,
     isFetchingNextPage: isFetchingNextPrivate,
-    isLoading: privateLoading,
   } = useTweetsPrivate({
     enabled: isLoggedIn && isSelected === 2,
   });
@@ -35,7 +34,6 @@ const Home = () => {
     fetchNextPage: fetchNextPublic,
     hasNextPage: hasNextPublic,
     isFetchingNextPage: isFetchingNextPublic,
-    isLoading: publicLoading,
   } = useTweetsPublic({
     enabled: isSelected === 1,
   });
