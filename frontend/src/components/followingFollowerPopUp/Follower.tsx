@@ -25,7 +25,7 @@ const Follower = ({ info, isLast }: FollowingFollowerPropsType) => {
             {/* Profile Picture */}
             {info.follower.profile_picture ? (
               <img
-                src={`http://127.0.0.1:8000${info.follower.profile_picture}`} // backend
+                src={info.follower.profile_picture}
                 alt="profile-picture"
                 className="size-22 rounded-[50%]"
               />

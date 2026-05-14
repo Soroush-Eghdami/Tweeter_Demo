@@ -166,7 +166,7 @@ const FollowingFollower = ({
                   </div>
                 )}
                 {/* Mapping Through Each Following */}
-                {!isPublic ? (
+                {!isPublic && !followingListLoading ? (
                   <p className="text-center font-medium text-xl text-[#555] my-52">
                     This Profile is Private.
                   </p>
@@ -206,7 +206,7 @@ const FollowingFollower = ({
                   </div>
                 )}
                 {/* Mapping Through Each Follower */}
-                {!isPublic ? (
+                {!isPublic && !followerListLoading ? (
                   <p className="text-center font-medium text-xl text-[#555] my-52">
                     This Profile is Private.
                   </p>
