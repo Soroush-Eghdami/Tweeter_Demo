@@ -4,7 +4,6 @@ import type { TweetCardInfoType } from "../types/TweetTypes";
 import { joinedDate } from "../utils/joinedDate";
 import { useLikeMutation } from "../hooks/useToggleLike";
 import { useRetweetMutation } from "../hooks/useToggleRetweet";
-import { useCooldown } from "../hooks/useCooldown";
 import profilePicture from "../assets/icons/profile-default.svg";
 import like from "../assets/icons/heart.svg";
 import likeFilled from "../assets/icons/filled-heart.svg";
@@ -27,19 +26,21 @@ const TweetCard = ({ isPinned, info }: TweetCardPropsType) => {
   const likeMutation = useLikeMutation(info.id);
   const retweetMutation = useRetweetMutation(info.id);
 
-  const { isCoolingDown: likeCooldown, startCooldown: startLikeCooldown } = useCooldown(500);
-  const { isCoolingDown: retweetCooldown, startCooldown: startRetweetCooldown } = useCooldown(500);
+  const lastLikeClick = useRef(0);
+  const lastRetweetClick = useRef(0);
 
   const handleLikeClick = () => {
-  if (likeMutation.isPending || likeCooldown) return;
-  startLikeCooldown();
-  likeMutation.mutate(!info.is_liked);
+    const now = Date.now();
+    if (now - lastLikeClick.current < 300) return; // 300ms cooldown
+    lastLikeClick.current = now;
+    likeMutation.mutate(!info.is_liked);
   };
 
   const handleRetweetClick = () => {
-  if (retweetMutation.isPending || retweetCooldown) return;
-  startRetweetCooldown();
-  retweetMutation.mutate(!info.is_retweeted);
+    const now = Date.now();
+    if (now - lastRetweetClick.current < 300) return;
+    lastRetweetClick.current = now;
+    retweetMutation.mutate(!info.is_retweeted);
   };
 
   if (!info) return null;
