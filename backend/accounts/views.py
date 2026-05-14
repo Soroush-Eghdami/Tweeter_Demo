@@ -56,19 +56,19 @@ class UserListView(APIView):
 
 
 class UserDetailView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.AllowAny]
 
     @extend_schema(
         parameters=[
-            OpenApiParameter(name='pk', type=str, location=OpenApiParameter.PATH, description='UUID of the user'),
+            OpenApiParameter(name='id', type=str, location=OpenApiParameter.PATH, description='UUID of the user'),
         ],
         summary="Get user details",
         description="Retrieve a specific user's profile by UUID.",
         tags=["users"],
         responses={200: UserOutputSerializer},
     )
-    def get(self, request: Request, pk: str) -> Response:
-        user = get_user_by_id(pk)
+    def get(self, request: Request, id: str) -> Response:
+        user = get_user_by_id(id)
         serializer = UserOutputSerializer(user, context={'request': request})
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -91,11 +91,33 @@ class UserProfileView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     @extend_schema(
-        summary="Update profile",
-        description="Update own profile fields (email, name, bio, privacy, profile picture, banner).",
-        tags=["profile"],
-        request=UserUpdateInputSerializer,
-        responses={200: UserOutputSerializer},
+    summary="Update profile",
+    description="Update own profile fields. Supports multipart/form-data for image uploads.",
+    request={
+        "multipart/form-data": {
+            "type": "object",
+            "properties": {
+                "username": {"type": "string", "description": "New username (optional)"},
+                "email": {"type": "string", "format": "email", "description": "New email (optional)"},
+                "first_name": {"type": "string", "description": "First name (optional)"},
+                "last_name": {"type": "string", "description": "Last name (optional)"},
+                "bio": {"type": "string", "description": "Short bio (optional)"},
+                "is_public_user": {"type": "boolean", "description": "Profile visibility (optional)"},
+                "profile_picture": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "New profile picture",
+                },
+                "profile_banner": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "New profile banner",
+                },
+            },
+        }
+    },
+    responses={200: UserOutputSerializer},
+    tags=["profile"],
     )
     def patch(self, request: Request) -> Response:
         input_ser = UserUpdateInputSerializer(data=request.data, context={'request': request})
@@ -206,7 +228,7 @@ class SearchUsersView(APIView):
 # Timelines (class‑based)
 # =============================================================================
 class PublicTimelineView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.AllowAny]
 
     @extend_schema(
         parameters=[

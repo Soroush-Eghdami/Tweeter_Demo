@@ -1,55 +1,106 @@
 import { useEffect, useState } from "react";
 import { observerFunction, scrollFunction } from "../utils/scrollFunction";
+import LoadingPage from "../components/loading/LoadingPage";
+import Loading from "../components/loading/Loading";
 import TweetCard from "../components/TweetCard";
 import HomeSideProfileBox from "../components/homePage/HomeSideProfileBox";
 import CreatePost from "../components/createPost/CreatePost";
 import ForYouFollowing from "../components/homePage/ForYouFollowing";
-import { tweetInfo } from "../contents/tweetInfo";
+import useIsLoggedIn from "../hooks/global-hooks/useIsLoggedIn";
+import { useTweetsPrivate, useTweetsPublic } from "../hooks/useTweets";
+import type { TweetCardInfoType } from "../types/TweetTypes";
 import newTweet from "../assets/icons/new-tweet.svg";
 
 const Home = () => {
   const [isScrolled, setIsScrolled] = useState(false);
-  const [iconBottom, setIconBottom] = useState(28); // default bottom margin (px)
+  const [iconBottom, setIconBottom] = useState(28);
   const [isCreatedPost, setIsCreatedPost] = useState(false);
   const [isSelected, setIsSelected] = useState<1 | 2>(1);
   const [popupVisible, setPopupVisible] = useState(false);
 
-  useEffect(() => {
-    if (isCreatedPost) {
-      setPopupVisible(true);
-    } else {
-      const timer = setTimeout(() => {
-        setPopupVisible(false);
-      }, 300); // must match animation duration (0.3s)
-      return () => clearTimeout(timer);
-    }
-  }, [isCreatedPost]);
+  const { isLoggedIn, isLoading: isAuthLoading } = useIsLoggedIn();
 
-  // 1. Scroll threshold for moving icon up/down (optional)
+  const {
+    data: privateData,
+    fetchNextPage: fetchNextPrivate,
+    hasNextPage: hasNextPrivate,
+    isFetchingNextPage: isFetchingNextPrivate,
+    isLoading: privateLoading,
+  } = useTweetsPrivate({
+    enabled: isLoggedIn && isSelected === 2,
+  });
+
+  const {
+    data: publicData,
+    fetchNextPage: fetchNextPublic,
+    hasNextPage: hasNextPublic,
+    isFetchingNextPage: isFetchingNextPublic,
+    isLoading: publicLoading,
+  } = useTweetsPublic({
+    enabled: isSelected === 1,
+  });
+
+  const privateTweets =
+    privateData?.pages.flatMap((page) => page.results) ?? [];
+  const publicTweets = publicData?.pages.flatMap((page) => page.results) ?? [];
+
+  const tweets = (isSelected === 1 ? publicTweets : privateTweets).filter(
+    (tweet) => tweet?.user != null,
+  );
+  const hasNextPage = isSelected === 1 ? hasNextPublic : hasNextPrivate;
+  const fetchNextPage = isSelected === 1 ? fetchNextPublic : fetchNextPrivate;
+  const isFetchingNext =
+    isSelected === 1 ? isFetchingNextPublic : isFetchingNextPrivate;
+
   useEffect(() => {
     const handleScroll = scrollFunction(setIsScrolled);
-
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // 2. Observe footer to avoid overlapping it
   useEffect(() => {
-    const footer = document.querySelector("#footer"); // or use an id like "#main-footer"
+    const footer = document.querySelector("#footer");
     if (!footer) return;
-
     const observer = observerFunction(setIconBottom);
-
     observer.observe(footer);
     return () => observer.disconnect();
   }, []);
 
   useEffect(() => {
+    const footer = document.querySelector("#footer");
+    if (!footer) return;
+
+    const loadMoreOnIntersect = (entries: IntersectionObserverEntry[]) => {
+      const [entry] = entries;
+      if (entry.isIntersecting && hasNextPage && !isFetchingNext) {
+        fetchNextPage(); // only called if the active query is enabled and has next page
+      }
+    };
+
+    const observer = new IntersectionObserver(loadMoreOnIntersect, {
+      threshold: 0.1,
+    });
+    observer.observe(footer);
+
+    return () => observer.disconnect();
+  }, [hasNextPage, isFetchingNext, fetchNextPage]);
+
+  useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
 
-  // 3. Dynamic bottom class (your original scroll‑based movement)
+  useEffect(() => {
+    if (isCreatedPost) {
+      setPopupVisible(true);
+    } else {
+      const timer = setTimeout(() => setPopupVisible(false), 300);
+      return () => clearTimeout(timer);
+    }
+  }, [isCreatedPost]);
+
   const scrollBottomClass = isScrolled ? "bottom-60" : "bottom-10";
+
+  if (isAuthLoading) return <LoadingPage />;
 
   return (
     <>
@@ -60,23 +111,29 @@ const Home = () => {
         />
       )}
       <div className="relative flex gap-24 max-w-[92%] mx-auto my-16">
-        {/* Tweet Boxes */}
         <div className="flex-3">
-          {/* For You / Following */}
           <ForYouFollowing
             isSelected={isSelected}
             setIsSelected={setIsSelected}
           />
           <div>
-            {(isSelected === 1
-              ? tweetInfo.filter((tweet) => tweet.isPrivate)
-              : tweetInfo.filter((tweet) => !tweet.isPrivate)
-            ).map((tweet, index) => (
-              <TweetCard key={index} info={tweet} />
-            ))}
+            {tweets.length === 0 ? (
+              <div className="text-center text-gray-500 mt-50 text-lg">
+                No tweets to display.
+              </div>
+            ) : (
+              tweets.map((tweet: TweetCardInfoType) => (
+                <TweetCard key={tweet.id} info={tweet} />
+              ))
+            )}
+            {/* Optional: Show a loading indicator at the bottom */}
+            {isFetchingNext && (
+              <div className="text-center p-4 text-gray-500">
+                <Loading />
+              </div>
+            )}
           </div>
         </div>
-        {/* Home Sidebar */}
         <div className="flex-1 h-fit">
           <HomeSideProfileBox />
         </div>
