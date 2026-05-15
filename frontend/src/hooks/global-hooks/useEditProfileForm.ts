@@ -1,8 +1,11 @@
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
-import { useEditProfile } from "./useEditProfile";
-import type { EditProfileFormType, EditProfileResponse } from "../types/FormTypes";
+import { useEditProfile } from "../useEditProfile";
+import type {
+  EditProfileFormType,
+  EditProfileResponse,
+} from "../../types/FormTypes";
 
 type FieldErrorRecord = Record<string, string[]>;
 
@@ -69,14 +72,21 @@ export const useEditProfileForm = ({ profile }: UseEditProfileFormProps) => {
           const detail = (data as Record<string, unknown>).detail;
           if (detail && typeof detail === "object" && !Array.isArray(detail)) {
             fieldErrors = detail as FieldErrorRecord;
-          } else if ("errors" in data && typeof data.errors === "object" && !Array.isArray(data.errors)) {
+          } else if (
+            "errors" in data &&
+            typeof data.errors === "object" &&
+            !Array.isArray(data.errors)
+          ) {
             fieldErrors = data.errors as FieldErrorRecord;
           } else {
             const possibleErrors: FieldErrorRecord = {};
             let hasFieldError = false;
             for (const key in data as Record<string, unknown>) {
               const value = (data as Record<string, unknown>)[key];
-              if (Array.isArray(value) && value.every((item) => typeof item === "string")) {
+              if (
+                Array.isArray(value) &&
+                value.every((item) => typeof item === "string")
+              ) {
                 possibleErrors[key] = value as string[];
                 hasFieldError = true;
               }
@@ -88,13 +98,16 @@ export const useEditProfileForm = ({ profile }: UseEditProfileFormProps) => {
         if (fieldErrors) {
           if (fieldErrors.username || fieldErrors.email) {
             const currentValues = getValues();
-            if (fieldErrors.username) currentValues.username = profile!.username;
+            if (fieldErrors.username)
+              currentValues.username = profile!.username;
             if (fieldErrors.email) currentValues.email = profile!.email;
             reset(currentValues);
             toast.error("That username or email is already taken.");
           } else {
             const firstError = Object.values(fieldErrors).flat().join(", ");
-            toast.error(firstError || "Update failed. Please check your inputs.");
+            toast.error(
+              firstError || "Update failed. Please check your inputs.",
+            );
           }
         } else {
           toast.error("Update failed. Please try again.");

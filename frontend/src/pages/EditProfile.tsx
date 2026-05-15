@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
-import { useEditProfileForm } from "../hooks/useEditProfileForm";
+import { useEditProfileForm } from "../hooks/global-hooks/useEditProfileForm";
 import WarningPopUp from "../components/WarningPopUp";
 import BackToPrev from "../components/BackToPrev";
 import ProfilePictureEdit from "../components/profilePictureEdit/ProfilePictureEdit";
