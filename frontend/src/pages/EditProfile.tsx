@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
-import { useEditProfileForm } from "../hooks/useEditProfileForm"; 
+import { useEditProfileForm } from "../hooks/useEditProfileForm";
 import WarningPopUp from "../components/WarningPopUp";
 import BackToPrev from "../components/BackToPrev";
 import ProfilePictureEdit from "../components/profilePictureEdit/ProfilePictureEdit";
@@ -22,19 +22,16 @@ import userProfile from "../assets/icons/profile-default.svg";
 const EditProfile = () => {
   const location = useLocation();
   const [profile, setProfile] = useState<EditProfileResponse | undefined>(
-    location.state?.profile
+    location.state?.profile,
   );
 
-  const { mutateAsync: picUpdate, isPending: picUpdateLoading } = useUpdateProfilePicture();
-  const { mutateAsync: bannerUpdate, isPending: bannerUpdateLoading } = useUpdateBannerPicture();
+  const { mutateAsync: picUpdate, isPending: picUpdateLoading } =
+    useUpdateProfilePicture();
+  const { mutateAsync: bannerUpdate, isPending: bannerUpdateLoading } =
+    useUpdateBannerPicture();
 
-  const {
-    register,
-    handleSubmit,
-    errors,
-    isPending,
-    onSubmit,
-  } = useEditProfileForm({ profile });
+  const { register, handleSubmit, errors, isPending, onSubmit } =
+    useEditProfileForm({ profile });
 
   const [isOpenPopUp, setIsOpenPopUp] = useState(false);
   const [isProfilePicOpen, setIsProfilePicOpen] = useState(false);
@@ -102,23 +99,42 @@ const EditProfile = () => {
       >
         <div className="flex items-center gap-6">
           <div className="w-[50%]">
-            <FirstNameInput register={register} error={errors.firstName} isEditProfile={true} />
+            <FirstNameInput
+              register={register}
+              error={errors.firstName}
+              isEditProfile={true}
+            />
           </div>
           <div className="w-[50%]">
-            <LastNameInput register={register} error={errors.lastName} isEditProfile={true} />
+            <LastNameInput
+              register={register}
+              error={errors.lastName}
+              isEditProfile={true}
+            />
           </div>
         </div>
 
         <div className="w-full">
-          <UsernameInput register={register} error={errors.username} isEditProfile={true} />
+          <UsernameInput
+            register={register}
+            error={errors.username}
+            isEditProfile={true}
+          />
         </div>
 
         <div className="w-full">
-          <EmailInput register={register} error={errors.email} isEditProfile={true} />
+          <EmailInput
+            register={register}
+            error={errors.email}
+            isEditProfile={true}
+          />
         </div>
 
         <div className="flex justify-between items-center my-3">
-          <div className="w-[50%]" onClick={() => setIsChangePasswordOpen(true)}>
+          <div
+            className="w-[50%]"
+            onClick={() => setIsChangePasswordOpen(true)}
+          >
             <button className="px-6 py-3 w-full border rounded-xl cursor-pointer hover:scale-95 hover:-rotate-1 transition-all duration-200 ease-in-out">
               Change Password
             </button>
@@ -141,7 +157,17 @@ const EditProfile = () => {
           </div>
         </div>
 
-        <BiographyInput register={register} isEditProfile={true} />
+        <BiographyInput
+          register={register}
+          isEditProfile={true}
+          error={errors.bio}
+          validation={{
+            maxLength: {
+              value: 250,
+              message: "Bio must not exceed 250 characters",
+            },
+          }}
+        />
         <PrivateCheckbox register={register} isEditProfile={true} />
 
         <div className="flex items-center gap-6">

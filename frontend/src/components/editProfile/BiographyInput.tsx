@@ -1,13 +1,20 @@
-import type { UseFormRegister, FieldPath } from "react-hook-form";
+import type { UseFormRegister, FieldPath, FieldError, RegisterOptions, FieldValues } from "react-hook-form";
 import type { HasBio } from "../../types/FormTypes";
 import biographyIcon from "../../assets/icons/profile/bio.svg";
 
-interface BiographyInputProps<T extends HasBio> {
+interface BiographyInputProps<T extends HasBio & FieldValues> {
   register: UseFormRegister<T>;
   isEditProfile?: boolean;
+  error?: FieldError;
+  validation?: RegisterOptions<T>;
 }
 
-const BiographyInput = <T extends HasBio>({ register, isEditProfile }: BiographyInputProps<T>) => {
+const BiographyInput = <T extends HasBio & FieldValues>({
+  register,
+  isEditProfile,
+  error,
+  validation,
+}: BiographyInputProps<T>) => {
   return (
     <div className="w-full">
       <div className="flex flex-row items-center gap-1.5 pl-1 pb-2">
@@ -17,7 +24,7 @@ const BiographyInput = <T extends HasBio>({ register, isEditProfile }: Biography
         </label>
       </div>
       <textarea
-        {...register("bio" as FieldPath<T>)}
+        {...register("bio" as FieldPath<T>, validation)}
         id="bio"
         className={
           isEditProfile
@@ -26,6 +33,9 @@ const BiographyInput = <T extends HasBio>({ register, isEditProfile }: Biography
         }
         placeholder="Enter your Bio ..."
       />
+      {error && (
+        <p className="pl-1 text-yellow-200 text-sm mb-1">{error.message}</p>
+      )}
     </div>
   );
 };
