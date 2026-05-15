@@ -120,7 +120,7 @@ class UserProfileView(APIView):
     tags=["profile"],
     )
     def patch(self, request: Request) -> Response:
-        input_ser = UserUpdateInputSerializer(data=request.data, context={'request': request})
+        input_ser = UserUpdateInputSerializer(data=request.data, partial=True, context={'request': request})
         input_ser.is_valid(raise_exception=True)
         data = cast(dict[str, Any], input_ser.validated_data)
         updated_user = UserService.update_profile(request.user, **data)

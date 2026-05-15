@@ -52,14 +52,29 @@ class UserService:
 
     @staticmethod
     def update_profile(user: User, **data: Any) -> User:
+        # Handle username separately with validation
         if 'username' in data:
             username = data['username']
-            if User.objects.exclude(pk=user.pk).filter(username=username).exists():
-                raise ValueError("Username already taken.")
-            if ' ' in username:
-                raise ValueError("Username cannot contain spaces.")
+            if isinstance(username, str) and username.strip() == '':
+                del data['username']
+            else:
+                if User.objects.exclude(pk=user.pk).filter(username=username).exists():
+                    raise ValueError("Username already taken.")
+                if ' ' in username:
+                    raise ValueError("Username cannot contain spaces.")
+    
+        # Fields that should not be cleared accidentally by empty uploads
+        FILE_FIELDS = {'profile_picture', 'profile_banner'}
+    
         for field, value in data.items():
+            # Skip empty strings for all fields to preserve existing data
+            if isinstance(value, str) and value.strip() == '':
+                continue
+            # For file/image fields, also skip if value is None (meaning no file was provided)
+            if field in FILE_FIELDS and value is None:
+                continue
             setattr(user, field, value)
+    
         user.save()
         return user
 
