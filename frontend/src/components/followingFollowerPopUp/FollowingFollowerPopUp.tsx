@@ -13,6 +13,7 @@ import user from "../../assets/icons/profile/follower-following-counter.svg";
 interface FollowingFollowerPropsType {
   isPublic: boolean;
   userId: string;
+  myProfileId?: string;
   setIsUserListOpen: (arg0: boolean) => void;
   isUserListOpen: boolean;
 }
@@ -20,6 +21,7 @@ interface FollowingFollowerPropsType {
 const FollowingFollower = ({
   isPublic,
   userId,
+  myProfileId,
   setIsUserListOpen,
   isUserListOpen,
 }: FollowingFollowerPropsType) => {
@@ -180,6 +182,9 @@ const FollowingFollower = ({
                       <Following
                         key={following.id}
                         info={following}
+                        isMyProfile={
+                          following.followee.id === myProfileId ? true : false
+                        }
                         isLast={handleLast(index)}
                       />
                     ),
@@ -220,6 +225,9 @@ const FollowingFollower = ({
                       <Follower
                         key={follower.id}
                         info={follower}
+                        isMyProfile={
+                          follower.follower.id === myProfileId ? true : false
+                        }
                         isLast={handleLast(index)}
                       />
                     ),

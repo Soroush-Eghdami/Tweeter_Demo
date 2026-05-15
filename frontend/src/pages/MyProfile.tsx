@@ -42,8 +42,6 @@ const MyProfile = () => {
   const [isUserListOpen, setIsUserListOpen] = useState(false);
   const navigate = useNavigate();
 
-  const isPublic = data.is_public_user;
-
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
@@ -54,7 +52,7 @@ const MyProfile = () => {
       {/* Following / Follower List */}
       <div>
         <FollowingFollower
-          isPublic={isPublic}
+          isPublic={true}
           userId={data.id}
           setIsUserListOpen={setIsUserListOpen}
           isUserListOpen={isUserListOpen}
@@ -99,7 +97,7 @@ const MyProfile = () => {
 
       <div className="flex gap-6 transition-none sm:px-6 lg:px-8 mt-32">
         <LeftBox
-          isPublic={isPublic}
+          isPublic={true}
           isMyProfile={true}
           profile={data}
           editUserIcon={editUser}

@@ -36,7 +36,7 @@ const UserProfile = () => {
   const [isUserListOpen, setIsUserListOpen] = useState(false);
   const navigate = useNavigate();
 
-  const isPublic = data.is_public_user;
+  const isPublic = data?.is_public_user;
 
   useEffect(() => {
     if (currentUser?.id && id) {
@@ -58,6 +58,7 @@ const UserProfile = () => {
         <FollowingFollower
           isPublic={isPublic}
           userId={id || ""}
+          myProfileId={currentUser?.id}
           setIsUserListOpen={setIsUserListOpen}
           isUserListOpen={isUserListOpen}
         />

@@ -9,7 +9,11 @@ import {
   unfollowHandler,
 } from "../../utils/followUnfollowHandler";
 
-const Following = ({ info, isLast }: FollowingFollowerPropsType) => {
+const Following = ({
+  info,
+  isLast,
+  isMyProfile,
+}: FollowingFollowerPropsType) => {
   const { mutate: follow, isPending: isFollowPending } = useFollow();
   const { mutate: unfollow, isPending: isUnfollowPending } = useUnfollow();
   const [isFollowed, setIsFollowed] = useState(true);
@@ -47,37 +51,41 @@ const Following = ({ info, isLast }: FollowingFollowerPropsType) => {
             </div>
           </div>
           {/* Follow / Unfollow Button */}
-          <div className="ml-auto my-auto mr-18">
-            {isFollowed ? (
-              <button
-                className={`text-xl px-12 py-3 rounded-3xl text-white border-2 border-white hover:bg-[#333] disabled:cursor-not-allowed disabled:hover:bg-[#1c1c1c]/90 transition-colors cursor-pointer duration-300`}
-                disabled={isUnfollowPending}
-                onClick={() => unfollowHandler(unfollow, userId, setIsFollowed)}
-              >
-                {isUnfollowPending ? (
-                  <div className="w-19.75">
-                    <Loading width="w-7" height="h-7" />
-                  </div>
-                ) : (
-                  "Unfollow"
-                )}
-              </button>
-            ) : (
-              <button
-                className={`text-xl font-semibold px-12 py-3 rounded-3xl bg-white text-black hover:bg-[#ccc] disabled:cursor-not-allowed disabled:hover:bg-white transition-colors cursor-pointer duration-300`}
-                disabled={isFollowPending}
-                onClick={() => followHandler(follow, userId, setIsFollowed)}
-              >
-                {isFollowPending ? (
-                  <div className="w-14.75">
-                    <Loading width="w-7" height="h-7" />
-                  </div>
-                ) : (
-                  "Follow"
-                )}
-              </button>
-            )}
-          </div>
+          {!isMyProfile && (
+            <div className="ml-auto my-auto mr-18">
+              {isFollowed ? (
+                <button
+                  className={`text-xl px-12 py-3 rounded-3xl text-white border-2 border-white hover:bg-[#333] disabled:cursor-not-allowed disabled:hover:bg-[#1c1c1c]/90 transition-colors cursor-pointer duration-300`}
+                  disabled={isUnfollowPending}
+                  onClick={() =>
+                    unfollowHandler(unfollow, userId, setIsFollowed)
+                  }
+                >
+                  {isUnfollowPending ? (
+                    <div className="w-19.75">
+                      <Loading width="w-7" height="h-7" />
+                    </div>
+                  ) : (
+                    "Unfollow"
+                  )}
+                </button>
+              ) : (
+                <button
+                  className={`text-xl font-semibold px-12 py-3 rounded-3xl bg-white text-black hover:bg-[#ccc] disabled:cursor-not-allowed disabled:hover:bg-white transition-colors cursor-pointer duration-300`}
+                  disabled={isFollowPending}
+                  onClick={() => followHandler(follow, userId, setIsFollowed)}
+                >
+                  {isFollowPending ? (
+                    <div className="w-14.75">
+                      <Loading width="w-7" height="h-7" />
+                    </div>
+                  ) : (
+                    "Follow"
+                  )}
+                </button>
+              )}
+            </div>
+          )}
         </div>
         {/* Line */}
         {!isLast && (

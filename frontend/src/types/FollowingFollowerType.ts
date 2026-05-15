@@ -22,5 +22,6 @@ export interface FollowingFollowerListType {
 
 export interface FollowingFollowerPropsType {
   info: FollowingFollowerListType;
+  isMyProfile: boolean;
   isLast: boolean;
 }
