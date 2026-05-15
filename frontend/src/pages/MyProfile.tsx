@@ -110,7 +110,7 @@ const MyProfile = () => {
           followerFollowingIcon={followerFollowing}
           tweetIcon={tweet}
           retweetIcon={retweet}
-          onEditProfile={() => navigate("/edit-profile")}
+          onEditProfile={() => navigate("/edit-profile", { state: { profile: data } })}
         />
         <RightBox
           setIsTweetsOpen={setIsTweetsOpen}
