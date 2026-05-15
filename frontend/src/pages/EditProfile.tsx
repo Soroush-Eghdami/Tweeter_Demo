@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
-import { useForm } from "react-hook-form";
-import toast from "react-hot-toast";
+import { useLocation } from "react-router-dom";
+import { useEditProfileForm } from "../hooks/useEditProfileForm"; 
 import WarningPopUp from "../components/WarningPopUp";
 import BackToPrev from "../components/BackToPrev";
 import ProfilePictureEdit from "../components/profilePictureEdit/ProfilePictureEdit";
@@ -13,143 +12,37 @@ import UsernameInput from "../components/loginRegister/UsernameInput";
 import EmailInput from "../components/loginRegister/EmailInput";
 import BiographyInput from "../components/editProfile/BiographyInput";
 import PrivateCheckbox from "../components/editProfile/PrivateCheckbox";
-import { useEditProfile } from "../hooks/useEditProfile";
 import {
   useUpdateBannerPicture,
   useUpdateProfilePicture,
 } from "../hooks/useUpdateProfile";
-import type { EditProfileFormType, EditProfileResponse } from "../types/FormTypes";
+import type { EditProfileResponse } from "../types/FormTypes";
 import userProfile from "../assets/icons/profile-default.svg";
-
-// NEW: Type for API validation errors (e.g., { username: ["message"] })
-type FieldErrorRecord = Record<string, string[]>;
 
 const EditProfile = () => {
   const location = useLocation();
-  const navigate = useNavigate();
-
   const [profile, setProfile] = useState<EditProfileResponse | undefined>(
     location.state?.profile
   );
 
-  const { mutateAsync: picUpdate, isPending: picUpdateLoading } =
-    useUpdateProfilePicture();
-  const { mutateAsync: bannerUpdate, isPending: bannerUpdateLoading } =
-    useUpdateBannerPicture();
+  const { mutateAsync: picUpdate, isPending: picUpdateLoading } = useUpdateProfilePicture();
+  const { mutateAsync: bannerUpdate, isPending: bannerUpdateLoading } = useUpdateBannerPicture();
 
   const {
     register,
     handleSubmit,
-    formState: { errors, dirtyFields },
-    getValues,
-    reset,
-  } = useForm<EditProfileFormType>({
-    defaultValues: {
-      firstName: profile?.first_name || "",
-      lastName: profile?.last_name || "",
-      username: profile?.username || "",
-      email: profile?.email || "",
-      bio: profile?.bio || "",
-      is_private: profile ? !profile.is_public_user : false,
-    },
-  });
-
-  const { mutate, isPending } = useEditProfile();
+    errors,
+    isPending,
+    onSubmit,
+  } = useEditProfileForm({ profile });
 
   const [isOpenPopUp, setIsOpenPopUp] = useState(false);
   const [isProfilePicOpen, setIsProfilePicOpen] = useState(false);
   const [isProfileBannerOpen, setIsProfileBannerOpen] = useState(false);
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
 
-  // CHANGED: typed callback – no more any
   const handlePictureUploaded = (updatedUser: EditProfileResponse) => {
     setProfile((prev) => ({ ...prev, ...updatedUser }) as EditProfileResponse);
-  };
-
-  const onSubmit = (data: EditProfileFormType) => {
-    const payload: Partial<{
-      first_name: string;
-      last_name: string;
-      username: string;
-      email: string;
-      bio: string;
-      is_public_user: boolean;
-    }> = {};
-
-    if (dirtyFields.firstName) payload.first_name = data.firstName;
-    if (dirtyFields.lastName) payload.last_name = data.lastName;
-    if (dirtyFields.username) payload.username = data.username;
-    if (dirtyFields.email) payload.email = data.email;
-    if (dirtyFields.bio) payload.bio = data.bio;
-    if (dirtyFields.is_private) payload.is_public_user = !data.is_private;
-
-    if (Object.keys(payload).length === 0) {
-      toast("No changes detected.");
-      return;
-    }
-
-    mutate(payload, {
-      onSuccess: () => {
-        toast.success("Profile updated successfully!");
-        navigate("/profile");
-      },
-      // CHANGED: error is now unknown – we safely narrow inside
-      onError: (error: unknown) => {
-        console.error(error);
-
-        // Extract possible field errors
-        let fieldErrors: FieldErrorRecord | undefined;
-
-        // Assume the error might be an Axios-like error with response.data
-        const maybeAxiosError = error as { response?: { data?: unknown } };
-        const data = maybeAxiosError?.response?.data;
-
-        if (data && typeof data === "object" && !Array.isArray(data)) {
-          // Pattern: { detail: { username: [...] } }
-          const detail = (data as Record<string, unknown>).detail;
-          if (detail && typeof detail === "object" && !Array.isArray(detail)) {
-            fieldErrors = detail as FieldErrorRecord;
-          }
-          // Pattern: { errors: { username: [...] } }
-          else if ("errors" in data && typeof data.errors === "object" && !Array.isArray(data.errors)) {
-            fieldErrors = data.errors as FieldErrorRecord;
-          }
-          // Pattern: { username: [...] } directly
-          else {
-            // Check if any key maps to an array of strings
-            const possibleErrors: FieldErrorRecord = {};
-            let hasFieldError = false;
-            for (const key in data as Record<string, unknown>) {
-              const value = (data as Record<string, unknown>)[key];
-              if (Array.isArray(value) && value.every((item) => typeof item === "string")) {
-                possibleErrors[key] = value as string[];
-                hasFieldError = true;
-              }
-            }
-            if (hasFieldError) fieldErrors = possibleErrors;
-          }
-        }
-
-        if (fieldErrors) {
-          if (fieldErrors.username || fieldErrors.email) {
-            const currentValues = getValues();
-            if (fieldErrors.username) {
-              currentValues.username = profile!.username;
-            }
-            if (fieldErrors.email) {
-              currentValues.email = profile!.email;
-            }
-            reset(currentValues);
-            toast.error("That username or email is already taken.");
-          } else {
-            const firstError = Object.values(fieldErrors).flat().join(", ");
-            toast.error(firstError || "Update failed. Please check your inputs.");
-          }
-        } else {
-          toast.error("Update failed. Please try again.");
-        }
-      },
-    });
   };
 
   useEffect(() => {
@@ -168,22 +61,15 @@ const EditProfile = () => {
         title={"Do you want to Delete your profile?"}
         description={"if you proceed yor profile will be lost!!"}
       />
-      {/* CHANGED: onUploadSuccess now expects EditProfileResponse */}
       <ProfilePictureEdit
         isOpen={isProfilePicOpen}
         setIsOpen={setIsProfilePicOpen}
-        picUpdateObj={{
-          picUpdate,
-          picUpdateLoading,
-        }}
+        picUpdateObj={{ picUpdate, picUpdateLoading }}
         onUploadSuccess={handlePictureUploaded}
       />
       <EditBanner
         isOpen={isProfileBannerOpen}
-        bannerUpdateObj={{
-          bannerUpdate,
-          bannerUpdateLoading,
-        }}
+        bannerUpdateObj={{ bannerUpdate, bannerUpdateLoading }}
         username={profile.username}
         email={profile.email}
         bio={profile.bio || ""}
@@ -256,7 +142,6 @@ const EditProfile = () => {
         </div>
 
         <BiographyInput register={register} isEditProfile={true} />
-
         <PrivateCheckbox register={register} isEditProfile={true} />
 
         <div className="flex items-center gap-6">
