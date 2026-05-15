@@ -1,25 +1,25 @@
-export const scrollFunction = (setIsScrolled: (arg0: boolean) => void) => {
-  return () => {
-    if (window.scrollY > 250) {
-      setIsScrolled(true);
-    } else if (window.scrollY < 200) {
-      setIsScrolled(false);
-    }
-  };
-};
+export const updateButtonBottom = (
+  sideBoxRef: React.RefObject<HTMLDivElement | null>,
+  setCombinedBottom: (bottom: number) => void,
+  maxBottomNum: number,
+) => {
+  const footerEl = document.querySelector("#footer");
+  const sideBoxEl = sideBoxRef.current;
+  if (!footerEl || !sideBoxEl) return;
 
-export const observerFunction = (setIconBottom: (arg0: number) => void) => {
-  const observer = new IntersectionObserver(
-    ([entry]) => {
-      if (entry.isIntersecting) {
-        const footerHeight = entry.boundingClientRect.height;
-        setIconBottom(footerHeight + 100);
-      } else {
-        setIconBottom(28);
-      }
-    },
-    { threshold: 0, rootMargin: "0px" },
-  );
+  const footerRect = footerEl.getBoundingClientRect();
+  const sideBoxRect = sideBoxEl.getBoundingClientRect();
+  const viewportHeight = window.innerHeight;
 
-  return observer;
+  let footerBasedBottom = 28;
+  const isFooterVisible =
+    footerRect.top < viewportHeight && footerRect.bottom > 0;
+  if (isFooterVisible) {
+    footerBasedBottom = footerRect.height + 100;
+  }
+  const maxBottom = viewportHeight - sideBoxRect.bottom - maxBottomNum;
+
+  // Final bottom is the smaller of the two (to keep button low enough)
+  const finalBottom = Math.min(footerBasedBottom, maxBottom);
+  setCombinedBottom(Math.max(28, finalBottom)); // never go below 28px
 };

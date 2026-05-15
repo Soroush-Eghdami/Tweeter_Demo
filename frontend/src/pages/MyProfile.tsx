@@ -21,6 +21,7 @@ import tweetBlue from "../assets/icons/profile/peace_pigeon.svg";
 import avatar from "../assets/icons/profile-default.svg";
 import edit from "../assets/icons/profile/edit-profile-pic.svg";
 import user from "../assets/icons/user-profile.svg";
+import username from "../assets/icons/profile/username.svg";
 import email from "../assets/icons/profile/edit-email.svg";
 import calender from "../assets/icons/profile/joined-date.svg";
 import followerFollowing from "../assets/icons/profile/follower-following-counter.svg";
@@ -41,6 +42,8 @@ const MyProfile = () => {
   const [isUserListOpen, setIsUserListOpen] = useState(false);
   const navigate = useNavigate();
 
+  const isPublic = data.is_public_user;
+
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
@@ -51,6 +54,7 @@ const MyProfile = () => {
       {/* Following / Follower List */}
       <div>
         <FollowingFollower
+          isPublic={isPublic}
           userId={data.id}
           setIsUserListOpen={setIsUserListOpen}
           isUserListOpen={isUserListOpen}
@@ -95,9 +99,11 @@ const MyProfile = () => {
 
       <div className="flex gap-6 transition-none sm:px-6 lg:px-8 mt-32">
         <LeftBox
+          isPublic={isPublic}
           isMyProfile={true}
           profile={data}
           editUserIcon={editUser}
+          usernameIcon={username}
           emailIcon={email}
           calendarIcon={calender}
           bioIcon={bio}

@@ -1,106 +1,169 @@
-from django.core.exceptions import ValidationError
-from rest_framework import generics, permissions, status, serializers
+from rest_framework import permissions, status
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
+from rest_framework import serializers
 from drf_spectacular.utils import extend_schema, OpenApiResponse, OpenApiParameter
-from .models import Tweet, ReTweet, Like
-from .serializers import TweetSerializer, CreateTweetSerializer, ReTweetSerializer
+
+from core.pagination import TweeterPagination
+
+from .models import Tweet
+from .serializers import (
+    TweetSerializer,
+    CreateTweetSerializer,
+    ReTweetSerializer,
+)
 from .services.engagement import TweetEngagementService
 from .services.visibility import TweetVisibilityService
-from .services.reply import ReplyService
-from .selectors import get_visible_tweets, get_tweet_by_id
+from .selectors import (
+    get_visible_tweets,
+    get_tweet_detail,
+    get_tweet_by_id,
+    get_replies_queryset
+)
 
 
-class TweetListView(generics.ListCreateAPIView):
-    permission_classes = [permissions.IsAuthenticated]
+class TweetListView(APIView):
     parser_classes = [MultiPartParser, FormParser, JSONParser]
 
-    def get_serializer_class(self):
+    def get_permissions(self):
         if self.request.method == 'POST':
-            return CreateTweetSerializer
-        return TweetSerializer
-
-    def get_queryset(self):
-        return get_visible_tweets(self.request.user)
-
-    def perform_create(self, serializer):
-        try:
-            tweet = TweetEngagementService.create_tweet(
-                user=self.request.user,
-                **serializer.validated_data
-            )
-        except ValueError as e:
-            raise serializers.ValidationError({"error": str(e)}) from e
-        return tweet
+            return [permissions.IsAuthenticated()]
+        return [permissions.AllowAny()]
 
     @extend_schema(
         summary="List tweets",
-        description="Returns a paginated list of tweets visible to the authenticated user.",
+        description="Returns a paginated list of tweets visible to the current user (authenticated or anonymous).",
         parameters=[
             OpenApiParameter(name='page', type=int, location=OpenApiParameter.QUERY, description='Page number'),
             OpenApiParameter(name='page_size', type=int, location=OpenApiParameter.QUERY, description='Items per page'),
         ],
-        tags=["tweets"]
+        responses={200: TweetSerializer(many=True)},
+        tags=["tweets"],
     )
-    def get(self, request, *args, **kwargs):
-        return super().get(request, *args, **kwargs)
+    def get(self, request):
+        queryset = get_visible_tweets(request.user)
+        paginator = TweeterPagination()
+        page = paginator.paginate_queryset(queryset, request)
+        serializer = TweetSerializer(page, many=True, context={'request': request})
+        return paginator.get_paginated_response(serializer.data)
 
     @extend_schema(
         summary="Create tweet",
-        description="Create a new tweet. Supports multipart/form-data for media upload.",
-        request=CreateTweetSerializer,
+        description="Create a new tweet (requires authentication). Supports multipart/form-data for media upload.",
+        request={
+            "multipart/form-data": {
+                "type": "object",
+                "properties": {
+                    "content": {
+                        "type": "string",
+                        "description": "Tweet content (max 280 characters)",
+                    },
+                    "media": {
+                        "type": "string",
+                        "format": "binary",
+                        "description": "Optional image or video file",
+                    },
+                    "parent_tweet": {
+                        "type": "integer",
+                        "nullable": True,
+                        "description": "ID of the tweet you are replying to",
+                    },
+                },
+                "required": ["content"],
+            }
+        },
         responses={
             201: TweetSerializer,
-            400: OpenApiResponse(description='Invalid input'),
+            400: OpenApiResponse(description="Invalid input"),
         },
-        tags=["tweets"]
+        tags=["tweets"],
     )
-    def post(self, request, *args, **kwargs):
-        return super().post(request, *args, **kwargs)
+    def post(self, request):
+        input_serializer = CreateTweetSerializer(data=request.data, context={'request': request})
+        input_serializer.is_valid(raise_exception=True)
 
-    def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        instance = self.perform_create(serializer)
-        output_serializer = TweetSerializer(instance, context={'request': request})
-        headers = self.get_success_headers(output_serializer.data)
-        return Response(output_serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+        try:
+            tweet = TweetEngagementService.create_tweet(
+                user=request.user,
+                **input_serializer.validated_data,
+            )
+        except ValueError as e:
+            raise serializers.ValidationError({"error": str(e)})
 
+        output_serializer = TweetSerializer(tweet, context={'request': request})
+        return Response(output_serializer.data, status=status.HTTP_201_CREATED)
 
-class TweetDetailView(generics.RetrieveDestroyAPIView):
-    serializer_class = TweetSerializer
-    permission_classes = [permissions.IsAuthenticated]
+class TweetDetailView(APIView):
 
-    def get_queryset(self):
-        return get_visible_tweets(self.request.user)
+    def get_permissions(self):
+        if self.request.method == 'DELETE':
+            return [permissions.IsAuthenticated()]
+        return [permissions.AllowAny()]
 
     @extend_schema(
         summary="Get tweet details",
         description="Retrieve a single tweet by ID. Returns 404 if not visible or not found.",
-        tags=["tweets"]
+        tags=["tweets"],
     )
-    def get(self, request, *args, **kwargs):
-        return super().get(request, *args, **kwargs)
+    def get(self, request, pk):
+        tweet = get_tweet_detail(pk=pk, user=request.user)
+        serializer = TweetSerializer(tweet, context={'request': request})
+        return Response(serializer.data)
 
     @extend_schema(
         summary="Delete tweet",
-        description="Delete own tweet. Returns 204 on success.",
+        description="Delete own tweet (requires authentication). Returns 204 on success.",
         responses={
             204: OpenApiResponse(description='Tweet deleted successfully'),
             403: OpenApiResponse(description='You can only delete your own tweets'),
             404: OpenApiResponse(description='Tweet not found'),
         },
-        tags=["tweets"]
+        tags=["tweets"],
     )
-    def delete(self, request, *args, **kwargs):
-        return super().delete(request, *args, **kwargs)
+    def delete(self, request, pk):
+        tweet = get_tweet_detail(pk=pk, user=request.user)
 
-    def perform_destroy(self, instance):
-        if instance.user != self.request.user:
-            return Response({'error': 'You can only delete your own tweets.'}, status=status.HTTP_403_FORBIDDEN)
-        TweetEngagementService.delete_tweet(instance)
+        if tweet.user != request.user:
+            return Response(
+                {'error': 'You can only delete your own tweets.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
 
+        TweetEngagementService.delete_tweet(tweet)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class TweetRepliesView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    @extend_schema(
+        summary="List replies to a tweet",
+        description="Returns a paginated list of replies to the specified tweet. Visible replies respect the user's auth status (public only for anonymous).",
+        parameters=[
+            OpenApiParameter(name='page', type=int, location=OpenApiParameter.QUERY, description='Page number'),
+            OpenApiParameter(name='page_size', type=int, location=OpenApiParameter.QUERY, description='Items per page'),
+        ],
+        responses={200: TweetSerializer(many=True)},
+        tags=["tweets"],
+    )
+    def get(self, request, pk):
+        # First get the parent tweet without visibility check (or use get_tweet_detail? 
+        # We want to show replies even if the parent itself is not visible? Usually if parent is visible, we use get_tweet_detail to ensure it's visible.
+        # But we can simply fetch the tweet and then get replies; if parent is not visible, replies should be hidden too? Let's ensure parent is visible first.
+        from .selectors import get_tweet_detail
+        parent_tweet = get_tweet_detail(pk=pk, user=request.user)  # raises 404 if not visible
+        replies = get_replies_queryset(parent_tweet, request.user)
+        paginator = TweeterPagination()
+        page = paginator.paginate_queryset(replies, request)
+        serializer = TweetSerializer(page, many=True, context={'request': request})
+        return paginator.get_paginated_response(serializer.data)
+
+
+# -------------------------------------------------------------------------
+# The following views are already plain APIViews and stay exactly as they
+# were – reproduced here for completeness.
+# -------------------------------------------------------------------------
 
 class RetweetView(APIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -116,7 +179,7 @@ class RetweetView(APIView):
             403: OpenApiResponse(description='Tweet not accessible'),
             404: OpenApiResponse(description='Tweet not found'),
         },
-        tags=["tweets"]
+        tags=["tweets"],
     )
     def post(self, request, pk):
         tweet = get_tweet_by_id(pk)      # selector
@@ -135,7 +198,7 @@ class RetweetView(APIView):
         else:
             return Response(
                 {'message': 'Already retweeted', 'retweet': serializer.data},
-                status=status.HTTP_200_OK
+                status=status.HTTP_200_OK,
             )
 
 
@@ -151,15 +214,18 @@ class UnretweetView(APIView):
             400: OpenApiResponse(description='You have not retweeted this tweet'),
             404: OpenApiResponse(description='Tweet not found'),
         },
-        tags=["tweets"]
+        tags=["tweets"],
     )
     def post(self, request, pk):
-        tweet = get_tweet_by_id(pk)      # selector
+        tweet = get_tweet_by_id(pk)
         success = TweetEngagementService.unretweet(tweet, request.user)
         if success:
             return Response({'message': 'Unretweeted successfully'})
         else:
-            return Response({'error': 'You have not retweeted this tweet'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {'error': 'You have not retweeted this tweet'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
 
 class LikeView(APIView):
@@ -175,19 +241,25 @@ class LikeView(APIView):
             403: OpenApiResponse(description='Tweet not accessible'),
             404: OpenApiResponse(description='Tweet not found'),
         },
-        tags=["tweets"]
+        tags=["tweets"],
     )
     def post(self, request, pk):
-        tweet = get_tweet_by_id(pk)      # selector
+        tweet = get_tweet_by_id(pk)
 
         if not TweetVisibilityService.is_visible_to(tweet, request.user):
             return Response({'error': 'Tweet not accessible'}, status=status.HTTP_403_FORBIDDEN)
 
         like, created = TweetEngagementService.like(tweet, request.user)
         if created:
-            return Response({'message': 'Liked', 'like_count': TweetEngagementService.get_like_count(tweet)}, status=status.HTTP_201_CREATED)
+            return Response(
+                {'message': 'Liked', 'like_count': TweetEngagementService.get_like_count(tweet)},
+                status=status.HTTP_201_CREATED,
+            )
         else:
-            return Response({'message': 'Already liked', 'like_count': TweetEngagementService.get_like_count(tweet)}, status=status.HTTP_200_OK)
+            return Response(
+                {'message': 'Already liked', 'like_count': TweetEngagementService.get_like_count(tweet)},
+                status=status.HTTP_200_OK,
+            )
 
 
 class UnlikeView(APIView):
@@ -202,12 +274,18 @@ class UnlikeView(APIView):
             400: OpenApiResponse(description='You have not liked this tweet'),
             404: OpenApiResponse(description='Tweet not found'),
         },
-        tags=["tweets"]
+        tags=["tweets"],
     )
     def post(self, request, pk):
-        tweet = get_tweet_by_id(pk)      # selector
+        tweet = get_tweet_by_id(pk)
         removed = TweetEngagementService.unlike(tweet, request.user)
         if removed:
-            return Response({'message': 'Unliked', 'like_count': TweetEngagementService.get_like_count(tweet)}, status=status.HTTP_200_OK)
+            return Response(
+                {'message': 'Unliked', 'like_count': TweetEngagementService.get_like_count(tweet)},
+                status=status.HTTP_200_OK,
+            )
         else:
-            return Response({'error': 'You have not liked this tweet'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {'error': 'You have not liked this tweet'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )

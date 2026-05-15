@@ -25,7 +25,7 @@ const Following = ({ info, isLast }: FollowingFollowerPropsType) => {
             {/* Profile Picture */}
             {info.followee.profile_picture ? (
               <img
-                src={`http://127.0.0.1:8000${info.followee.profile_picture}`}
+                src={info.followee.profile_picture}
                 alt="profile-picture"
                 className="size-22 rounded-[50%]"
               />
@@ -55,7 +55,7 @@ const Following = ({ info, isLast }: FollowingFollowerPropsType) => {
                 onClick={() => unfollowHandler(unfollow, userId, setIsFollowed)}
               >
                 {isUnfollowPending ? (
-                  <div className="w-19.5">
+                  <div className="w-19.75">
                     <Loading width="w-7" height="h-7" />
                   </div>
                 ) : (

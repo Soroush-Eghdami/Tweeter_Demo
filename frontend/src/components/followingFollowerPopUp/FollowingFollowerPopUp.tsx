@@ -11,12 +11,14 @@ import type { FollowingFollowerListType } from "../../types/FollowingFollowerTyp
 import user from "../../assets/icons/profile/follower-following-counter.svg";
 
 interface FollowingFollowerPropsType {
+  isPublic: boolean;
   userId: string;
   setIsUserListOpen: (arg0: boolean) => void;
   isUserListOpen: boolean;
 }
 
 const FollowingFollower = ({
+  isPublic,
   userId,
   setIsUserListOpen,
   isUserListOpen,
@@ -164,7 +166,11 @@ const FollowingFollower = ({
                   </div>
                 )}
                 {/* Mapping Through Each Following */}
-                {!followingListLoading && followingList.length === 0 ? (
+                {!isPublic && !followingListLoading ? (
+                  <p className="text-center font-medium text-xl text-[#555] my-52">
+                    This Profile is Private.
+                  </p>
+                ) : !followingListLoading && followingList.length === 0 ? (
                   <p className="text-center font-medium text-lg text-[#555] my-52">
                     You haven't follow anyone yet.
                   </p>
@@ -200,7 +206,11 @@ const FollowingFollower = ({
                   </div>
                 )}
                 {/* Mapping Through Each Follower */}
-                {!followerListLoading && followerList.length === 0 ? (
+                {!isPublic && !followerListLoading ? (
+                  <p className="text-center font-medium text-xl text-[#555] my-52">
+                    This Profile is Private.
+                  </p>
+                ) : !followerListLoading && followerList.length === 0 ? (
                   <p className="text-center font-medium text-lg text-[#555] my-52">
                     No one has follow you yet.
                   </p>

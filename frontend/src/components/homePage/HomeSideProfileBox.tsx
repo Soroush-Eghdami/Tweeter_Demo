@@ -1,53 +1,67 @@
 import { useNavigate } from "react-router-dom";
 import HomeProfileFilled from "./HomeProfileFilled";
-import LoadingPage from "../loading/LoadingPage";
+import Loading from "../loading/Loading";
 import useIsLoggedIn from "../../hooks/global-hooks/useIsLoggedIn";
+import { useMyProfile } from "../../hooks/useMyProfile";
 import profilePicture from "../../assets/icons/profile-default.svg";
 
 const HomeSideProfileBox = () => {
-  const { isLoggedIn, isLoading } = useIsLoggedIn();
+  const { isLoggedIn } = useIsLoggedIn();
   const navigation = useNavigate();
+  const { data: profile, isLoading } = useMyProfile();
 
-  // if (isLoading) return <LoadingPage />;
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <Loading />
+      </div>
+    );
+  }
+
+  // If logged in but profile is missing after loading (error or no data)
+  if (isLoggedIn && !profile) {
+    return null;
+  }
 
   return (
     <div className="relative h-fit">
-      {isLoading && <LoadingPage />}
       {isLoggedIn ? (
         <div className="border-2 border-white bg-white/10 backdrop-filter-md backdrop-blur-[35px] backdrop-brightness-[1.5] rounded-3xl py-7 h-fit">
           <div className="mb-11 px-26">
             <img
-              src={profilePicture}
-              alt="Default-Profile"
-              className="mx-auto mb-2"
+              src={profile?.profile_picture || profilePicture}
+              alt="Profile"
+              className="mx-auto mb-2 size-16 rounded-full object-cover"
             />
-            <h2 className="font-bold text-lg text-center mb-2">Khargoosh</h2>
+            <h2 className="font-bold text-lg text-center mb-2">
+              {profile?.username}
+            </h2>
             <h5 className="font-light text-sm text-center text-[#ccc]">
               Welcome!
             </h5>
           </div>
           <div className="grid grid-cols-2 grid-rows-2 gap-4 px-8">
             <HomeProfileFilled
-              title="Post"
-              number={20}
+              title="Followers"
+              number={profile?.followers_count ?? 0}
+              textColor="text-white"
+              bgColor="bg-black"
+            />
+            <HomeProfileFilled
+              title="Following"
+              number={profile?.following_count ?? 0}
+              textColor="text-[#333]"
+              bgColor="bg-[#f4f4f4]"
+            />
+            <HomeProfileFilled
+              title="Tweet"
+              number={profile?.tweets_count ?? 0}
               textColor="text-white"
               bgColor="bg-black"
             />
             <HomeProfileFilled
               title="Retweet"
-              number={6}
-              textColor="text-[#333]"
-              bgColor="bg-[#f4f4f4]"
-            />
-            <HomeProfileFilled
-              title="Followers"
-              number={8}
-              textColor="text-white"
-              bgColor="bg-black"
-            />
-            <HomeProfileFilled
-              title="Followings"
-              number={12}
+              number={profile?.retweets_made ?? 0}
               textColor="text-[#333]"
               bgColor="bg-[#f4f4f4]"
             />
