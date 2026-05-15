@@ -12,12 +12,14 @@ interface ProfilePictureEditPropsType {
   isOpen: boolean;
   setIsOpen: (arg0: boolean) => void;
   picUpdateObj?: picUpdateObjType;
+  onUploadSuccess?: (updatedUser: any) => void;
 }
 
 const ProfilePictureEdit = ({
   isOpen,
   setIsOpen,
   picUpdateObj,
+  onUploadSuccess,   // NEW
 }: ProfilePictureEditPropsType) => {
   const [pic, setPic] = useState<string | null>(null);
   const [crop, setCrop] = useState({ x: 0, y: 0 });
@@ -27,9 +29,7 @@ const ProfilePictureEdit = ({
   const fileInput = useRef<HTMLInputElement>(null);
 
   const handleClick = () => {
-    if (!fileInput.current) return;
-
-    fileInput.current.click();
+    fileInput.current?.click();
   };
 
   const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -40,7 +40,7 @@ const ProfilePictureEdit = ({
   };
 
   const onCropComplete = useCallback(
-    (_unknown: unknown, croppedAreaPixels: Area) => {
+    (_: unknown, croppedAreaPixels: Area) => {
       setCroppedAreaPixels(croppedAreaPixels);
     },
     [],
@@ -55,6 +55,7 @@ const ProfilePictureEdit = ({
     if (fileInput.current) fileInput.current.value = "";
   };
 
+  // CHANGED: now awaits the upload and calls onUploadSuccess
   const handleSave = async () => {
     if (!pic || !croppedAreaPixels) {
       console.warn("No image or crop area selected");
@@ -72,7 +73,12 @@ const ProfilePictureEdit = ({
       if (finalImageFile) {
         const formData = new FormData();
         formData.append("profile_picture", finalImageFile);
-        if (picUpdateObj) await picUpdateObj.picUpdate(formData);
+
+        if (picUpdateObj) {
+          const updatedUser = await picUpdateObj.picUpdate(formData); // returns updated user data
+          onUploadSuccess?.(updatedUser);   // inform parent to update displayed picture
+        }
+
         setIsOpen(false);
         setTimeout(() => resetStates(), 500);
       }

@@ -14,13 +14,24 @@ import EmailInput from "../components/loginRegister/EmailInput";
 import BiographyInput from "../components/editProfile/BiographyInput";
 import PrivateCheckbox from "../components/editProfile/PrivateCheckbox";
 import { useEditProfile } from "../hooks/useEditProfile";
+import {
+  useUpdateBannerPicture,
+  useUpdateProfilePicture,
+} from "../hooks/useUpdateProfile";
 import type { EditProfileFormType } from "../types/FormTypes";
 import userProfile from "../assets/icons/profile-default.svg";
 
 const EditProfile = () => {
   const location = useLocation();
-  const profile = location.state?.profile;
   const navigate = useNavigate();
+
+  // CHANGED: store profile in local state so we can update it after uploads
+  const [profile, setProfile] = useState(location.state?.profile);
+
+  const { mutateAsync: picUpdate, isPending: picUpdateLoading } =
+    useUpdateProfilePicture();
+  const { mutateAsync: bannerUpdate, isPending: bannerUpdateLoading } =
+    useUpdateBannerPicture();
 
   const {
     register,
@@ -46,6 +57,12 @@ const EditProfile = () => {
   const [isProfileBannerOpen, setIsProfileBannerOpen] = useState(false);
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
 
+  // NEW: callback to update local profile state after a successful image upload
+  const handlePictureUploaded = (updatedUser: any) => {
+    setProfile((prev) => ({ ...prev, ...updatedUser }));
+  };
+
+  // Submit handler – sends only changed fields
   const onSubmit = (data: EditProfileFormType) => {
     const payload: Partial<{
       first_name: string;
@@ -73,49 +90,40 @@ const EditProfile = () => {
         toast.success("Profile updated successfully!");
         navigate("/profile");
       },
-onError: (error: any) => {
-  console.error(error); // keep for debugging
+      onError: (error: any) => {
+        console.error(error);
 
-  // Extract field-specific errors from the possible structures
-  let fieldErrors: Record<string, any> | undefined;
+        let fieldErrors: Record<string, any> | undefined;
+        const data = error?.response?.data;
+        if (data) {
+          if (data.detail && typeof data.detail === "object") {
+            fieldErrors = data.detail;
+          } else if (typeof data === "object" && !Array.isArray(data)) {
+            fieldErrors = data;
+          } else if (data.errors && typeof data.errors === "object") {
+            fieldErrors = data.errors;
+          }
+        }
 
-  const data = error?.response?.data;
-  if (data) {
-    // NEW: Check for the actual API format { detail: { username: [...] } }
-    if (data.detail && typeof data.detail === 'object') {
-      fieldErrors = data.detail;
-    }
-    // Fallback: direct field errors { username: [...] }
-    else if (typeof data === 'object' && !Array.isArray(data)) {
-      fieldErrors = data;
-    }
-    // Fallback: errors wrapper { errors: { username: [...] } }
-    else if (data.errors && typeof data.errors === 'object') {
-      fieldErrors = data.errors;
-    }
-  }
-
-  if (fieldErrors) {
-    // Username or email conflict – rollback the offending field(s)
-    if (fieldErrors.username || fieldErrors.email) {
-      const currentValues = getValues();
-      if (fieldErrors.username) {
-        currentValues.username = profile.username;
-      }
-      if (fieldErrors.email) {
-        currentValues.email = profile.email;
-      }
-      reset(currentValues);
-      toast.error("That username or email is already taken.");
-    } else {
-      // Other field errors: show the first error message
-      const firstError = Object.values(fieldErrors).flat().join(', ');
-      toast.error(firstError || "Update failed. Please check your inputs.");
-    }
-  } else {
-    toast.error("Update failed. Please try again.");
-  }
-},
+        if (fieldErrors) {
+          if (fieldErrors.username || fieldErrors.email) {
+            const currentValues = getValues();
+            if (fieldErrors.username) {
+              currentValues.username = profile.username;
+            }
+            if (fieldErrors.email) {
+              currentValues.email = profile.email;
+            }
+            reset(currentValues);
+            toast.error("That username or email is already taken.");
+          } else {
+            const firstError = Object.values(fieldErrors).flat().join(", ");
+            toast.error(firstError || "Update failed. Please check your inputs.");
+          }
+        } else {
+          toast.error("Update failed. Please try again.");
+        }
+      },
     });
   };
 
@@ -135,16 +143,29 @@ onError: (error: any) => {
         title={"Do you want to Delete your profile?"}
         description={"if you proceed yor profile will be lost!!"}
       />
+      {/* CHANGED: pass onUploadSuccess to ProfilePictureEdit */}
       <ProfilePictureEdit
-        setIsOpen={setIsProfilePicOpen}
         isOpen={isProfilePicOpen}
+        setIsOpen={setIsProfilePicOpen}
+        picUpdateObj={{
+          picUpdate,
+          picUpdateLoading,
+        }}
+        onUploadSuccess={handlePictureUploaded}  // NEW
       />
+      {/* CHANGED: pass onUploadSuccess to EditBanner */}
       <EditBanner
         isOpen={isProfileBannerOpen}
-        onClose={() => setIsProfileBannerOpen(false)}
+        bannerUpdateObj={{
+          bannerUpdate,
+          bannerUpdateLoading,
+        }}
         username={profile.username}
         email={profile.email}
         bio={profile.bio || ""}
+        bannerPic={profile.profile_banner}
+        onClose={() => setIsProfileBannerOpen(false)}
+        onUploadSuccess={handlePictureUploaded}  // NEW
       />
       <ChangePasswordPopUp
         isOpen={isChangePasswordOpen}
@@ -159,7 +180,7 @@ onError: (error: any) => {
           <img
             src={profile.profile_picture || userProfile}
             alt="user-profile"
-            className="size-33 mx-auto"
+            className="size-33 mx-auto rounded-full"
           />
           <p className="mx-auto text-4xl font-bold mt-6">Edit profile</p>
         </div>
@@ -169,7 +190,6 @@ onError: (error: any) => {
         onSubmit={handleSubmit(onSubmit)}
         className="flex flex-col w-[48%] shadow-[0_0px_30px_rgba(0,0,0,0.4)] backdrop-filter-md backdrop-blur-[35px] backdrop-brightness-[0.65] mx-auto mt-10 rounded-3xl px-12 py-10 gap-4"
       >
-        {/* First Name + Last Name side‑by‑side */}
         <div className="flex items-center gap-6">
           <div className="w-[50%]">
             <FirstNameInput register={register} error={errors.firstName} isEditProfile={true} />

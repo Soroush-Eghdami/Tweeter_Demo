@@ -12,6 +12,8 @@ interface EditBannerProps {
   bio: string;
   bannerPic: string;
   onClose: () => void;
+  // NEW: callback to update parent with new user data
+  onUploadSuccess?: (updatedUser: any) => void;
 }
 
 const EditBanner = ({
@@ -22,6 +24,7 @@ const EditBanner = ({
   bio,
   bannerPic,
   onClose,
+  onUploadSuccess,   // NEW
 }: EditBannerProps) => {
   const [bannerFile, setBannerFile] = useState<File | null>(null);
   const [bannerPreview, setBannerPreview] = useState<string | null>(null);
@@ -31,23 +34,22 @@ const EditBanner = ({
     bannerInputRef.current?.click();
   };
 
-  // File Selector + URL Maker
   const handleBannerChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] ?? null;
     if (!file) return;
-
     setBannerFile(file);
     setBannerPreview(file ? URL.createObjectURL(file) : null);
   };
 
-  // On Save
+  // CHANGED: await the upload and call onUploadSuccess
   const handleYesClick = async () => {
     if (!bannerFile || !bannerUpdateObj) return;
 
     const formData = new FormData();
     formData.append("profile_banner", bannerFile);
     try {
-      await bannerUpdateObj.bannerUpdate(formData);
+      const updatedUser = await bannerUpdateObj.bannerUpdate(formData);
+      onUploadSuccess?.(updatedUser);   // update parent state
       onClose();
     } catch (err) {
       console.error("Upload failed", err);
@@ -58,7 +60,6 @@ const EditBanner = ({
     onClose();
   };
 
-  // Clean Up
   useEffect(() => {
     if (!isOpen) {
       setTimeout(() => {
@@ -70,18 +71,13 @@ const EditBanner = ({
     }
   }, [isOpen, bannerPreview]);
 
-  // Close Pop up using ESC key on keyboard
   useEffect(() => {
     if (!isOpen) return;
-
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
     };
-
     document.addEventListener("keydown", handleEscape);
-    return () => {
-      document.removeEventListener("keydown", handleEscape);
-    };
+    return () => document.removeEventListener("keydown", handleEscape);
   }, [isOpen, onClose]);
 
   return (
@@ -105,7 +101,6 @@ const EditBanner = ({
           )}
         </div>
 
-        {/* Avatar  */}
         <div className="relative mt-0 mb-20 flex-1">
           <div className="border-t-2 border-white" />
           <div className="absolute -top-20 left-30 flex flex-col items-center group">
