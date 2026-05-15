@@ -90,7 +90,7 @@ const EditProfile = () => {
           <img
             src={profile.profile_picture || userProfile}
             alt="user-profile"
-            className="size-33 mx-auto"
+            className="size-33 mx-auto rounded-full"
           />
           <p className="mx-auto text-4xl font-bold mt-6">Edit profile</p>
         </div>
