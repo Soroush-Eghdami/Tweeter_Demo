@@ -29,7 +29,7 @@ const TweetCard = ({ isPinned, info }: TweetCardPropsType) => {
 
   const handleLikeClick = () => {
     const now = Date.now();
-    if (now - lastLikeClick.current < 300) return; // 300ms 
+    if (now - lastLikeClick.current < 300) return; // 300ms
     lastLikeClick.current = now;
     likeMutation.mutate(!info.is_liked);
   };
@@ -95,7 +95,7 @@ const TweetCard = ({ isPinned, info }: TweetCardPropsType) => {
         {/* Comment Button */}
         <div
           className="flex items-center gap-2.5 cursor-pointer"
-          onClick={() => navigation("/comment")}  // need to be changed later
+          onClick={() => navigation("/comment")} // need to be changed later
         >
           {isPinned ? (
             <img

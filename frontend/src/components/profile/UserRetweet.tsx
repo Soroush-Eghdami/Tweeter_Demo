@@ -1,8 +1,8 @@
 import TweetCard from "../TweetCard";
-import type { userRetweetInfoType } from "../../contents/userRetweetInfo";
+import type { TweetCardInfoType } from "../../types/TweetTypes";
 
 interface UserRetweetPropsType {
-  info: userRetweetInfoType;
+  info: TweetCardInfoType;
 }
 
 const UserRetweet = ({ info }: UserRetweetPropsType) => {

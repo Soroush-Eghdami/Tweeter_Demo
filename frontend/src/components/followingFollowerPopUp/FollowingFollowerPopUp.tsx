@@ -32,14 +32,18 @@ const FollowingFollower = ({
     hasNextPage: followingHasNextPage,
     isFetchingNextPage: followingIsFetchNextPage,
     isLoading: followingListLoading,
-  } = useFollowingList(userId, 5, { enabled: isUserListOpen && isFollowing });
+  } = useFollowingList(userId, 5, {
+    enabled: isPublic && isUserListOpen && isFollowing,
+  });
   const {
     data: followerData,
     fetchNextPage: followerFetchNextPage,
     hasNextPage: followerHasNextPage,
     isFetchingNextPage: followerIsFetchNextPage,
     isLoading: followerListLoading,
-  } = useFollowerList(userId, 5, { enabled: isUserListOpen && !isFollowing });
+  } = useFollowerList(userId, 5, {
+    enabled: isPublic && isUserListOpen && !isFollowing,
+  });
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const loadMoreRefFollowing = useRef<HTMLDivElement>(null);
   const loadMoreRefFollower = useRef<HTMLDivElement>(null);

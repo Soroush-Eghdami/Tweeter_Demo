@@ -171,15 +171,15 @@ const Home = () => {
         <div className="flex-1 h-fit" ref={sideBoxRef}>
           <HomeSideProfileBox />
         </div>
-        {
-          <div
-            onClick={() => setIsCreatedPost((prev) => !prev)}
-            className={`${isCreatedPost ? "rotate-45" : "rotate-0"} fixed right-20 cursor-pointer hover:scale-95 transition-all duration-400 ease-in-out z-40`}
-            style={{ bottom: `${combinedBottom}px` }}
-          >
-            <img src={newTweet} alt="New-Tweet" className="size-21" />
-          </div>
-        }
+        {/* Create Tweet Button */}
+        <button
+          disabled={!isLoggedIn}
+          onClick={() => setIsCreatedPost((prev) => !prev)}
+          className={`${isCreatedPost ? "rotate-45" : "rotate-0"} fixed right-20 cursor-pointer hover:scale-95 disabled:cursor-not-allowed disabled:hover:scale-none transition-all duration-400 ease-in-out z-40`}
+          style={{ bottom: `${combinedBottom}px` }}
+        >
+          <img src={newTweet} alt="New-Tweet" className="size-21" />
+        </button>
       </div>
     </>
   );

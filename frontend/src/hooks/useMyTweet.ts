@@ -1,40 +1,34 @@
 import { useInfiniteQuery } from "@tanstack/react-query";
 import api from "../api-services/api";
 
-const pageSize = 5;
+const pageSize = 4;
 
-// Following List
-const getFollowingList = async (
-  { pageParam = 1 },
-  id: string,
-  size: number,
-) => {
-  const response = await api.get(`/accounts/users/${id}/following/`, {
+// My Tweet
+const getMyTweet = async ({ pageParam = 1 }, id: string, size: number) => {
+  const response = await api.get(`/accounts/users/${id}/tweets/`, {
     params: { page: pageParam, page_size: size },
   });
   return response.data;
 };
 
-export const useFollowingList = (
+export const useMyTweetList = (
   userId: string,
   size: number = pageSize,
   options?: { enabled?: boolean },
 ) => {
   return useInfiniteQuery({
-    queryKey: ["following", userId, size],
-    queryFn: ({ pageParam }) => getFollowingList({ pageParam }, userId, size),
+    queryKey: ["myTweet", userId, size],
+    queryFn: ({ pageParam }) => getMyTweet({ pageParam }, userId, size),
     initialPageParam: 1,
     refetchOnWindowFocus: false,
 
     getNextPageParam: (lastPage) => {
-      if (!lastPage.next) return undefined;
-      // Extract page number from URL
+      if (!lastPage) return undefined;
       try {
         const url = new URL(lastPage.next);
         const pageParam = url.searchParams.get("page");
         return pageParam ? parseInt(pageParam, 10) : undefined;
-      } catch (e) {
-        // If it's already a number, use it directly
+      } catch (err) {
         return typeof lastPage.next === "number" ? lastPage.next : undefined;
       }
     },
@@ -42,32 +36,32 @@ export const useFollowingList = (
   });
 };
 
-// Follower List
-const getFollowerList = async ({ pageParam = 1 }, id: string, size: number) => {
-  const response = await api.get(`/accounts/users/${id}/followers/`, {
+// My Retweet
+const getMyRetweet = async ({ pageParam = 1 }, id: string, size: number) => {
+  const response = await api.get(`/accounts/users/${id}/retweets/`, {
     params: { page: pageParam, page_size: size },
   });
   return response.data;
 };
 
-export const useFollowerList = (
+export const useMyRetweetList = (
   userId: string,
   size: number = pageSize,
   options?: { enabled?: boolean },
 ) => {
   return useInfiniteQuery({
-    queryKey: ["follower", userId, size],
-    queryFn: ({ pageParam }) => getFollowerList({ pageParam }, userId, size),
+    queryKey: ["myRetweet", userId, size],
+    queryFn: ({ pageParam }) => getMyRetweet({ pageParam }, userId, size),
     initialPageParam: 1,
     refetchOnWindowFocus: false,
 
     getNextPageParam: (lastPage) => {
-      if (!lastPage.next) return undefined;
+      if (!lastPage) return undefined;
       try {
         const url = new URL(lastPage.next);
         const pageParam = url.searchParams.get("page");
         return pageParam ? parseInt(pageParam, 10) : undefined;
-      } catch (error) {
+      } catch (err) {
         return typeof lastPage.next === "number" ? lastPage.next : undefined;
       }
     },

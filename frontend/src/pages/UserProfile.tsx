@@ -1,7 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import UserTweet from "../components/profile/UserTweet";
-import UserRetweet from "../components/profile/UserRetweet";
 import HeaderProfile from "../components/profile/HeaderProfile";
 import RightBox from "../components/profile/RightBox";
 import LeftBox from "../components/profile/LeftBox";
@@ -10,8 +8,8 @@ import LoadingPage from "../components/loading/LoadingPage";
 import { useUserProfile } from "../hooks/useUserProfile";
 import { useFollow, useUnfollow } from "../hooks/useFollowUnfollow";
 import { useMyProfile } from "../hooks/useMyProfile";
-import { userTweetInfo } from "../contents/userTweetInfo";
-import { userRetweetInfo } from "../contents/userRetweetInfo";
+import { useMyRetweetList, useMyTweetList } from "../hooks/useMyTweet";
+import { privateEnabled } from "../utils/privateEnabled";
 import tweet from "../assets/icons/profile/tweet.svg";
 import tweetBlue from "../assets/icons/profile/peace_pigeon.svg";
 import avatar from "../assets/icons/profile-default.svg";
@@ -34,10 +32,34 @@ const UserProfile = () => {
   const { mutate: unfollow, isPending: unfollowLoading } = useUnfollow();
   const [isTweetsOpen, setIsTweetsOpen] = useState(true);
   const [isUserListOpen, setIsUserListOpen] = useState(false);
+  const {
+    data: myTweet,
+    fetchNextPage: myTweetFetchNextPage,
+    hasNextPage: myTweetHasNextPage,
+    isFetchingNextPage: myTweetIsFetchNextPage,
+    isLoading: myTweetIsLoading,
+  } = useMyTweetList(id || "", 5, {
+    enabled: privateEnabled(data) && isTweetsOpen,
+  });
+  const {
+    data: myRetweet,
+    fetchNextPage: myRetweetFetchNextPage,
+    hasNextPage: myRetweetHasNextPage,
+    isFetchingNextPage: myRetweetIsFetchNextPage,
+    isLoading: myRetweetIsLoading,
+  } = useMyRetweetList(id || "", 5, {
+    enabled: privateEnabled(data) && !isTweetsOpen,
+  });
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const loadMoreRefTweet = useRef<HTMLDivElement>(null);
+  const loadMoreRefRetweet = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
 
-  const isPublic = data?.is_public_user;
+  const isPublic = privateEnabled(data);
+  const myTweetList = myTweet?.pages.flatMap((page) => page.results) ?? [];
+  const myRetweetList = myRetweet?.pages.flatMap((page) => page.results) ?? [];
 
+  // Navigate to MyProfile
   useEffect(() => {
     if (currentUser?.id && id) {
       if (currentUser.id === id) {
@@ -45,6 +67,46 @@ const UserProfile = () => {
       }
     }
   }, [currentUser, id, navigate, currentUserLoading, isLoading]);
+
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    const loadMore = isTweetsOpen
+      ? loadMoreRefTweet.current
+      : loadMoreRefRetweet.current;
+    const hasNextPage = isTweetsOpen
+      ? myTweetHasNextPage
+      : myRetweetHasNextPage;
+    const isFetching = isTweetsOpen
+      ? myTweetIsFetchNextPage
+      : myRetweetIsFetchNextPage;
+    const fetchNext = isTweetsOpen
+      ? myTweetFetchNextPage
+      : myRetweetFetchNextPage;
+
+    if (!container || !loadMore || !hasNextPage || isFetching) {
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          fetchNext();
+        }
+      },
+      { root: container, rootMargin: "0px 0px 100px 0px" },
+    );
+
+    observer.observe(loadMore);
+    return () => observer.disconnect();
+  }, [
+    isTweetsOpen,
+    myTweetHasNextPage,
+    myTweetIsFetchNextPage,
+    myTweetFetchNextPage,
+    myRetweetHasNextPage,
+    myRetweetIsFetchNextPage,
+    myRetweetFetchNextPage,
+  ]);
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -97,6 +159,8 @@ const UserProfile = () => {
           onEditProfile={() => navigate("/edit-profile")}
         />
         <RightBox
+          isPublic={isPublic}
+          isMyProfile={false}
           setIsTweetsOpen={setIsTweetsOpen}
           isTweetsOpen={isTweetsOpen}
           tweetIcon={tweet}
@@ -104,22 +168,25 @@ const UserProfile = () => {
           retweetIcon={retweet}
           retweetGreenIcon={retweetGreen}
           userIcon={user}
+          containerRef={scrollContainerRef}
+          tweetRetweetList={{
+            tweet: {
+              isLoading: myTweetIsLoading,
+              infoList: myTweetList,
+              hasNextPage: myTweetHasNextPage,
+              loadMoreRef: loadMoreRefTweet,
+              isFetchNextPage: myTweetIsFetchNextPage,
+            },
+            retweet: {
+              isLoading: myRetweetIsLoading,
+              infoList: myRetweetList,
+              hasNextPage: myRetweetHasNextPage,
+              loadMoreRef: loadMoreRefRetweet,
+              isFetchNextPage: myRetweetIsFetchNextPage,
+            },
+          }}
           onUserIconClick={() => setIsUserListOpen(true)}
-        >
-          {isTweetsOpen ? (
-            <div className="pt-8">
-              {userTweetInfo.map((userTweet, index) => (
-                <UserTweet key={index} info={userTweet} />
-              ))}
-            </div>
-          ) : (
-            <div className="pt-8">
-              {userRetweetInfo.map((userRetweet, index) => (
-                <UserRetweet key={index} info={userRetweet} />
-              ))}
-            </div>
-          )}
-        </RightBox>
+        />
       </div>
     </div>
   );

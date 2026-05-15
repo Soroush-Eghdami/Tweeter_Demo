@@ -10,6 +10,7 @@ export const useUserProfile = (userid: string) => {
   return useQuery({
     queryKey: ["user", userid],
     queryFn: () => getUserInfo(userid),
+    refetchOnWindowFocus: false,
     enabled: !!userid,
   });
 };

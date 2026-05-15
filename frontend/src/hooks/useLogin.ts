@@ -23,6 +23,7 @@ export const useLogin = () => {
     onSuccess: () => {
       setSession(true);
       queryClient.invalidateQueries({ queryKey: ["myProf"] });
+      toast.success("User Logged in Successfully!");
       navigate("/");
     },
     onError: (error) => {
