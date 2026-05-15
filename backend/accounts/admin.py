@@ -4,28 +4,27 @@ from .models import User, Follower, PasswordHistory
 
 
 class CustomUserAdmin(UserAdmin):
-    list_display = ('username', 'email', 'first_name', 'last_name', 'is_staff', 'id', 'custom_id', 'is_public_status')
-    list_filter = ('is_staff', 'is_superuser', 'is_active')
-    
-    fieldsets = UserAdmin.fieldsets + ( # type: ignore[operator]
+    list_display = ('username', 'email', 'first_name', 'last_name', 'is_staff', 'id', 'custom_id', 'is_public_user_display')
+    list_filter = ('is_staff', 'is_superuser', 'is_active', 'is_public_user')
+
+    fieldsets = UserAdmin.fieldsets + (
         ('Profile Information', {
-            'fields': ('bio', 'profile_picture', 'profile_banner'),
+            'fields': ('bio', 'profile_picture', 'profile_banner', 'is_public_user'),
         }),
     )
-    
-    add_fieldsets = UserAdmin.add_fieldsets + ( # type: ignore[operator]
+
+    add_fieldsets = UserAdmin.add_fieldsets + (
         ('Profile Information', {
-            'fields': ('bio', 'profile_picture', 'profile_banner'),
+            'fields': ('bio', 'profile_picture', 'profile_banner', 'is_public_user'),
         }),
     )
-    
+
     @admin.display(description='Public Status', boolean=True)
-    def is_public_status(self, obj):
-        return obj.is_public
+    def is_public_user_display(self, obj):
+        return obj.is_public_user
 
 
 admin.site.register(User, CustomUserAdmin)
-
 
 @admin.register(Follower)
 class FollowerAdmin(admin.ModelAdmin):

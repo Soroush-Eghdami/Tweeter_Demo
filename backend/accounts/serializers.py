@@ -29,19 +29,19 @@ class AbsoluteURLImageField(serializers.ImageField):
 
 class UserLiteOutputSerializer(serializers.ModelSerializer):
     """Lightweight user representation for nested use (e.g., in Follower)."""
-    is_public = serializers.ReadOnlyField()
+    # is_public = serializers.ReadOnlyField()
     profile_picture = AbsoluteURLImageField(read_only=True)
     
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'custom_id', 'is_public', 'profile_picture']
+        fields = ['id', 'username', 'email', 'custom_id', 'profile_picture']
         read_only_fields = fields
 
 
 class UserOutputSerializer(serializers.ModelSerializer):
     """Full user output serializer for detail/list views."""
     is_following = serializers.SerializerMethodField()
-    is_public = serializers.ReadOnlyField()
+    # is_public = serializers.ReadOnlyField()
     profile_picture = AbsoluteURLImageField(read_only=True)
     profile_banner = AbsoluteURLImageField(read_only=True)
     followers_count = serializers.SerializerMethodField()
@@ -54,7 +54,7 @@ class UserOutputSerializer(serializers.ModelSerializer):
         model = User
         fields = [
             'id', 'username', 'email', 'first_name', 'last_name', 'custom_id',
-            'bio', 'is_public_user', 'is_public', 'is_following',
+            'bio', 'is_public_user', 'is_following',
             'profile_picture', 'profile_banner', 'date_joined',
             'followers_count', 'following_count', 'tweets_count', 'likes_received', 'retweets_made'
         ]
