@@ -10,7 +10,7 @@ interface EditProfilePayload {
   is_public_user: boolean;
 }
 
-const editProfile = async (userData: EditProfilePayload) => {
+const editProfile = async (userData: Partial<EditProfilePayload>) => {
   const response = await api.patch("/accounts/profile/", userData);
   return response.data;
 };

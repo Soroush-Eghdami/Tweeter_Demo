@@ -20,3 +20,22 @@ export interface EditProfileFormType {
   bio: string;
   is_private: boolean;
 }
+
+export interface HasFirstName {
+  firstName: string;
+}
+export interface HasLastName {
+  lastName: string;
+}
+export interface HasUsername {
+  username: string;
+}
+export interface HasEmail {
+  email: string;
+}
+export interface HasBio {
+  bio: string;
+}
+export interface HasPrivate {
+  is_private: boolean;
+}

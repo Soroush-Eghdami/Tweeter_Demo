@@ -14,6 +14,7 @@ import EmailInput from "../components/loginRegister/EmailInput";
 import BiographyInput from "../components/editProfile/BiographyInput";
 import PrivateCheckbox from "../components/editProfile/PrivateCheckbox";
 import { useEditProfile } from "../hooks/useEditProfile";
+import type { EditProfileFormType } from "../types/FormTypes";
 import userProfile from "../assets/icons/profile-default.svg";
 
 const EditProfile = () => {
@@ -24,8 +25,10 @@ const EditProfile = () => {
   const {
     register,
     handleSubmit,
-    formState: { errors },
-  } = useForm({
+    formState: { errors, dirtyFields },
+    getValues,
+    reset,
+  } = useForm<EditProfileFormType>({
     defaultValues: {
       firstName: profile?.first_name || "",
       lastName: profile?.last_name || "",
@@ -43,25 +46,76 @@ const EditProfile = () => {
   const [isProfileBannerOpen, setIsProfileBannerOpen] = useState(false);
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
 
-  const onSubmit = (data: any) => {
-    const payload = {
-      first_name: data.firstName,
-      last_name: data.lastName,
-      username: data.username,
-      email: data.email,
-      bio: data.bio,
-      is_public_user: !data.is_private,
-    };
+  const onSubmit = (data: EditProfileFormType) => {
+    const payload: Partial<{
+      first_name: string;
+      last_name: string;
+      username: string;
+      email: string;
+      bio: string;
+      is_public_user: boolean;
+    }> = {};
+
+    if (dirtyFields.firstName) payload.first_name = data.firstName;
+    if (dirtyFields.lastName) payload.last_name = data.lastName;
+    if (dirtyFields.username) payload.username = data.username;
+    if (dirtyFields.email) payload.email = data.email;
+    if (dirtyFields.bio) payload.bio = data.bio;
+    if (dirtyFields.is_private) payload.is_public_user = !data.is_private;
+
+    if (Object.keys(payload).length === 0) {
+      toast("No changes detected.");
+      return;
+    }
 
     mutate(payload, {
       onSuccess: () => {
         toast.success("Profile updated successfully!");
         navigate("/profile");
       },
-      onError: (err) => {
-        toast.error("Update failed. Please try again.");
-        console.error(err);
-      },
+onError: (error: any) => {
+  console.error(error); // keep for debugging
+
+  // Extract field-specific errors from the possible structures
+  let fieldErrors: Record<string, any> | undefined;
+
+  const data = error?.response?.data;
+  if (data) {
+    // NEW: Check for the actual API format { detail: { username: [...] } }
+    if (data.detail && typeof data.detail === 'object') {
+      fieldErrors = data.detail;
+    }
+    // Fallback: direct field errors { username: [...] }
+    else if (typeof data === 'object' && !Array.isArray(data)) {
+      fieldErrors = data;
+    }
+    // Fallback: errors wrapper { errors: { username: [...] } }
+    else if (data.errors && typeof data.errors === 'object') {
+      fieldErrors = data.errors;
+    }
+  }
+
+  if (fieldErrors) {
+    // Username or email conflict – rollback the offending field(s)
+    if (fieldErrors.username || fieldErrors.email) {
+      const currentValues = getValues();
+      if (fieldErrors.username) {
+        currentValues.username = profile.username;
+      }
+      if (fieldErrors.email) {
+        currentValues.email = profile.email;
+      }
+      reset(currentValues);
+      toast.error("That username or email is already taken.");
+    } else {
+      // Other field errors: show the first error message
+      const firstError = Object.values(fieldErrors).flat().join(', ');
+      toast.error(firstError || "Update failed. Please check your inputs.");
+    }
+  } else {
+    toast.error("Update failed. Please try again.");
+  }
+},
     });
   };
 
@@ -115,6 +169,7 @@ const EditProfile = () => {
         onSubmit={handleSubmit(onSubmit)}
         className="flex flex-col w-[48%] shadow-[0_0px_30px_rgba(0,0,0,0.4)] backdrop-filter-md backdrop-blur-[35px] backdrop-brightness-[0.65] mx-auto mt-10 rounded-3xl px-12 py-10 gap-4"
       >
+        {/* First Name + Last Name side‑by‑side */}
         <div className="flex items-center gap-6">
           <div className="w-[50%]">
             <FirstNameInput register={register} error={errors.firstName} isEditProfile={true} />
@@ -123,12 +178,15 @@ const EditProfile = () => {
             <LastNameInput register={register} error={errors.lastName} isEditProfile={true} />
           </div>
         </div>
+
         <div className="w-full">
           <UsernameInput register={register} error={errors.username} isEditProfile={true} />
         </div>
+
         <div className="w-full">
           <EmailInput register={register} error={errors.email} isEditProfile={true} />
         </div>
+
         <div className="flex justify-between items-center my-3">
           <div className="w-[50%]" onClick={() => setIsChangePasswordOpen(true)}>
             <button className="px-6 py-3 w-full border rounded-xl cursor-pointer hover:scale-95 hover:-rotate-1 transition-all duration-200 ease-in-out">
@@ -152,7 +210,9 @@ const EditProfile = () => {
             </button>
           </div>
         </div>
+
         <BiographyInput register={register} isEditProfile={true} />
+
         <PrivateCheckbox register={register} isEditProfile={true} />
 
         <div className="flex items-center gap-6">
