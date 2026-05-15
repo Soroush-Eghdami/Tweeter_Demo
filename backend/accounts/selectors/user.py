@@ -80,3 +80,13 @@ def get_likes_received_count(user: User) -> int:
 def get_retweets_made_count(user: User) -> int:
     from tweets.models import ReTweet
     return ReTweet.objects.filter(user=user).count()  # type: ignore[union-attr]
+
+
+def is_following_you(user: User, target_user: User) -> bool:
+    """
+    Check whether `target_user` follows `user`.
+    Returns False for anonymous users.
+    """
+    if not user.is_authenticated:
+        return False
+    return Follower.objects.filter(follower=target_user, followee=user).exists()
