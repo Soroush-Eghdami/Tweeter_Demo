@@ -18,15 +18,19 @@ import {
   useUpdateBannerPicture,
   useUpdateProfilePicture,
 } from "../hooks/useUpdateProfile";
-import type { EditProfileFormType } from "../types/FormTypes";
+import type { EditProfileFormType, EditProfileResponse } from "../types/FormTypes";
 import userProfile from "../assets/icons/profile-default.svg";
+
+// NEW: Type for API validation errors (e.g., { username: ["message"] })
+type FieldErrorRecord = Record<string, string[]>;
 
 const EditProfile = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // CHANGED: store profile in local state so we can update it after uploads
-  const [profile, setProfile] = useState(location.state?.profile);
+  const [profile, setProfile] = useState<EditProfileResponse | undefined>(
+    location.state?.profile
+  );
 
   const { mutateAsync: picUpdate, isPending: picUpdateLoading } =
     useUpdateProfilePicture();
@@ -57,12 +61,11 @@ const EditProfile = () => {
   const [isProfileBannerOpen, setIsProfileBannerOpen] = useState(false);
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
 
-  // NEW: callback to update local profile state after a successful image upload
-  const handlePictureUploaded = (updatedUser: any) => {
-    setProfile((prev) => ({ ...prev, ...updatedUser }));
+  // CHANGED: typed callback – no more any
+  const handlePictureUploaded = (updatedUser: EditProfileResponse) => {
+    setProfile((prev) => ({ ...prev, ...updatedUser }) as EditProfileResponse);
   };
 
-  // Submit handler – sends only changed fields
   const onSubmit = (data: EditProfileFormType) => {
     const payload: Partial<{
       first_name: string;
@@ -90,18 +93,40 @@ const EditProfile = () => {
         toast.success("Profile updated successfully!");
         navigate("/profile");
       },
-      onError: (error: any) => {
+      // CHANGED: error is now unknown – we safely narrow inside
+      onError: (error: unknown) => {
         console.error(error);
 
-        let fieldErrors: Record<string, any> | undefined;
-        const data = error?.response?.data;
-        if (data) {
-          if (data.detail && typeof data.detail === "object") {
-            fieldErrors = data.detail;
-          } else if (typeof data === "object" && !Array.isArray(data)) {
-            fieldErrors = data;
-          } else if (data.errors && typeof data.errors === "object") {
-            fieldErrors = data.errors;
+        // Extract possible field errors
+        let fieldErrors: FieldErrorRecord | undefined;
+
+        // Assume the error might be an Axios-like error with response.data
+        const maybeAxiosError = error as { response?: { data?: unknown } };
+        const data = maybeAxiosError?.response?.data;
+
+        if (data && typeof data === "object" && !Array.isArray(data)) {
+          // Pattern: { detail: { username: [...] } }
+          const detail = (data as Record<string, unknown>).detail;
+          if (detail && typeof detail === "object" && !Array.isArray(detail)) {
+            fieldErrors = detail as FieldErrorRecord;
+          }
+          // Pattern: { errors: { username: [...] } }
+          else if ("errors" in data && typeof data.errors === "object" && !Array.isArray(data.errors)) {
+            fieldErrors = data.errors as FieldErrorRecord;
+          }
+          // Pattern: { username: [...] } directly
+          else {
+            // Check if any key maps to an array of strings
+            const possibleErrors: FieldErrorRecord = {};
+            let hasFieldError = false;
+            for (const key in data as Record<string, unknown>) {
+              const value = (data as Record<string, unknown>)[key];
+              if (Array.isArray(value) && value.every((item) => typeof item === "string")) {
+                possibleErrors[key] = value as string[];
+                hasFieldError = true;
+              }
+            }
+            if (hasFieldError) fieldErrors = possibleErrors;
           }
         }
 
@@ -109,10 +134,10 @@ const EditProfile = () => {
           if (fieldErrors.username || fieldErrors.email) {
             const currentValues = getValues();
             if (fieldErrors.username) {
-              currentValues.username = profile.username;
+              currentValues.username = profile!.username;
             }
             if (fieldErrors.email) {
-              currentValues.email = profile.email;
+              currentValues.email = profile!.email;
             }
             reset(currentValues);
             toast.error("That username or email is already taken.");
@@ -143,7 +168,7 @@ const EditProfile = () => {
         title={"Do you want to Delete your profile?"}
         description={"if you proceed yor profile will be lost!!"}
       />
-      {/* CHANGED: pass onUploadSuccess to ProfilePictureEdit */}
+      {/* CHANGED: onUploadSuccess now expects EditProfileResponse */}
       <ProfilePictureEdit
         isOpen={isProfilePicOpen}
         setIsOpen={setIsProfilePicOpen}
@@ -151,9 +176,8 @@ const EditProfile = () => {
           picUpdate,
           picUpdateLoading,
         }}
-        onUploadSuccess={handlePictureUploaded}  // NEW
+        onUploadSuccess={handlePictureUploaded}
       />
-      {/* CHANGED: pass onUploadSuccess to EditBanner */}
       <EditBanner
         isOpen={isProfileBannerOpen}
         bannerUpdateObj={{
@@ -165,7 +189,7 @@ const EditProfile = () => {
         bio={profile.bio || ""}
         bannerPic={profile.profile_banner}
         onClose={() => setIsProfileBannerOpen(false)}
-        onUploadSuccess={handlePictureUploaded}  // NEW
+        onUploadSuccess={handlePictureUploaded}
       />
       <ChangePasswordPopUp
         isOpen={isChangePasswordOpen}
@@ -180,7 +204,7 @@ const EditProfile = () => {
           <img
             src={profile.profile_picture || userProfile}
             alt="user-profile"
-            className="size-33 mx-auto rounded-full"
+            className="size-33 mx-auto"
           />
           <p className="mx-auto text-4xl font-bold mt-6">Edit profile</p>
         </div>

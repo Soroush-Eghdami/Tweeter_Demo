@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import YesButton from "../YesButton";
 import NoButton from "../NoButton";
 import type { bannerUpdateObjType } from "../../types/UpdateProfileTypes";
+import type { EditProfileResponse } from "../../types/FormTypes"; // NEW
 import avatar from "../../assets/icons/profile-default.svg";
 
 interface EditBannerProps {
@@ -12,8 +13,7 @@ interface EditBannerProps {
   bio: string;
   bannerPic: string;
   onClose: () => void;
-  // NEW: callback to update parent with new user data
-  onUploadSuccess?: (updatedUser: any) => void;
+  onUploadSuccess?: (updatedUser: EditProfileResponse) => void;
 }
 
 const EditBanner = ({
@@ -24,7 +24,7 @@ const EditBanner = ({
   bio,
   bannerPic,
   onClose,
-  onUploadSuccess,   // NEW
+  onUploadSuccess,
 }: EditBannerProps) => {
   const [bannerFile, setBannerFile] = useState<File | null>(null);
   const [bannerPreview, setBannerPreview] = useState<string | null>(null);
@@ -41,15 +41,15 @@ const EditBanner = ({
     setBannerPreview(file ? URL.createObjectURL(file) : null);
   };
 
-  // CHANGED: await the upload and call onUploadSuccess
   const handleYesClick = async () => {
     if (!bannerFile || !bannerUpdateObj) return;
 
     const formData = new FormData();
     formData.append("profile_banner", bannerFile);
     try {
-      const updatedUser = await bannerUpdateObj.bannerUpdate(formData);
-      onUploadSuccess?.(updatedUser);   // update parent state
+      // CHANGED: mutation returns EditProfileResponse
+      const updatedUser: EditProfileResponse = await bannerUpdateObj.bannerUpdate(formData);
+      onUploadSuccess?.(updatedUser);
       onClose();
     } catch (err) {
       console.error("Upload failed", err);
