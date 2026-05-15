@@ -2,26 +2,21 @@ import { useState } from "react";
 import toast from "react-hot-toast";
 import Loading from "../loading/Loading";
 import { useCreateTweet } from "../../hooks/useCreateTweet";
-import { useMyProfile } from "../../hooks/useMyProfile";
 import userProfile from "../../assets/icons/profile-default.svg";
 import createPost from "../../assets/icons/post.svg";
 
 interface CreatePostPropType {
   setIsCreatedPost: (arg0: boolean) => void;
   isCreatedPost: boolean;
+  profile: any;
+  profileLoading: boolean;
+
 }
 
-const CreatePost = ({
-  setIsCreatedPost,
-  isCreatedPost,
-}: CreatePostPropType) => {
+const CreatePost = ({ setIsCreatedPost, isCreatedPost,profile }: CreatePostPropType) => {
   // for create tweet
   const [content, setContent] = useState("");
   const createTweetMutation = useCreateTweet();
-  const {data: profile, isLoading: profileLoading} = useMyProfile({
-    enabled: isCreatedPost
-  });
-  // when is in loading or without data
   const displayName = profile?.username || profile?.custom_id || "User";
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -58,23 +53,12 @@ const CreatePost = ({
         <div className="pt-3 pb-3 z-50 max-w-[45%] mx-auto bg-[#1c1c1c]/90 rounded-2xl shadow-[0_0px_30px_rgba(0,0,0,0.4)]">
           <form onSubmit={handleSubmit}>
             <div className="flex flex-row gap-3 pt-9 px-10">
-              {profileLoading ? (
-                <div className="size-18 flex items-center justify-center">
-                  <Loading width="w-6" height="h-6"/>
-                </div>
-              ) : (
                 <img 
                 key={profile?.profile_picture}
                 src={profile?.profile_picture || userProfile}
                 alt="user-profile" className="size-18 rounded-full object-cover"/>
-              )}
               {/* username */}
-              {profileLoading ? (
-                <div className="h-6 w-32 ml-2 mt-3 bg-gray-600 animate-pulse rounded"></div>
-              ) : (
                 <p className="text-white font-semibold text-lg ml-2 mt-2">{displayName}</p>
-              )}
-
             </div>
             <div className="relative ml-30 mr-8 -top-10">
               <textarea

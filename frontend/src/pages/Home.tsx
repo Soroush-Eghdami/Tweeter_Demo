@@ -5,6 +5,7 @@ import HomeSideProfileBox from "../components/homePage/HomeSideProfileBox";
 import CreatePost from "../components/createPost/CreatePost";
 import ForYouFollowing from "../components/homePage/ForYouFollowing";
 import LoadingPage from "../components/loading/LoadingPage";
+import { useMyProfile } from "../hooks/useMyProfile";
 import useIsLoggedIn from "../hooks/global-hooks/useIsLoggedIn";
 import { useTweetsPrivate, useTweetsPublic } from "../hooks/useTweets";
 import type { TweetCardInfoType } from "../types/TweetTypes";
@@ -18,6 +19,7 @@ const Home = () => {
   const [popupVisible, setPopupVisible] = useState(false);
   const [combinedBottom, setCombinedBottom] = useState(28);
   const sideBoxRef = useRef<HTMLDivElement>(null);
+  const { data: profile, isLoading: profileLoading } = useMyProfile();
 
   const {
     data: privateData,
@@ -137,6 +139,8 @@ const Home = () => {
         <CreatePost
           setIsCreatedPost={setIsCreatedPost}
           isCreatedPost={isCreatedPost}
+          profile={profile}
+          profileLoading={profileLoading}
         />
       )}
       <div className="relative flex gap-24 max-w-[92%] mx-auto min-h-[80dvh] my-16">
@@ -169,7 +173,9 @@ const Home = () => {
           </div>
         </div>
         <div className="flex-1 h-fit" ref={sideBoxRef}>
-          <HomeSideProfileBox />
+          <HomeSideProfileBox 
+          profile={profile}
+          isLoading={profileLoading}/>
         </div>
         {
           <div
