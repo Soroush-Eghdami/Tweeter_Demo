@@ -31,38 +31,48 @@ const LeftBox: React.FC<LeftBoxProps> = ({
   onEditProfile,
 }) => {
   return (
-    <div className="bg-white/10 backdrop-filter-md h-fit flex-1 backdrop-filter backdrop-blur-[35px] backdrop-brightness-[0.6] rounded-2xl shadow-xl border-2 border-white p-7 space-y-4">
-      {/* User Info */}
-      <div className="flex items-center gap-2 text-xl font-bold text-gray-900">
-        <img src={editUserIcon} alt="User" className="w-6 h-6" />
-        <span className="text-white">
+    <div className="bg-white/10 backdrop-filter-md h-fit flex-1 backdrop-filter backdrop-blur-[35px] backdrop-brightness-[0.6] rounded-2xl shadow-xl border-2 border-white p-7 space-y-4 min-w-0 overflow-hidden">
+      {/* Name */}
+      <div className="flex items-center gap-2 text-xl font-bold text-gray-900 min-w-0">
+        <img src={editUserIcon} alt="User" className="w-6 h-6 shrink-0" />
+        <span className="text-white break-all">
           {profile.first_name && profile.last_name
             ? `${profile.first_name} ${profile.last_name}`
             : "----"}
         </span>
       </div>
-      <div className="flex items-center gap-2 text-gray-800">
-        <img src={usernameIcon} alt="Username" className="w-5 h-5" />
-        <span className="text-white">{profile.username}</span>
-      </div>
-      <div className="flex items-center gap-2 text-gray-800">
-        <img src={emailIcon} alt="Email" className="w-5 h-5" />
-        <span className="text-white">{isPublic ? profile.email : "----"}</span>
+
+      {/* Username */}
+      <div className="flex items-center gap-2 text-gray-800 min-w-0">
+        <img src={usernameIcon} alt="Username" className="w-5 h-5 shrink-0" />
+        <span className="text-white break-all">{profile.username}</span>
       </div>
 
-      <div className="flex items-center gap-2 text-gray-800">
-        <img src={calendarIcon} alt="Calendar" className="w-5 h-5" />
-        <span className="text-white">
+      {/* Email */}
+      <div className="flex items-center gap-2 text-gray-800 min-w-0">
+        <img src={emailIcon} alt="Email" className="w-5 h-5 shrink-0" />
+        <span className="text-white break-all">
+          {isPublic ? profile.email : "----"}
+        </span>
+      </div>
+
+      {/* Calendar */}
+      <div className="flex items-center gap-2 text-gray-800 min-w-0">
+        <img src={calendarIcon} alt="Calendar" className="w-5 h-5 shrink-0" />
+        <span className="text-white break-all">
           {isPublic ? joinedDate(profile.date_joined) : "----"}
         </span>
       </div>
 
-      <div className="flex items-start gap-2 text-gray-800">
-        <img src={bioIcon} alt="Bio" className="w-5 h-5" />
-        <p className="text-white">{profile.bio ? profile.bio : "----"}</p>
+      {/* Bio */}
+      <div className="flex items-start gap-2 text-gray-800 h-auto min-w-0">
+        <img src={bioIcon} alt="Bio" className="w-5 h-5 shrink-0" />
+        <p className="text-white break-all">
+          {profile.bio ? profile.bio : "----"}
+        </p>
       </div>
 
-      {/* Followers, Following, Tweet, Retweet Info */}
+      {/* Followers, Following */}
       <div className="flex-1 min-w-35 bg-white/15 backdrop-filter-md backdrop-blur-[35px] backdrop-brightness-[1.5] rounded-xl p-3 border border-white/40">
         <div className="flex justify-around">
           <div className="flex items-center gap-2">
@@ -95,6 +105,7 @@ const LeftBox: React.FC<LeftBoxProps> = ({
         </div>
       </div>
 
+      {/* Tweets, Retweets */}
       <div className="flex-1 min-w-35 bg-white/15 rounded-xl p-3 mb-2 border border-white/40 backdrop-filter-md backdrop-blur-[35px] backdrop-brightness-[1.5]">
         <div className="flex justify-around">
           <div className="mr-4 flex items-center gap-1">
