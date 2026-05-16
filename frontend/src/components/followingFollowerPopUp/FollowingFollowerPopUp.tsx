@@ -11,6 +11,7 @@ import type { FollowingFollowerListType } from "../../types/FollowingFollowerTyp
 import user from "../../assets/icons/profile/follower-following-counter.svg";
 
 interface FollowingFollowerPropsType {
+  isUserProfile: boolean;
   isPublic: boolean;
   userId: string;
   myProfileId?: string;
@@ -19,6 +20,7 @@ interface FollowingFollowerPropsType {
 }
 
 const FollowingFollower = ({
+  isUserProfile,
   isPublic,
   userId,
   myProfileId,
@@ -189,6 +191,7 @@ const FollowingFollower = ({
                         isMyProfile={
                           following.followee.id === myProfileId ? true : false
                         }
+                        isUserProfile={isUserProfile}
                         isLast={handleLast(index)}
                       />
                     ),
@@ -232,6 +235,7 @@ const FollowingFollower = ({
                         isMyProfile={
                           follower.follower.id === myProfileId ? true : false
                         }
+                        isUserProfile={isUserProfile}
                         isLast={handleLast(index)}
                       />
                     ),

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useFollow, useUnfollow } from "../../hooks/useFollowUnfollow";
 import Loading from "../loading/Loading";
@@ -20,6 +20,10 @@ const Following = ({
   const navigation = useNavigate();
 
   const userId = info.followee.id;
+
+  useEffect(() => {
+    setIsFollowed(info.followee.is_following);
+  }, [info.followee.is_following]);
 
   return (
     <>

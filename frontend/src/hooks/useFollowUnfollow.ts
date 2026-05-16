@@ -6,6 +6,7 @@ import type {
 } from "../types/FollowTypes";
 import type { ProfileType } from "../types/ProfileType";
 import toast from "react-hot-toast";
+import { updateFollowInLists } from "../utils/updateFollowInLists";
 
 // Follow
 const followFunc = async (id: followFuncType) => {
@@ -34,6 +35,7 @@ export const useFollow = () => {
 
     onSuccess: (_, { followee_id }) => {
       queryClient.invalidateQueries({ queryKey: ["user", followee_id] });
+      updateFollowInLists(queryClient, followee_id, true);
     },
 
     onError: (err, _variables, context) => {
@@ -56,6 +58,7 @@ const unfollowFunc = async (id: followFuncType) => {
 
 export const useUnfollow = () => {
   const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: unfollowFunc,
     onMutate: async ({ followee_id }) => {
@@ -75,6 +78,7 @@ export const useUnfollow = () => {
 
     onSuccess: (_, { followee_id }) => {
       queryClient.invalidateQueries({ queryKey: ["user", followee_id] });
+      updateFollowInLists(queryClient, followee_id, false);
     },
 
     onError: (err, _variables, context) => {

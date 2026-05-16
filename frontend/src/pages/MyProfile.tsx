@@ -109,6 +109,7 @@ const MyProfile = () => {
       {/* Following / Follower List */}
       <div>
         <FollowingFollower
+          isUserProfile={false}
           isPublic={true}
           userId={data.id}
           setIsUserListOpen={setIsUserListOpen}

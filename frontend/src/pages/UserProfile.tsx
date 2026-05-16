@@ -54,7 +54,7 @@ const UserProfile = () => {
   const loadMoreRefRetweet = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
 
-  const isPublic = data?.email;
+  const isPublic = !!data && !!data?.email;
   const myTweetList = myTweet?.pages.flatMap((page) => page.results) ?? [];
   const myRetweetList = myRetweet?.pages.flatMap((page) => page.results) ?? [];
 
@@ -117,6 +117,7 @@ const UserProfile = () => {
     <div className="min-h-fit w-full bg-custom-dark-gradient">
       <div>
         <FollowingFollower
+          isUserProfile={true}
           isPublic={isPublic}
           userId={id || ""}
           myProfileId={currentUser?.id}
