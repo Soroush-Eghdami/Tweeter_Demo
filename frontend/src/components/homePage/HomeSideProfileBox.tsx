@@ -2,13 +2,16 @@ import { useNavigate } from "react-router-dom";
 import HomeProfileFilled from "./HomeProfileFilled";
 import Loading from "../loading/Loading";
 import useIsLoggedIn from "../../hooks/global-hooks/useIsLoggedIn";
-import { useMyProfile } from "../../hooks/useMyProfile";
 import profilePicture from "../../assets/icons/profile-default.svg";
 
-const HomeSideProfileBox = () => {
+interface HomeSideProfileBoxProps {
+  profile: ProfileType;
+  isLoading: boolean;
+}
+
+const HomeSideProfileBox = ({profile, isLoading}: HomeSideProfileBoxProps) => {
   const { isLoggedIn } = useIsLoggedIn();
   const navigation = useNavigate();
-  const { data: profile, isLoading } = useMyProfile();
 
   if (isLoading) {
     return (
