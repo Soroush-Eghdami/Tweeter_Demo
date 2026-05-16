@@ -14,8 +14,8 @@ interface UseEditProfileFormProps {
 }
 
 export const useEditProfileForm = ({ profile }: UseEditProfileFormProps) => {
-  const navigate = useNavigate();
   const { mutate: mutateProfile, isPending } = useEditProfile();
+  const navigate = useNavigate();
 
   const {
     register,
