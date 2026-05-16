@@ -317,8 +317,6 @@ class UserTweetsView(APIView):
     )
     def get(self, request: Request, user_id: str) -> Response:
         user = get_user_by_id(user_id)
-        if not is_user_visible_to(user, request.user):
-            raise Http404("User not found.")
         queryset = get_user_tweets_queryset(user)
         paginator = TweeterPagination()
         page = paginator.paginate_queryset(queryset, request)
@@ -342,8 +340,6 @@ class UserRetweetsView(APIView):
     )
     def get(self, request: Request, user_id: str) -> Response:
         user = get_user_by_id(user_id)
-        if not is_user_visible_to(user, request.user):
-            raise Http404("User not found.")
         queryset = get_user_retweets_queryset(user)
         paginator = TweeterPagination()
         page = paginator.paginate_queryset(queryset, request)
@@ -367,8 +363,6 @@ class UserFollowersView(APIView):
     )
     def get(self, request: Request, user_id: str) -> Response:
         user = get_user_by_id(user_id)
-        if not is_user_visible_to(user, request.user):
-            raise Http404("User not found.")        
         queryset = get_user_followers_queryset(user)
         paginator = TweeterPagination()
         page = paginator.paginate_queryset(queryset, request)
@@ -392,8 +386,6 @@ class UserFollowingView(APIView):
     )
     def get(self, request: Request, user_id: str) -> Response:
         user = get_user_by_id(user_id)
-        if not is_user_visible_to(user, request.user):
-            raise Http404("User not found.")
         queryset = get_user_following_queryset(user)
         paginator = TweeterPagination()
         page = paginator.paginate_queryset(queryset, request)
