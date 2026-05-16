@@ -9,7 +9,6 @@ import { useUserProfile } from "../hooks/useUserProfile";
 import { useFollow, useUnfollow } from "../hooks/useFollowUnfollow";
 import { useMyProfile } from "../hooks/useMyProfile";
 import { useMyRetweetList, useMyTweetList } from "../hooks/useMyTweet";
-import { privateEnabled } from "../utils/privateEnabled";
 import tweet from "../assets/icons/profile/tweet.svg";
 import tweetBlue from "../assets/icons/profile/peace_pigeon.svg";
 import avatar from "../assets/icons/profile-default.svg";
@@ -39,7 +38,7 @@ const UserProfile = () => {
     isFetchingNextPage: myTweetIsFetchNextPage,
     isLoading: myTweetIsLoading,
   } = useMyTweetList(id || "", 5, {
-    enabled: privateEnabled(data) && isTweetsOpen,
+    enabled: !!data && !!data?.email && isTweetsOpen,
   });
   const {
     data: myRetweet,
@@ -48,14 +47,14 @@ const UserProfile = () => {
     isFetchingNextPage: myRetweetIsFetchNextPage,
     isLoading: myRetweetIsLoading,
   } = useMyRetweetList(id || "", 5, {
-    enabled: privateEnabled(data) && !isTweetsOpen,
+    enabled: !!data && !!data?.email && !isTweetsOpen,
   });
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const loadMoreRefTweet = useRef<HTMLDivElement>(null);
   const loadMoreRefRetweet = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
 
-  const isPublic = privateEnabled(data);
+  const isPublic = data?.email;
   const myTweetList = myTweet?.pages.flatMap((page) => page.results) ?? [];
   const myRetweetList = myRetweet?.pages.flatMap((page) => page.results) ?? [];
 
@@ -132,6 +131,7 @@ const UserProfile = () => {
           bannerSrc={data.profile_banner}
           editIconSrc={edit}
           isFollowed={data.is_following}
+          isFollower={data.is_following_you}
           followObj={{
             follow,
             followLoading,

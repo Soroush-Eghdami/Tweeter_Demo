@@ -16,7 +16,7 @@ const Following = ({
 }: FollowingFollowerPropsType) => {
   const { mutate: follow, isPending: isFollowPending } = useFollow();
   const { mutate: unfollow, isPending: isUnfollowPending } = useUnfollow();
-  const [isFollowed, setIsFollowed] = useState(true);
+  const [isFollowed, setIsFollowed] = useState(info.followee.is_following);
   const navigation = useNavigate();
 
   const userId = info.followee.id;

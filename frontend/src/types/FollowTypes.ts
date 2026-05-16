@@ -1,6 +1,9 @@
 export interface followFuncType {
   followee_id: string;
 }
+export interface RemoveFollowerFuncType {
+  follower_id: string;
+}
 
 export interface followObjType {
   follow: (arg0: followFuncType) => void;

@@ -1,4 +1,7 @@
-import type { followFuncType } from "../types/FollowTypes";
+import type {
+  followFuncType,
+  RemoveFollowerFuncType,
+} from "../types/FollowTypes";
 
 export const followHandler = (
   follow: (variables: followFuncType) => void,
@@ -16,4 +19,11 @@ export const unfollowHandler = (
 ) => {
   unfollow({ followee_id: userId });
   setIsFollowed?.(false);
+};
+
+export const RemoveFollowerHandler = (
+  removeFollower: (variables: RemoveFollowerFuncType) => void,
+  userId: string,
+) => {
+  removeFollower({ follower_id: userId });
 };

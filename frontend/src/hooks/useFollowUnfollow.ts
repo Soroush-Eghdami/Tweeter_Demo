@@ -1,7 +1,11 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "../api-services/api";
-import type { followFuncType } from "../types/FollowTypes";
+import type {
+  followFuncType,
+  RemoveFollowerFuncType,
+} from "../types/FollowTypes";
 import type { ProfileType } from "../types/ProfileType";
+import toast from "react-hot-toast";
 
 // Follow
 const followFunc = async (id: followFuncType) => {
@@ -81,6 +85,28 @@ export const useUnfollow = () => {
         );
       }
       console.log("Unfollow Failed:", err);
+    },
+  });
+};
+
+//Remove Follower
+const removeFollowerFunc = async (id: RemoveFollowerFuncType) => {
+  const response = await api.post("/accounts/remove-follower/", id);
+  return response.data;
+};
+
+export const useRemoveFollower = (userId: string) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: removeFollowerFunc,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["follower", userId] });
+      queryClient.invalidateQueries({ queryKey: ["user", userId] });
+      toast.success("Follower Removed Successfully!");
+    },
+    onError: () => {
+      toast.error("Removing Follower Failed!");
     },
   });
 };
