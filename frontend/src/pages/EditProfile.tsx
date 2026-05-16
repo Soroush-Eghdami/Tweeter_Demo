@@ -135,7 +135,10 @@ const EditProfile = () => {
             className="w-[50%]"
             onClick={() => setIsChangePasswordOpen(true)}
           >
-            <button className="px-6 py-3 w-full border rounded-xl cursor-pointer hover:scale-95 hover:-rotate-1 transition-all duration-200 ease-in-out">
+            <button
+              type="button"
+              className="px-6 py-3 w-full border rounded-xl cursor-pointer hover:scale-95 hover:-rotate-1 transition-all duration-200 ease-in-out"
+            >
               Change Password
             </button>
           </div>
