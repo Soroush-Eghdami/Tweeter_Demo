@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
-import { useEditProfileForm } from "../hooks/global-hooks/useEditProfileForm";
 import WarningPopUp from "../components/WarningPopUp";
 import BackToPrev from "../components/BackToPrev";
 import ProfilePictureEdit from "../components/profilePictureEdit/ProfilePictureEdit";
@@ -12,6 +11,7 @@ import UsernameInput from "../components/loginRegister/UsernameInput";
 import EmailInput from "../components/loginRegister/EmailInput";
 import BiographyInput from "../components/editProfile/BiographyInput";
 import PrivateCheckbox from "../components/editProfile/PrivateCheckbox";
+import { useEditProfileForm } from "../hooks/global-hooks/useEditProfileForm";
 import {
   useUpdateBannerPicture,
   useUpdateProfilePicture,
@@ -141,16 +141,16 @@ const EditProfile = () => {
           </div>
           <div className="flex h-fit gap-6">
             <button
+              type="button"
               className="px-3.5 py-3 border rounded-xl cursor-pointer hover:bg-white hover:text-black hover:border-black hover:scale-105 transition-all duration-200 ease-in-out"
               onClick={() => setIsProfileBannerOpen(true)}
-              type="button"
             >
               Profile Banner
             </button>
             <button
+              type="button"
               className="px-3.5 py-3 border rounded-xl cursor-pointer border-white hover:bg-black hover:border-black hover:scale-105 transition-all duration-200 ease-in-out"
               onClick={() => setIsProfilePicOpen(true)}
-              type="button"
             >
               Profile Picture
             </button>
@@ -174,9 +174,9 @@ const EditProfile = () => {
           <div className="w-full flex-row mt-4">
             <div className="flex justify-between">
               <button
+                type="button"
                 onClick={() => setIsOpenPopUp((prev) => !prev)}
                 className="px-6 text-sm rounded-xl bg-[#FF4949] text-black font-semibold hover:bg-red-500 cursor-pointer hover:scale-105 transition-all duration-200 ease-in-out"
-                type="button"
               >
                 Delete Profile
               </button>
