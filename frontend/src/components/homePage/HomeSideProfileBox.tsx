@@ -4,11 +4,11 @@ import Loading from "../loading/Loading";
 import useIsLoggedIn from "../../hooks/global-hooks/useIsLoggedIn";
 import profilePicture from "../../assets/icons/profile-default.svg";
 
-
 interface HomeSideProfileBoxProps {
-  profile: any;
+  profile: ProfileType;
   isLoading: boolean;
 }
+
 const HomeSideProfileBox = ({profile, isLoading}: HomeSideProfileBoxProps) => {
   const { isLoggedIn } = useIsLoggedIn();
   const navigation = useNavigate();
