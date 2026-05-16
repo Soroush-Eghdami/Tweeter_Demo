@@ -3,7 +3,7 @@ from django.contrib.auth import get_user_model
 from rest_framework import status, permissions
 from rest_framework.request import Request
 from rest_framework.response import Response
-from rest_framework.views import APIView
+from rest_framework.views import APIView, Http404
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -13,6 +13,7 @@ from accounts.serializers import (
     UserOutputSerializer, UserUpdateInputSerializer, FollowerOutputSerializer,
     RegisterInputSerializer, LogoutInputSerializer, PasswordChangeInputSerializer,
     FollowInputSerializer, UnfollowInputSerializer, RemoveFollowerInputSerializer,
+    PrivateUserOutputSerializer,
 )
 from accounts.services import UserService
 from accounts.auth_utils import set_token_cookies, clear_token_cookies, set_access_token_cookie, set_refresh_token_cookie
@@ -25,6 +26,7 @@ from accounts.selectors import (
     get_user_followers_queryset,
     get_user_following_queryset,
     get_user_retweets_queryset,
+    is_user_visible_to,
 )
 from tweets.serializers import TweetSerializer
 
@@ -63,13 +65,16 @@ class UserDetailView(APIView):
             OpenApiParameter(name='id', type=str, location=OpenApiParameter.PATH, description='UUID of the user'),
         ],
         summary="Get user details",
-        description="Retrieve a specific user's profile by UUID.",
+        description="Retrieve a user's profile. Private profiles return limited information unless the requester is a follower.",
         tags=["users"],
         responses={200: UserOutputSerializer},
     )
     def get(self, request: Request, id: str) -> Response:
         user = get_user_by_id(id)
-        serializer = UserOutputSerializer(user, context={'request': request})
+        if is_user_visible_to(user, request.user):
+            serializer = UserOutputSerializer(user, context={'request': request})
+        else:
+            serializer = PrivateUserOutputSerializer(user, context={'request': request})
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
@@ -312,6 +317,8 @@ class UserTweetsView(APIView):
     )
     def get(self, request: Request, user_id: str) -> Response:
         user = get_user_by_id(user_id)
+        if not is_user_visible_to(user, request.user):
+            raise Http404("User not found.")
         queryset = get_user_tweets_queryset(user)
         paginator = TweeterPagination()
         page = paginator.paginate_queryset(queryset, request)
@@ -335,6 +342,8 @@ class UserRetweetsView(APIView):
     )
     def get(self, request: Request, user_id: str) -> Response:
         user = get_user_by_id(user_id)
+        if not is_user_visible_to(user, request.user):
+            raise Http404("User not found.")
         queryset = get_user_retweets_queryset(user)
         paginator = TweeterPagination()
         page = paginator.paginate_queryset(queryset, request)
@@ -358,6 +367,8 @@ class UserFollowersView(APIView):
     )
     def get(self, request: Request, user_id: str) -> Response:
         user = get_user_by_id(user_id)
+        if not is_user_visible_to(user, request.user):
+            raise Http404("User not found.")        
         queryset = get_user_followers_queryset(user)
         paginator = TweeterPagination()
         page = paginator.paginate_queryset(queryset, request)
@@ -381,6 +392,8 @@ class UserFollowingView(APIView):
     )
     def get(self, request: Request, user_id: str) -> Response:
         user = get_user_by_id(user_id)
+        if not is_user_visible_to(user, request.user):
+            raise Http404("User not found.")
         queryset = get_user_following_queryset(user)
         paginator = TweeterPagination()
         page = paginator.paginate_queryset(queryset, request)

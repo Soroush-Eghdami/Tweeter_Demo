@@ -90,3 +90,17 @@ def is_following_you(user: User, target_user: User) -> bool:
     if not user.is_authenticated:
         return False
     return Follower.objects.filter(follower=target_user, followee=user).exists()
+
+def is_user_visible_to(target_user: User, requesting_user: User) -> bool:
+    """
+    Check whether `requesting_user` is allowed to view `target_user`'s profile.
+    Public users are visible to everyone.
+    Private users are visible only to themselves and their followers.
+    """
+    if target_user.is_public_user:
+        return True
+    if not requesting_user.is_authenticated:
+        return False
+    if target_user == requesting_user:
+        return True
+    return Follower.objects.filter(follower=requesting_user, followee=target_user).exists()

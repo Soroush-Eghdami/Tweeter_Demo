@@ -5,7 +5,13 @@ from rest_framework import serializers
 from drf_spectacular.utils import extend_schema_field, OpenApiTypes
 from accounts.models import Follower
 from accounts.selectors import is_following
-from accounts.selectors.user import is_following_you
+from accounts.selectors.user import (
+    is_following_you,
+    get_followers_count,
+    get_following_count,
+    get_tweets_count,
+    get_retweets_made_count,
+)
 
 User = get_user_model()
 
@@ -108,6 +114,58 @@ class UserOutputSerializer(serializers.ModelSerializer):
     def get_retweets_made(self, obj: User) -> int:
         from accounts.selectors.user import get_retweets_made_count
         return get_retweets_made_count(obj)
+
+
+
+class PrivateUserOutputSerializer(serializers.ModelSerializer):
+    """
+    Minimal user profile visible to non-followers when the account is private.
+    """
+    is_following = serializers.SerializerMethodField()
+    is_following_you = serializers.SerializerMethodField()
+    profile_picture = AbsoluteURLImageField(read_only=True)
+    profile_banner = AbsoluteURLImageField(read_only=True)
+    followers_count = serializers.SerializerMethodField()
+    following_count = serializers.SerializerMethodField()
+    tweets_count = serializers.SerializerMethodField()
+
+    class Meta:
+        model = User
+        fields = [
+            'id', 'username', 'first_name', 'last_name', 'custom_id',
+            'bio', 'is_public_user',
+            'profile_picture', 'profile_banner',
+            'followers_count', 'following_count', 'tweets_count',
+            'is_following', 'is_following_you',
+        ]
+        read_only_fields = fields
+
+    @extend_schema_field(OpenApiTypes.BOOL)
+    def get_is_following(self, obj):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            return is_following(request.user, obj)
+        return False
+
+    @extend_schema_field(OpenApiTypes.BOOL)
+    def get_is_following_you(self, obj):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            return is_following_you(request.user, obj)
+        return False
+
+    def get_followers_count(self, obj):
+        return get_followers_count(obj)
+
+    def get_following_count(self, obj):
+        return get_following_count(obj)
+
+    def get_tweets_count(self, obj):
+        return get_tweets_count(obj)
+    
+    def get_retweets_made_count(self, obj):
+        return get_retweets_made_count(obj)
+    
 
 
 # =====================================================================
