@@ -8,9 +8,8 @@ import createPost from "../../assets/icons/post.svg";
 interface CreatePostPropType {
   setIsCreatedPost: (arg0: boolean) => void;
   isCreatedPost: boolean;
-  profile: any;
+  profile: ProfileType;
   profileLoading: boolean;
-
 }
 
 const CreatePost = ({ setIsCreatedPost, isCreatedPost,profile }: CreatePostPropType) => {
