@@ -52,28 +52,39 @@ class UserService:
 
     @staticmethod
     def update_profile(user: User, **data: Any) -> User:
-        # Handle username separately with validation
+        # Username validation (unchanged)
         if 'username' in data:
             username = data['username']
             if isinstance(username, str) and username.strip() == '':
-                del data['username']
+                del data['username']   # ignore empty username (can't clear it)
             else:
                 if User.objects.exclude(pk=user.pk).filter(username=username).exists():
                     raise ValueError("Username already taken.")
                 if ' ' in username:
                     raise ValueError("Username cannot contain spaces.")
     
-        # Fields that should not be cleared accidentally by empty uploads
+        # Fields that are file uploads – never clear them via empty strings
         FILE_FIELDS = {'profile_picture', 'profile_banner'}
+        # Fields that can be cleared by sending an empty string
+        CLEARABLE_FIELDS = {'bio'}
     
         for field, value in data.items():
-            # Skip empty strings for all fields to preserve existing data
-            if isinstance(value, str) and value.strip() == '':
-                continue
-            # For file/image fields, also skip if value is None (meaning no file was provided)
-            if field in FILE_FIELDS and value is None:
-                continue
-            setattr(user, field, value)
+            if field in FILE_FIELDS:
+                # For file fields, ignore empty strings and None (no change)
+                if value is None or (isinstance(value, str) and value.strip() == ''):
+                    continue
+                setattr(user, field, value)
+            elif field in CLEARABLE_FIELDS:
+                # For clearable fields, empty string means "clear it"
+                if isinstance(value, str):
+                    setattr(user, field, value.strip())
+                else:
+                    setattr(user, field, value)
+            else:
+                # For other text fields, ignore empty strings (preserve existing)
+                if isinstance(value, str) and value.strip() == '':
+                    continue
+                setattr(user, field, value)
     
         user.save()
         return user
