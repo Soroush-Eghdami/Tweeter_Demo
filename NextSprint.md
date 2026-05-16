@@ -5,3 +5,4 @@
 - [ ] Tweet Search functionality
 
 ## Frontend :
+- [ ] Image as a tweet
