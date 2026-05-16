@@ -72,7 +72,7 @@ const Follower = ({
               {isUserProfile ? (
                 !isFollowed ? (
                   <button
-                    className={`${isUserProfile ? "px-12" : "px-8"} text-xl font-semibold py-3 rounded-3xl bg-white text-black hover:bg-[#ccc] disabled:cursor-not-allowed disabled:hover:bg-white transition-colors cursor-pointer duration-300`}
+                    className="text-xl font-semibold px-12 py-3 rounded-3xl bg-white text-black hover:bg-[#ccc] disabled:cursor-not-allowed disabled:hover:bg-white transition-colors cursor-pointer duration-300"
                     disabled={isFollowPending}
                     onClick={() => followHandler(follow, userId, setIsFollowed)}
                   >
@@ -80,10 +80,8 @@ const Follower = ({
                       <div className="w-26.75">
                         <Loading width="w-7" height="h-7" />
                       </div>
-                    ) : isUserProfile ? (
-                      "Follow"
                     ) : (
-                      "Follow Back"
+                      "Follow"
                     )}
                   </button>
                 ) : (
@@ -106,7 +104,7 @@ const Follower = ({
               ) : (
                 !isFollowed && (
                   <button
-                    className={`${isUserProfile ? "px-12" : "px-8"} text-xl font-semibold py-3 rounded-3xl bg-white text-black hover:bg-[#ccc] disabled:cursor-not-allowed disabled:hover:bg-white transition-colors cursor-pointer duration-300`}
+                    className="text-xl font-semibold px-8 py-3 rounded-3xl bg-white text-black hover:bg-[#ccc] disabled:cursor-not-allowed disabled:hover:bg-white transition-colors cursor-pointer duration-300"
                     disabled={isFollowPending}
                     onClick={() => followHandler(follow, userId, setIsFollowed)}
                   >

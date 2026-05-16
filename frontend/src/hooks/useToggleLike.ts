@@ -1,4 +1,3 @@
-// hooks/useToggleLike.ts
 import { useRef } from "react";
 import toast from "react-hot-toast";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -85,8 +84,25 @@ export const useLikeMutation = (tweetId: number) => {
         ["tweetsPublic"],
         updateCache(previousPublic),
       );
+      queryClient.setQueriesData<InfiniteTweets>(
+        { queryKey: ["myTweet"], exact: false },
+        updateCache,
+      );
+      queryClient.setQueriesData<InfiniteTweets>(
+        { queryKey: ["myRetweet"], exact: false },
+        updateCache,
+      );
 
       return { previousPrivate, previousPublic };
+    },
+
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tweetsPrivate"] });
+      queryClient.invalidateQueries({ queryKey: ["tweetsPublic"] });
+      // toast.success(shouldLike ? "Liked!" : "Unliked", {
+      //   id: toastIdRef.current || undefined,
+      // });
+      // if (!toastIdRef.current) toastIdRef.current = "like-toast";
     },
 
     onError: (
@@ -104,19 +120,17 @@ export const useLikeMutation = (tweetId: number) => {
         if (context?.previousPublic) {
           queryClient.setQueryData(["tweetsPublic"], context.previousPublic);
         }
+
+        queryClient.invalidateQueries({ queryKey: ["myTweet"], exact: false });
+        queryClient.invalidateQueries({
+          queryKey: ["myRetweet"],
+          exact: false,
+        });
+
         toast.error(shouldLike ? "Failed to like" : "Failed to unlike", {
           id: toastIdRef.current || undefined,
         });
       }
-    },
-
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["tweetsPrivate"] });
-      queryClient.invalidateQueries({ queryKey: ["tweetsPublic"] });
-      // toast.success(shouldLike ? "Liked!" : "Unliked", {
-      //   id: toastIdRef.current || undefined,
-      // });
-      // if (!toastIdRef.current) toastIdRef.current = "like-toast";
     },
   });
 };
