@@ -1,6 +1,7 @@
 import UserTweet from "./UserTweet";
 import UserRetweet from "./UserRetweet";
 import Loading from "../loading/Loading";
+import useIsLoggedIn from "../../hooks/global-hooks/useIsLoggedIn";
 import type { TweetRetweetListType } from "../../types/TweetRetweetListType";
 
 interface RightBoxProps {
@@ -33,11 +34,13 @@ const RightBox: React.FC<RightBoxProps> = ({
   onUserIconClick,
 }) => {
   const { tweet, retweet } = tweetRetweetList;
+  const { isLoggedIn } = useIsLoggedIn();
 
   return (
     <div className="min-h-150 flex-4 md:col-span-2 backdrop-filter-blur-[35px] backdrop-brightness-[1] rounded-2xl border-white border-2">
       <div className="px-6 pt-6 flex items-center justify-between cursor-pointer">
         <div className="flex items-center gap-7">
+          {/* Tweet Icon */}
           {isTweetsOpen ? (
             <img
               src={tweetBlueIcon}
@@ -53,6 +56,7 @@ const RightBox: React.FC<RightBoxProps> = ({
               onClick={() => setIsTweetsOpen(true)}
             />
           )}
+          {/* Retweet Icon */}
           {isTweetsOpen ? (
             <img
               src={retweetIcon}
@@ -69,9 +73,14 @@ const RightBox: React.FC<RightBoxProps> = ({
             />
           )}
         </div>
-        <div className="hover:scale-115 duration-300" onClick={onUserIconClick}>
+        <button
+          type="button"
+          disabled={!isLoggedIn}
+          className="hover:scale-115 duration-300 disabled:cursor-not-allowed"
+          onClick={onUserIconClick}
+        >
           <img src={userIcon} alt="profile" className="mr-4 w-8.5 h-8.5" />
-        </div>
+        </button>
       </div>
       <div className="border-t border-white mx-0 mt-3"></div>
 

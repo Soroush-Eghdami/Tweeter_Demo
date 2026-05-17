@@ -1,5 +1,6 @@
 import { useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import useIsLoggedIn from "../hooks/global-hooks/useIsLoggedIn";
 import { useLikeMutation } from "../hooks/useToggleLike";
 import { useRetweetMutation } from "../hooks/useToggleRetweet";
 import { joinedDate } from "../utils/joinedDate";
@@ -20,6 +21,7 @@ interface TweetCardPropsType {
 }
 
 const TweetCard = ({ isPinned, info }: TweetCardPropsType) => {
+  const { isLoggedIn } = useIsLoggedIn();
   const likeMutation = useLikeMutation(info.id);
   const retweetMutation = useRetweetMutation(info.id);
   const formattedJoinDate = joinedDate(info.created_at);
@@ -73,11 +75,13 @@ const TweetCard = ({ isPinned, info }: TweetCardPropsType) => {
       <p className="font-medium mb-9 pl-12">{info.content}</p>
       <div className="flex items-center gap-9 pl-6">
         {/* Like Button */}
-        <div
-          className="flex items-center gap-2.5 cursor-pointer"
+        <button
+          type="button"
+          disabled={!isLoggedIn}
+          className="flex items-center gap-2.5 cursor-pointer disabled:cursor-not-allowed"
           onClick={handleLikeClick}
         >
-          {info.is_liked ? (
+          {isLoggedIn && info.is_liked ? (
             <img
               src={likeFilled}
               alt="Liked"
@@ -91,7 +95,7 @@ const TweetCard = ({ isPinned, info }: TweetCardPropsType) => {
             />
           )}
           <p className="text-[#ddd] text-sm">{info.like_count}</p>
-        </div>
+        </button>
         {/* Comment Button */}
         <div
           className="flex items-center gap-2.5 cursor-pointer"
@@ -114,11 +118,13 @@ const TweetCard = ({ isPinned, info }: TweetCardPropsType) => {
           <p className="text-[#ddd] text-sm">{info.replies_count}</p>
         </div>
         {/* Retweet Button */}
-        <div
-          className="flex items-center gap-2.5 cursor-pointer"
+        <button
+          type="button"
+          disabled={!isLoggedIn}
+          className="flex items-center gap-2.5 cursor-pointer disabled:cursor-not-allowed"
           onClick={handleRetweetClick}
         >
-          {info.is_retweeted ? (
+          {isLoggedIn && info.is_retweeted ? (
             <img
               src={retweetFilled}
               alt="Retweeted"
@@ -132,7 +138,7 @@ const TweetCard = ({ isPinned, info }: TweetCardPropsType) => {
             />
           )}
           <p className="text-[#ddd] text-sm">{info.retweet_count}</p>
-        </div>
+        </button>
       </div>
     </div>
   );
