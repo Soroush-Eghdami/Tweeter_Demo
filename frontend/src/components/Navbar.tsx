@@ -4,7 +4,7 @@ import toast from "react-hot-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import useIsLoggedIn from "../hooks/global-hooks/useIsLoggedIn";
 import { useLogout } from "../hooks/useLogout";
-import Search from "./Search";
+import Search from "./search/Search";
 import logo from "../assets/icons/pigeon.svg";
 import home from "../assets/icons/home.svg";
 import profile from "../assets/icons/user-profile.svg";
