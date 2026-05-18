@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useLikeMutation } from "../hooks/useToggleLike";
 import { useRetweetMutation } from "../hooks/useToggleRetweet";

@@ -117,7 +117,7 @@ const CommentPage = () => {
           />
 
           {/* New Comment */}
-          <NewComment />
+          <NewComment info={tweetDetail} />
 
           {/* Comment Cards */}
           <div className="relative w-full h-auto">
