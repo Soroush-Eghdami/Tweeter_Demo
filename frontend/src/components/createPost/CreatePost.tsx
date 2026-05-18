@@ -2,6 +2,7 @@ import { useState } from "react";
 import toast from "react-hot-toast";
 import Loading from "../loading/Loading";
 import { useCreateTweet } from "../../hooks/useCreateTweet";
+import type { ProfileType } from "../../types/ProfileType";
 import userProfile from "../../assets/icons/profile-default.svg";
 import createPost from "../../assets/icons/post.svg";
 
@@ -12,7 +13,11 @@ interface CreatePostPropType {
   profileLoading: boolean;
 }
 
-const CreatePost = ({ setIsCreatedPost, isCreatedPost,profile }: CreatePostPropType) => {
+const CreatePost = ({
+  setIsCreatedPost,
+  isCreatedPost,
+  profile,
+}: CreatePostPropType) => {
   // for create tweet
   const [content, setContent] = useState("");
   const createTweetMutation = useCreateTweet();
@@ -52,12 +57,16 @@ const CreatePost = ({ setIsCreatedPost, isCreatedPost,profile }: CreatePostPropT
         <div className="pt-3 pb-3 z-50 max-w-[45%] mx-auto bg-[#1c1c1c]/90 rounded-2xl shadow-[0_0px_30px_rgba(0,0,0,0.4)]">
           <form onSubmit={handleSubmit}>
             <div className="flex flex-row gap-3 pt-9 px-10">
-                <img 
+              <img
                 key={profile?.profile_picture}
                 src={profile?.profile_picture || userProfile}
-                alt="user-profile" className="size-18 rounded-full object-cover"/>
+                alt="user-profile"
+                className="size-18 rounded-full object-cover"
+              />
               {/* username */}
-                <p className="text-white font-semibold text-lg ml-2 mt-2">{displayName}</p>
+              <p className="text-white font-semibold text-lg ml-2 mt-2">
+                {displayName}
+              </p>
             </div>
             <div className="relative ml-30 mr-8 -top-10">
               <textarea
@@ -111,7 +120,7 @@ const CreatePost = ({ setIsCreatedPost, isCreatedPost,profile }: CreatePostPropT
                   <div className="grid grid-cols-1 place-items-center">
                     {createTweetMutation.isPending && (
                       <div className="col-start-1 row-start-1">
-                        <Loading width="w-5" height="h-5"/>
+                        <Loading width="w-5" height="h-5" />
                       </div>
                     )}
                     <div

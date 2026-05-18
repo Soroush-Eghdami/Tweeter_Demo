@@ -1,4 +1,4 @@
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "../api-services/api";
 
 interface CreateTweetVariables {
@@ -14,7 +14,13 @@ const createTweetApi = async (variables: CreateTweetVariables) => {
 };
 
 export const useCreateTweet = () => {
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: createTweetApi,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tweetsPrivate"] });
+      queryClient.invalidateQueries({ queryKey: ["tweetsPublic"] });
+    },
   });
 };

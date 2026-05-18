@@ -1,5 +1,6 @@
 import { useParams } from "react-router-dom";
 import Loading from "../loading/Loading";
+import useIsLoggedIn from "../../hooks/global-hooks/useIsLoggedIn";
 import type { followObjType, unfollowObjType } from "../../types/FollowTypes";
 
 interface HeaderProfileProps {
@@ -28,6 +29,7 @@ const HeaderProfile: React.FC<HeaderProfileProps> = ({
   onBannerClick,
 }) => {
   const { id } = useParams();
+  const { isLoggedIn } = useIsLoggedIn();
 
   const followHandler = () => {
     if (id)
@@ -92,41 +94,43 @@ const HeaderProfile: React.FC<HeaderProfileProps> = ({
                 )}
               </div>
 
-              <div className="absolute top-3.5 right-20">
-                {!isMyProfile && (
-                  <>
-                    {!isFollowed ? (
-                      // User is not following → show Follow or Follow Back
-                      <button
-                        className={`${isFollower ? "w-60" : "w-50"} h-19 text-3xl font-semibold text-center rounded-[9999px] bg-white text-black cursor-pointer hover:bg-[#ccc] disabled:cursor-not-allowed disabled:hover:bg-white transition-colors duration-300`}
-                        disabled={followObj?.followLoading}
-                        onClick={followHandler}
-                      >
-                        {followObj?.followLoading ? (
-                          <Loading width="w-10" height="h-10" />
-                        ) : isFollower ? (
-                          "Follow Back"
-                        ) : (
-                          "Follow"
-                        )}
-                      </button>
-                    ) : (
-                      // User is following → show Unfollow
-                      <button
-                        className="w-50 h-19 text-3xl font-semibold text-center rounded-[9999px] bg-black text-white border-2 border-white cursor-pointer hover:bg-[#333] disabled:cursor-not-allowed disabled:hover:bg-black transition-colors duration-300"
-                        disabled={unfollowObj?.unfollowLoading}
-                        onClick={unfollowHandler}
-                      >
-                        {unfollowObj?.unfollowLoading ? (
-                          <Loading width="w-10" height="h-10" />
-                        ) : (
-                          "Unfollow"
-                        )}
-                      </button>
-                    )}
-                  </>
-                )}
-              </div>
+              {isLoggedIn && (
+                <div className="absolute top-3.5 right-20">
+                  {!isMyProfile && (
+                    <>
+                      {!isFollowed ? (
+                        // User is not following → show Follow or Follow Back
+                        <button
+                          className={`${isFollower ? "w-60" : "w-50"} h-19 text-3xl font-semibold text-center rounded-[9999px] bg-white text-black cursor-pointer hover:bg-[#ccc] disabled:cursor-not-allowed disabled:hover:bg-white transition-colors duration-300`}
+                          disabled={followObj?.followLoading}
+                          onClick={followHandler}
+                        >
+                          {followObj?.followLoading ? (
+                            <Loading width="w-10" height="h-10" />
+                          ) : isFollower ? (
+                            "Follow Back"
+                          ) : (
+                            "Follow"
+                          )}
+                        </button>
+                      ) : (
+                        // User is following → show Unfollow
+                        <button
+                          className="w-50 h-19 text-3xl font-semibold text-center rounded-[9999px] bg-black text-white border-2 border-white cursor-pointer hover:bg-[#333] disabled:cursor-not-allowed disabled:hover:bg-black transition-colors duration-300"
+                          disabled={unfollowObj?.unfollowLoading}
+                          onClick={unfollowHandler}
+                        >
+                          {unfollowObj?.unfollowLoading ? (
+                            <Loading width="w-10" height="h-10" />
+                          ) : (
+                            "Unfollow"
+                          )}
+                        </button>
+                      )}
+                    </>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>
