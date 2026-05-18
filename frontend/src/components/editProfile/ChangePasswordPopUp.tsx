@@ -1,7 +1,8 @@
 import { useState } from "react";
 import YesButton from "../YesButton";
 import NoButton from "../NoButton";
-import oldPassword from "../../assets/icons/profile/open-lock.svg";
+import OldPasswordInput from "../../components/editProfile/OldPasswordInput";
+// import oldPassword from "../../assets/icons/profile/open-lock.svg";
 import password from "../../assets/icons/login/password.svg";
 import repeatPassword from "../../assets/icons/login/repeat-password.svg";
 import openEye from "../../assets/icons/login/opened-eye.svg";
@@ -18,7 +19,33 @@ const ChangePasswordPopUp = ({
 }: ChangePasswordPopUpPropType) => {
   const [isOpenEyeLeft, setIsOpenEyeLeft] = useState(true);
   const [isOpenEyeRight, setIsOpenEyeRight] = useState(true);
-  const [isOpenEyeTop, setIsOpenEyeTop] = useState(true);
+  // const [isOpenEyeTop, setIsOpenEyeTop] = useState(true);
+  const [oldPassword, setOldPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [repeatPassword, setRepeatPassword] = useState("");
+  const [repeatError, setRepeatError] = useState("");
+
+const handleYesClick = () => {
+  if (!newPassword || !repeatPassword) {
+    setRepeatError("Please fill both password fields");
+    return;
+  }
+    if (newPassword !== repeatPassword) {
+    setRepeatError("Password & repeatPassword must be the same!");
+    return;
+  }
+    setRepeatError("");
+  setIsOpen(false);
+};
+const handleNewPasswordChange = (e) => {
+  setNewPassword(e.target.value);
+  setRepeatError("");
+};
+
+const handleRepeatPasswordChange = (e) => {
+  setRepeatPassword(e.target.value);
+  setRepeatError("");
+};
 
   return (
     <>
@@ -27,7 +54,9 @@ const ChangePasswordPopUp = ({
       >
         <div className="z-50 max-w-[50%] mx-auto pt-10 pb-7 px-14 rounded-2xl bg-[#1c1c1c] shadow-[0_0px_30px_rgba(0,0,0,0.4)]">
           <div className="flex flex-col gap-6">
-            <div className="w-[70%]">
+            <OldPasswordInput value={oldPassword} onChange={setOldPassword} />
+
+            {/* <div className="w-[70%]">
               <div className="flex flex-row items-center gap-1.5 pl-1 pb-1">
                 <img
                   src={oldPassword}
@@ -65,7 +94,7 @@ const ChangePasswordPopUp = ({
                   />
                 )}
               </div>
-            </div>
+            </div> */}
             <div className="w-[70%]">
               <div className="flex flex-row items-center gap-1.5 pl-1 pb-1">
                 <img src={password} alt="New-Password" className="size-5.5" />
@@ -83,6 +112,8 @@ const ChangePasswordPopUp = ({
                   id="newPassword"
                   className="h-13 px-3 rounded-xl border-[#383838] bg-white/8 backdrop-filter-md backdrop-blur-[35px] backdrop-brightness-[1.5] placeholder:text-[14px] w-full focus:outline-none"
                   placeholder="********"
+                  value={newPassword}
+                  onChange={handleNewPasswordChange}
                 />
                 {isOpenEyeLeft ? (
                   <img
@@ -123,7 +154,14 @@ const ChangePasswordPopUp = ({
                   id="repeatPassword"
                   className="h-13 px-3 rounded-xl border-[#383838] bg-white/8 backdrop-filter-md backdrop-blur-[35px] backdrop-brightness-[1.5] placeholder:text-[14px] w-full focus:outline-none"
                   placeholder="********"
+                  value={repeatPassword}
+                  onChange={handleRepeatPasswordChange}
                 />
+                {repeatError && (
+                  <p className="pl-4 text-yellow-200 text-sm mt-1">
+                    {repeatError}
+                  </p>
+                )}
                 {isOpenEyeRight ? (
                   <img
                     onClick={() => setIsOpenEyeRight((prev) => !prev)}
@@ -146,7 +184,9 @@ const ChangePasswordPopUp = ({
             <div>
               <NoButton setIsOpenPopUp={setIsOpen} />
             </div>
-            <YesButton setIsOpenPopUp={setIsOpen} />
+            <div onClick={handleYesClick}>
+            <YesButton setIsOpenPopUp={() => {}} />
+            </div>
           </div>
         </div>
       </div>
