@@ -8,7 +8,8 @@ interface WarningPopUpPropType {
   loadingHeight?: string;
   size?: string;
   padding?: string;
-  onClick?: () => void;               
+  onClick?: () => void;
+  closeOnClick?: boolean;   // new prop – defaults to true
 }
 
 const YesButton = ({
@@ -18,16 +19,19 @@ const YesButton = ({
   loadingHeight = "h-6.25",
   size = "size-9",
   padding = "p-4.5",
-  onClick,                          
+  onClick,
+  closeOnClick = true,   // default behavior unchanged
 }: WarningPopUpPropType) => {
   const handleClick = () => {
-    if (isLoading) return;            
-    onClick?.();                      
-    if (setIsOpenPopUp) setIsOpenPopUp(false);
+    if (isLoading) return;
+    onClick?.();
+    // Only close the popup if closeOnClick is true
+    if (closeOnClick && setIsOpenPopUp) {
+      setIsOpenPopUp(false);
+    }
   };
 
   return (
-    <>
     <button
       onClick={handleClick}
       disabled={isLoading}
@@ -39,7 +43,6 @@ const YesButton = ({
         <img src={Yes} alt="yes-button" className={size} />
       )}
     </button>
-    </>
   );
 };
 

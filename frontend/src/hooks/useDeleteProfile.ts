@@ -15,13 +15,15 @@ export const useDeleteProfile = () => {
   return useMutation({
     mutationFn: deleteProfileFunc,
     onSuccess: () => {
-      toast.success("Profile deleted successfully");
+      // Immediately remove profile from cache → home shows unauthenticated instantly
+      queryClient.removeQueries({ queryKey: ["myProf"] });
       setSession(false);
-      queryClient.invalidateQueries({ queryKey: ["myProf"] });
-      navigate("/");
+      toast.success("Profile deleted successfully");
+      navigate("/", { replace: true });
     },
     onError: () => {
       toast.error("Failed to delete profile. Please try again.");
+      // popup stays open because we no longer auto-close it
     },
   });
 };

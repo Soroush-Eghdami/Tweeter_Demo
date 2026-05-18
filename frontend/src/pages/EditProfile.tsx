@@ -39,7 +39,8 @@ const EditProfile = () => {
   const [isProfileBannerOpen, setIsProfileBannerOpen] = useState(false);
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
 
-  const { mutate: deleteProfile, isPending: isDeleting } = useDeleteProfile();
+  const { mutateAsync: deleteProfileAsync, isPending: isDeleting } =
+    useDeleteProfile();
 
   const handlePictureUploaded = (updatedUser: EditProfileResponse) => {
     setProfile((prev) => ({ ...prev, ...updatedUser }) as EditProfileResponse);
@@ -48,6 +49,14 @@ const EditProfile = () => {
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
+
+  const handleDelete = async () => {
+    try {
+      await deleteProfileAsync();
+    } catch {
+      // On error: toast is already shown by onError, popup stays open
+    }
+  };
 
   if (!profile) {
     return <div>Loading...</div>;
@@ -60,8 +69,9 @@ const EditProfile = () => {
         setIsOpenPopUp={setIsOpenPopUp}
         title={"Do you want to Delete your profile?"}
         description={"if you proceed your profile will be lost!!"}
-        onConfirm={() => deleteProfile()} 
-        isLoading={isDeleting} 
+        onConfirm={handleDelete}        
+        isLoading={isDeleting}
+        closeOnYes={false}             
       />
 
       <ProfilePictureEdit
