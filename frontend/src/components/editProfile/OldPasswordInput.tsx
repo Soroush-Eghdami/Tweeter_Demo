@@ -7,9 +7,10 @@ import openEye from "../../assets/icons/login/opened-eye.svg";
 interface OldPasswordInputProps {
   value: string;
   onChange: (value: string) => void;
+  error?: string;
 }
 
-const OldPasswordInput = ({ value, onChange }: OldPasswordInputProps) => {
+const OldPasswordInput = ({ value, onChange, error }: OldPasswordInputProps) => {
   const [isOpenEye, setIsOpenEye] = useState(true);
 
   return (
@@ -48,6 +49,7 @@ const OldPasswordInput = ({ value, onChange }: OldPasswordInputProps) => {
             className="absolute right-4.5 top-5 cursor-pointer"
           />
         )}
+        {error && <p className="pl-4 text-yellow-200 text-sm mt-1">{error}</p>}
       </div>
     </div>
   );

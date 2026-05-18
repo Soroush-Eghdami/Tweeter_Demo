@@ -23,8 +23,15 @@ const ChangePasswordPopUp = ({
   const [newPassword, setNewPassword] = useState("");
   const [repeatPassword, setRepeatPassword] = useState("");
   const [repeatError, setRepeatError] = useState("");
+  const [oldPasswordError, setOldPasswordError] = useState(""); 
 
   const handleYesClick = () => {
+
+    if (!oldPassword) {
+      setOldPasswordError("Old password is required");
+      return;
+    }
+    setOldPasswordError("");
     if (!newPassword || !repeatPassword) {
       setRepeatError("Please fill both password fields");
       return;
@@ -58,7 +65,10 @@ const ChangePasswordPopUp = ({
       >
         <div className="z-50 max-w-[50%] mx-auto pt-10 pb-7 px-14 rounded-2xl bg-[#1c1c1c] shadow-[0_0px_30px_rgba(0,0,0,0.4)]">
           <div className="flex flex-col gap-6">
-            <OldPasswordInput value={oldPassword} onChange={setOldPassword} />
+            <OldPasswordInput 
+            value={oldPassword} 
+            onChange={setOldPassword}
+            error={oldPasswordError}/>
             <div className="w-[70%]">
               <div className="flex flex-row items-center gap-1.5 pl-1 pb-1">
                 <img src={password} alt="New-Password" className="size-5.5" />
