@@ -11,10 +11,10 @@ interface NewCommentPropsType {
 
 const NewComment = ({ info }: NewCommentPropsType) => {
   const { isLoggedIn } = useIsLoggedIn();
-  const navigation = useNavigate();
   const { mutate: createComment, isPending } = useCreateComment();
   const [content, setContent] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const navigation = useNavigate();
 
   // Auto-resize the textarea based on its scrollHeight
   useEffect(() => {
@@ -73,7 +73,7 @@ const NewComment = ({ info }: NewCommentPropsType) => {
           onChange={(e) => setContent(e.target.value)}
           onKeyDown={handleKeyDown}
           disabled={isPending}
-          rows={3} // initial rows (will be overridden by style)
+          rows={3}
           className="relative -top-3 w-full pl-22 pr-22 resize-none focus:outline-none disabled:opacity-50 overflow-hidden"
           style={{ height: "auto" }}
         />
