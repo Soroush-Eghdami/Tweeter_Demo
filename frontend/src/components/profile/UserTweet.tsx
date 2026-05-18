@@ -1,8 +1,8 @@
 import TweetCard from "../TweetCard";
+import Loading from "../loading/Loading";
 import { useDeleteTweet } from "../../hooks/useDeleteTweet";
 import type { TweetCardInfoType } from "../../types/TweetTypes";
 import trash from "../../assets/icons/profile/delete-tweet.svg";
-import Loading from "../loading/Loading";
 
 interface UserTweetPropsType {
   info: TweetCardInfoType;

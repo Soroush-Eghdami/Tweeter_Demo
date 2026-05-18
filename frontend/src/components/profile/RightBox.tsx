@@ -2,7 +2,6 @@ import UserTweet from "./UserTweet";
 import UserRetweet from "./UserRetweet";
 import Loading from "../loading/Loading";
 import type { TweetRetweetListType } from "../../types/TweetRetweetListType";
-import MyProfile from "../../pages/MyProfile";
 
 interface RightBoxProps {
   isLoggedIn: boolean;
@@ -58,21 +57,27 @@ const RightBox: React.FC<RightBoxProps> = ({
             />
           )}
           {/* Retweet Icon */}
-          {isTweetsOpen ? (
-            <img
-              src={retweetIcon}
-              alt="retweet"
-              className="w-9 h-9 hover:scale-115 duration-300"
-              onClick={() => setIsTweetsOpen(false)}
-            />
-          ) : (
-            <img
-              src={retweetGreenIcon}
-              alt="retweet"
-              className="w-9 h-9 hover:scale-115 duration-300"
-              onClick={() => setIsTweetsOpen(false)}
-            />
-          )}
+          <button
+            type="button"
+            disabled={!isLoggedIn}
+            className="disabled:cursor-not-allowed"
+          >
+            {isTweetsOpen ? (
+              <img
+                src={retweetIcon}
+                alt="retweet"
+                className="w-9 h-9 hover:scale-115 duration-300"
+                onClick={() => setIsTweetsOpen(false)}
+              />
+            ) : (
+              <img
+                src={retweetGreenIcon}
+                alt="retweet"
+                className="w-9 h-9 hover:scale-115 duration-300"
+                onClick={() => setIsTweetsOpen(false)}
+              />
+            )}
+          </button>
         </div>
         <button
           type="button"
