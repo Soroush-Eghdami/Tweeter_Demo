@@ -171,7 +171,7 @@ const Home = () => {
         </div>
         {/* Create Tweet Button */}
         <button
-          disabled={!!profile}
+          disabled={!!!profile}
           onClick={() => setIsCreatedPost((prev) => !prev)}
           className={`${isCreatedPost ? "rotate-45" : "rotate-0"} fixed right-20 cursor-pointer hover:scale-95 disabled:cursor-not-allowed disabled:hover:scale-none transition-all duration-400 ease-in-out z-40`}
           style={{ bottom: `${combinedBottom}px` }}

@@ -38,21 +38,21 @@ const RightBox: React.FC<RightBoxProps> = ({
 
   return (
     <div className="min-h-150 flex-4 md:col-span-2 backdrop-filter-blur-[35px] backdrop-brightness-[1] rounded-2xl border-white border-2">
-      <div className="px-6 pt-6 flex items-center justify-between cursor-pointer">
+      <div className="px-6 pt-6 flex items-center justify-between">
         <div className="flex items-center gap-7">
           {/* Tweet Icon */}
           {isTweetsOpen ? (
             <img
               src={tweetBlueIcon}
               alt="tweet"
-              className="ml-4 w-10 h-10 hover:scale-115 duration-300"
+              className="ml-4 w-10 h-10 cursor-pointer hover:scale-115 duration-300"
               onClick={() => setIsTweetsOpen(true)}
             />
           ) : (
             <img
               src={tweetIcon}
               alt="tweet"
-              className="ml-4 w-10 h-10 hover:scale-115 duration-300"
+              className="ml-4 w-10 h-10 cursor-pointer hover:scale-115 duration-300"
               onClick={() => setIsTweetsOpen(true)}
             />
           )}
@@ -60,7 +60,7 @@ const RightBox: React.FC<RightBoxProps> = ({
           <button
             type="button"
             disabled={!isLoggedIn}
-            className="disabled:cursor-not-allowed"
+            className="cursor-pointer disabled:cursor-not-allowed"
           >
             {isTweetsOpen ? (
               <img
@@ -82,7 +82,7 @@ const RightBox: React.FC<RightBoxProps> = ({
         <button
           type="button"
           disabled={!isLoggedIn}
-          className="hover:scale-115 duration-300 disabled:cursor-not-allowed"
+          className="cursor-pointer hover:scale-115 duration-300 disabled:cursor-not-allowed"
           onClick={onUserIconClick}
         >
           <img src={userIcon} alt="profile" className="mr-4 w-8.5 h-8.5" />
