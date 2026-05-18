@@ -74,7 +74,7 @@ const NewComment = ({ info }: NewCommentPropsType) => {
           onKeyDown={handleKeyDown}
           disabled={isPending}
           rows={3} // initial rows (will be overridden by style)
-          className="relative -top-3 w-full pl-22 resize-none focus:outline-none disabled:opacity-50 overflow-hidden"
+          className="relative -top-3 w-full pl-22 pr-22 resize-none focus:outline-none disabled:opacity-50 overflow-hidden"
           style={{ height: "auto" }}
         />
         <div className="text-right mb-6">
