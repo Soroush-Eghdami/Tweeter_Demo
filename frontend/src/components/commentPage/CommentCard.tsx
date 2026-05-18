@@ -1,13 +1,18 @@
 import { useEffect, useRef, useState } from "react";
 import TweetCard from "../TweetCard";
-import type { commentInfoType } from "../../contents/commentInfo";
+import type { TweetCardInfoType } from "../../types/TweetTypes";
 
 interface CommentCardPropsType {
-  info: commentInfoType;
+  info: TweetCardInfoType;
   isLastComment: boolean;
+  isLoggedIn: boolean;
 }
 
-const CommentCard = ({ info, isLastComment }: CommentCardPropsType) => {
+const CommentCard = ({
+  info,
+  isLastComment,
+  isLoggedIn,
+}: CommentCardPropsType) => {
   const [lineHeight, setLineHeight] = useState(0);
   const tweetCardRef = useRef<HTMLDivElement>(null);
 
@@ -37,7 +42,7 @@ const CommentCard = ({ info, isLastComment }: CommentCardPropsType) => {
         ></div>
       </div>
       <div ref={tweetCardRef} className="w-full">
-        <TweetCard info={info} />
+        <TweetCard info={info} isLoggedIn={isLoggedIn} />
       </div>
     </div>
   );

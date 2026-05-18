@@ -1,7 +1,9 @@
 import { useNavigate } from "react-router-dom";
+import useIsLoggedIn from "../../hooks/global-hooks/useIsLoggedIn";
 import defaultProfile from "../../assets/icons/profile-default.svg";
 
 const NewComment = () => {
+  const { isLoggedIn } = useIsLoggedIn();
   const navigation = useNavigate();
 
   return (
@@ -26,7 +28,11 @@ const NewComment = () => {
           className="relative -top-3 w-full pl-22 resize-none focus:outline-none"
         ></textarea>
         <div className="text-right mb-6">
-          <button className="bg-white font-bold py-2 px-4 mr-4 text-black rounded-3xl cursor-pointer hover:text-white hover:bg-black transition-all duration-200 ease-in-out">
+          <button
+            type="button"
+            disabled={!isLoggedIn}
+            className="bg-white font-bold py-2 px-4 mr-4 text-black rounded-3xl cursor-pointer hover:text-white hover:bg-black disabled:cursor-not-allowed disabled:hover:bg-white disabled:hover:text-black transition-all duration-200 ease-in-out"
+          >
             Reply
           </button>
         </div>

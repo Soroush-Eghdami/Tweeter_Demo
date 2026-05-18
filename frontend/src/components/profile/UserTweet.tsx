@@ -1,15 +1,16 @@
 import TweetCard from "../TweetCard";
+import Loading from "../loading/Loading";
 import { useDeleteTweet } from "../../hooks/useDeleteTweet";
 import type { TweetCardInfoType } from "../../types/TweetTypes";
 import trash from "../../assets/icons/profile/delete-tweet.svg";
-import Loading from "../loading/Loading";
 
 interface UserTweetPropsType {
   info: TweetCardInfoType;
   isMyProfile: boolean;
+  isLoggedIn: boolean;
 }
 
-const UserTweet = ({ info, isMyProfile }: UserTweetPropsType) => {
+const UserTweet = ({ info, isMyProfile, isLoggedIn }: UserTweetPropsType) => {
   const { mutate: deleteTweet, isPending: deleteTweetIsPending } =
     useDeleteTweet();
 
@@ -35,7 +36,7 @@ const UserTweet = ({ info, isMyProfile }: UserTweetPropsType) => {
             )}
           </button>
         )}
-        <TweetCard info={info} />
+        <TweetCard info={info} isLoggedIn={isLoggedIn} />
       </div>
     </>
   );

@@ -34,13 +34,9 @@ const routes: RouteObject[] = [
       },
       {
         path: "profile/:id",
-        element: (
-          <ProtectedRoute>
-            <UserProfile />
-          </ProtectedRoute>
-        ),
+        element: <UserProfile />,
       },
-      { path: "comment", element: <CommentPage /> },
+      { path: "comment/:id", element: <CommentPage /> },
     ],
   },
 

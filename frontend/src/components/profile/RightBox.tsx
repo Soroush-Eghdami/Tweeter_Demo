@@ -4,6 +4,7 @@ import Loading from "../loading/Loading";
 import type { TweetRetweetListType } from "../../types/TweetRetweetListType";
 
 interface RightBoxProps {
+  isLoggedIn: boolean;
   isPublic: boolean;
   isMyProfile: boolean;
   setIsTweetsOpen: (arg0: boolean) => void;
@@ -19,6 +20,7 @@ interface RightBoxProps {
 }
 
 const RightBox: React.FC<RightBoxProps> = ({
+  isLoggedIn,
   isPublic,
   isMyProfile,
   setIsTweetsOpen,
@@ -38,6 +40,7 @@ const RightBox: React.FC<RightBoxProps> = ({
     <div className="min-h-150 flex-4 md:col-span-2 backdrop-filter-blur-[35px] backdrop-brightness-[1] rounded-2xl border-white border-2">
       <div className="px-6 pt-6 flex items-center justify-between cursor-pointer">
         <div className="flex items-center gap-7">
+          {/* Tweet Icon */}
           {isTweetsOpen ? (
             <img
               src={tweetBlueIcon}
@@ -53,25 +56,37 @@ const RightBox: React.FC<RightBoxProps> = ({
               onClick={() => setIsTweetsOpen(true)}
             />
           )}
-          {isTweetsOpen ? (
-            <img
-              src={retweetIcon}
-              alt="retweet"
-              className="w-9 h-9 hover:scale-115 duration-300"
-              onClick={() => setIsTweetsOpen(false)}
-            />
-          ) : (
-            <img
-              src={retweetGreenIcon}
-              alt="retweet"
-              className="w-9 h-9 hover:scale-115 duration-300"
-              onClick={() => setIsTweetsOpen(false)}
-            />
-          )}
+          {/* Retweet Icon */}
+          <button
+            type="button"
+            disabled={!isLoggedIn}
+            className="disabled:cursor-not-allowed"
+          >
+            {isTweetsOpen ? (
+              <img
+                src={retweetIcon}
+                alt="retweet"
+                className="w-9 h-9 hover:scale-115 duration-300"
+                onClick={() => setIsTweetsOpen(false)}
+              />
+            ) : (
+              <img
+                src={retweetGreenIcon}
+                alt="retweet"
+                className="w-9 h-9 hover:scale-115 duration-300"
+                onClick={() => setIsTweetsOpen(false)}
+              />
+            )}
+          </button>
         </div>
-        <div className="hover:scale-115 duration-300" onClick={onUserIconClick}>
+        <button
+          type="button"
+          disabled={!isLoggedIn}
+          className="hover:scale-115 duration-300 disabled:cursor-not-allowed"
+          onClick={onUserIconClick}
+        >
           <img src={userIcon} alt="profile" className="mr-4 w-8.5 h-8.5" />
-        </div>
+        </button>
       </div>
       <div className="border-t border-white mx-0 mt-3"></div>
 
@@ -102,9 +117,15 @@ const RightBox: React.FC<RightBoxProps> = ({
                   )}
                   {/* Mapping Through Tweet List */}
                   {!tweet.isLoading && tweet.infoList.length === 0 ? (
-                    <p className="text-center font-medium text-lg text-[#666] my-52">
-                      You haven't tweet anything yet.
-                    </p>
+                    !isMyProfile || !isLoggedIn ? (
+                      <p className="text-center font-medium text-lg text-[#666] my-52">
+                        This User haven't tweet anything yet.
+                      </p>
+                    ) : (
+                      <p className="text-center font-medium text-lg text-[#666] my-52">
+                        You haven't tweet anything yet.
+                      </p>
+                    )
                   ) : (
                     <div className="pt-8">
                       {tweet.infoList.map((tweet) => (
@@ -112,6 +133,7 @@ const RightBox: React.FC<RightBoxProps> = ({
                           key={tweet.id}
                           info={tweet}
                           isMyProfile={isMyProfile}
+                          isLoggedIn={isLoggedIn}
                         />
                       ))}
                     </div>
@@ -146,13 +168,23 @@ const RightBox: React.FC<RightBoxProps> = ({
                   )}
                   {/* Mapping Through Retweet List */}
                   {!retweet.isLoading && retweet.infoList.length === 0 ? (
-                    <p className="text-center font-medium text-lg text-[#666] my-52">
-                      You haven't Retweet anything yet.
-                    </p>
+                    !isMyProfile || !isLoggedIn ? (
+                      <p className="text-center font-medium text-lg text-[#666] my-52">
+                        This User haven't Retweet anything yet.
+                      </p>
+                    ) : (
+                      <p className="text-center font-medium text-lg text-[#666] my-52">
+                        You haven't Retweet anything yet.
+                      </p>
+                    )
                   ) : (
                     <div className="pt-8">
                       {retweet.infoList.map((retweet) => (
-                        <UserRetweet key={retweet.id} info={retweet} />
+                        <UserRetweet
+                          key={retweet.id}
+                          info={retweet}
+                          isLoggedIn={isLoggedIn}
+                        />
                       ))}
                     </div>
                   )}

@@ -8,7 +8,7 @@ import LoadingPage from "../components/loading/LoadingPage";
 import { useUserProfile } from "../hooks/useUserProfile";
 import { useFollow, useUnfollow } from "../hooks/useFollowUnfollow";
 import { useMyProfile } from "../hooks/useMyProfile";
-import { useMyRetweetList, useMyTweetList } from "../hooks/useMyTweet";
+import { useMyRetweetList, useMyTweetList } from "../hooks/useMyTweetRetweet";
 import tweet from "../assets/icons/profile/tweet.svg";
 import tweetBlue from "../assets/icons/profile/peace_pigeon.svg";
 import avatar from "../assets/icons/profile-default.svg";
@@ -127,6 +127,7 @@ const UserProfile = () => {
       </div>
       <div className="w-full">
         <HeaderProfile
+          isLoggedIn={!!currentUser}
           isMyProfile={false}
           avatarSrc={data.profile_picture || avatar}
           bannerSrc={data.profile_banner}
@@ -160,6 +161,7 @@ const UserProfile = () => {
           onEditProfile={() => navigate("/edit-profile")}
         />
         <RightBox
+          isLoggedIn={!!currentUser}
           isPublic={isPublic}
           isMyProfile={false}
           setIsTweetsOpen={setIsTweetsOpen}

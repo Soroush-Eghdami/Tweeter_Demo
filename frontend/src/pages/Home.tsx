@@ -6,20 +6,18 @@ import CreatePost from "../components/createPost/CreatePost";
 import ForYouFollowing from "../components/homePage/ForYouFollowing";
 import LoadingPage from "../components/loading/LoadingPage";
 import { useMyProfile } from "../hooks/useMyProfile";
-import useIsLoggedIn from "../hooks/global-hooks/useIsLoggedIn";
 import { useTweetsPrivate, useTweetsPublic } from "../hooks/useTweets";
+import { updateButtonBottom } from "../utils/scrollFunction";
 import type { TweetCardInfoType } from "../types/TweetTypes";
 import newTweet from "../assets/icons/new-tweet.svg";
-import { updateButtonBottom } from "../utils/scrollFunction";
 
 const Home = () => {
-  const { isLoggedIn, isLoading: isAuthLoading } = useIsLoggedIn();
+  const { data: profile, isLoading: profileLoading } = useMyProfile();
   const [isCreatedPost, setIsCreatedPost] = useState(false);
   const [isSelected, setIsSelected] = useState<1 | 2>(1);
   const [popupVisible, setPopupVisible] = useState(false);
   const [combinedBottom, setCombinedBottom] = useState(28);
   const sideBoxRef = useRef<HTMLDivElement>(null);
-  const { data: profile, isLoading: profileLoading } = useMyProfile();
 
   const {
     data: privateData,
@@ -27,9 +25,7 @@ const Home = () => {
     hasNextPage: hasNextPrivate,
     isFetchingNextPage: isFetchingNextPrivate,
     isLoading: isLoadingPrivate,
-  } = useTweetsPrivate({
-    enabled: isLoggedIn && isSelected === 2,
-  });
+  } = useTweetsPrivate(profile?.id, { enabled: !!profile && isSelected === 2 });
 
   const {
     data: publicData,
@@ -37,9 +33,7 @@ const Home = () => {
     hasNextPage: hasNextPublic,
     isFetchingNextPage: isFetchingNextPublic,
     isLoading: isLoadingPublic,
-  } = useTweetsPublic({
-    enabled: isSelected === 1,
-  });
+  } = useTweetsPublic(profile?.id, { enabled: isSelected === 1 });
 
   const privateTweets =
     privateData?.pages.flatMap((page) => page.results) ?? [];
@@ -131,7 +125,7 @@ const Home = () => {
   }, []);
 
   // Loading
-  if (isAuthLoading) return <LoadingPage />;
+  if (profileLoading) return <LoadingPage />;
 
   return (
     <>
@@ -161,7 +155,7 @@ const Home = () => {
               </div>
             ) : (
               tweets.map((tweet: TweetCardInfoType) => (
-                <TweetCard key={tweet.id} info={tweet} />
+                <TweetCard key={tweet.id} info={tweet} isLoggedIn={!!profile} />
               ))
             )}
             {/* Show loading indicator at the bottom when fetching more pages */}
@@ -173,13 +167,11 @@ const Home = () => {
           </div>
         </div>
         <div className="flex-1 h-fit" ref={sideBoxRef}>
-          <HomeSideProfileBox 
-          profile={profile}
-          isLoading={profileLoading}/>
+          <HomeSideProfileBox profile={profile} isLoading={profileLoading} />
         </div>
         {/* Create Tweet Button */}
         <button
-          disabled={!isLoggedIn}
+          disabled={!!profile}
           onClick={() => setIsCreatedPost((prev) => !prev)}
           className={`${isCreatedPost ? "rotate-45" : "rotate-0"} fixed right-20 cursor-pointer hover:scale-95 disabled:cursor-not-allowed disabled:hover:scale-none transition-all duration-400 ease-in-out z-40`}
           style={{ bottom: `${combinedBottom}px` }}

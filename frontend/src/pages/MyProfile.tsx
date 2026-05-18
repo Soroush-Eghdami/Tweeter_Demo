@@ -8,7 +8,7 @@ import FollowingFollower from "../components/followingFollowerPopUp/FollowingFol
 import ProfilePictureEdit from "../components/profilePictureEdit/ProfilePictureEdit";
 import LoadingPage from "../components/loading/LoadingPage";
 import { useMyProfile } from "../hooks/useMyProfile";
-import { useMyRetweetList, useMyTweetList } from "../hooks/useMyTweet";
+import { useMyRetweetList, useMyTweetList } from "../hooks/useMyTweetRetweet";
 import {
   useUpdateBannerPicture,
   useUpdateProfilePicture,
@@ -59,6 +59,7 @@ const MyProfile = () => {
   const myTweetList = myTweet?.pages.flatMap((page) => page.results) ?? [];
   const myRetweetList = myRetweet?.pages.flatMap((page) => page.results) ?? [];
 
+  // Fetch Next Pages
   useEffect(() => {
     const container = scrollContainerRef.current;
     const loadMore = isTweetsOpen
@@ -99,6 +100,7 @@ const MyProfile = () => {
     myRetweetFetchNextPage,
   ]);
 
+  // Scroll to top
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
@@ -144,6 +146,7 @@ const MyProfile = () => {
       </div>
       <div className="w-full">
         <HeaderProfile
+          isLoggedIn={!!data}
           isMyProfile={true}
           avatarSrc={data.profile_picture || avatar}
           bannerSrc={data.profile_banner}
@@ -166,9 +169,12 @@ const MyProfile = () => {
           followerFollowingIcon={followerFollowing}
           tweetIcon={tweet}
           retweetIcon={retweet}
-          onEditProfile={() => navigate("/edit-profile", { state: { profile: data } })}
+          onEditProfile={() =>
+            navigate("/edit-profile", { state: { profile: data } })
+          }
         />
         <RightBox
+          isLoggedIn={!!data}
           isPublic={true}
           isMyProfile={true}
           setIsTweetsOpen={setIsTweetsOpen}

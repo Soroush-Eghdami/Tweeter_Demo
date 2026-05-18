@@ -8,15 +8,22 @@ const TweetsInfoPrivate = async ({
 }: {
   pageParam: number;
 }): Promise<PaginatedResponse<TweetCardInfoType>> => {
-  const response = await api.get(`accounts/timeline/private/?page=${pageParam}`);
+  const response = await api.get(
+    `accounts/timeline/private/?page=${pageParam}`,
+  );
   return response.data;
 };
 
-export const useTweetsPrivate = (options?: { enabled?: boolean }) => {
+export const useTweetsPrivate = (
+  userId: number,
+  options?: { enabled?: boolean },
+) => {
   return useInfiniteQuery({
-    queryKey: ["tweetsPrivate"],
+    queryKey: ["tweetsPrivate", userId ?? "anonymous"],
     queryFn: TweetsInfoPrivate,
     initialPageParam: 1,
+    refetchOnWindowFocus: false,
+
     getNextPageParam: (lastPage) => {
       if (lastPage.next) {
         const url = new URL(lastPage.next);
@@ -25,7 +32,7 @@ export const useTweetsPrivate = (options?: { enabled?: boolean }) => {
       }
       return undefined;
     },
-    enabled: options?.enabled ?? true,
+    enabled: options?.enabled ?? !!userId,
   });
 };
 
@@ -39,11 +46,16 @@ const TweetsInfoPublic = async ({
   return response.data;
 };
 
-export const useTweetsPublic = (options?: { enabled?: boolean }) => {
+export const useTweetsPublic = (
+  userId: number,
+  options?: { enabled?: boolean },
+) => {
   return useInfiniteQuery({
-    queryKey: ["tweetsPublic"],
+    queryKey: ["tweetsPublic", userId ?? "anonymous"],
     queryFn: TweetsInfoPublic,
     initialPageParam: 1,
+    refetchOnWindowFocus: false,
+
     getNextPageParam: (lastPage) => {
       if (lastPage.next) {
         const url = new URL(lastPage.next);
