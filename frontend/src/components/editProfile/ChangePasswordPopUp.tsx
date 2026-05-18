@@ -43,8 +43,9 @@ const ChangePasswordPopUp = ({
     if (oldPassword && newPassword && repeatPassword && oldPassword === newPassword && newPassword === repeatPassword )
     {
       toast.error("All 3 passwords cannot be the same!")
+    return;      
     }
-    return;
+
     setRepeatError("");
     setIsOpen(false);
   };
