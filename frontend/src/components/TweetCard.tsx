@@ -1,6 +1,5 @@
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import useIsLoggedIn from "../hooks/global-hooks/useIsLoggedIn";
 import { useLikeMutation } from "../hooks/useToggleLike";
 import { useRetweetMutation } from "../hooks/useToggleRetweet";
 import { joinedDate } from "../utils/joinedDate";
@@ -17,11 +16,10 @@ import pin from "../assets/icons/pin.svg";
 interface TweetCardPropsType {
   isPinned?: boolean;
   info: TweetCardInfoType;
-  defaultRetweeted?: boolean;
+  isLoggedIn?: boolean;
 }
 
-const TweetCard = ({ isPinned, info }: TweetCardPropsType) => {
-  const { isLoggedIn } = useIsLoggedIn();
+const TweetCard = ({ isPinned, info, isLoggedIn }: TweetCardPropsType) => {
   const likeMutation = useLikeMutation(info.id);
   const retweetMutation = useRetweetMutation(info.id);
   const formattedJoinDate = joinedDate(info.created_at);
@@ -43,10 +41,32 @@ const TweetCard = ({ isPinned, info }: TweetCardPropsType) => {
     retweetMutation.mutate(!info.is_retweeted);
   };
 
+  // Double Click for like and unlike
+  const handleCardDoubleClick = (e: React.MouseEvent) => {
+    // Don't trigger if double-click originated from a button or link
+    let target = e.target as HTMLElement;
+    while (target && target !== e.currentTarget) {
+      if (
+        target.tagName === "BUTTON" ||
+        target.tagName === "A" ||
+        target.closest("button")
+      ) {
+        return;
+      }
+      target = target.parentElement as HTMLElement;
+    }
+    if (isLoggedIn) {
+      handleLikeClick();
+    }
+  };
+
   if (!info) return null;
 
   return (
-    <div className="relative border-2 border-white h-fit px-12 py-8 mb-7 rounded-3xl">
+    <div
+      className="relative border-2 border-white h-fit px-12 py-8 mb-7 rounded-3xl"
+      onDoubleClick={handleCardDoubleClick}
+    >
       {isPinned && (
         <div className="absolute top-10 right-10 size-6">
           <img src={pin} alt="Pin" />
@@ -81,7 +101,7 @@ const TweetCard = ({ isPinned, info }: TweetCardPropsType) => {
           className="flex items-center gap-2.5 cursor-pointer disabled:cursor-not-allowed"
           onClick={handleLikeClick}
         >
-          {isLoggedIn && info.is_liked ? (
+          {info.is_liked ? (
             <img
               src={likeFilled}
               alt="Liked"
@@ -99,7 +119,7 @@ const TweetCard = ({ isPinned, info }: TweetCardPropsType) => {
         {/* Comment Button */}
         <div
           className="flex items-center gap-2.5 cursor-pointer"
-          onClick={() => navigation("/comment")} // need to be changed later
+          onClick={() => navigation(`/comment/${info.id}`)}
         >
           {isPinned ? (
             <img
@@ -112,7 +132,7 @@ const TweetCard = ({ isPinned, info }: TweetCardPropsType) => {
               src={comment}
               alt="Comment"
               className="size-9 hover:scale-105 transition-all duration-150 ease-in-out"
-              onClick={() => navigation("/comment")}
+              onClick={() => navigation(`/comment/${info.id}`)}
             />
           )}
           <p className="text-[#ddd] text-sm">{info.replies_count}</p>
@@ -124,7 +144,7 @@ const TweetCard = ({ isPinned, info }: TweetCardPropsType) => {
           className="flex items-center gap-2.5 cursor-pointer disabled:cursor-not-allowed"
           onClick={handleRetweetClick}
         >
-          {isLoggedIn && info.is_retweeted ? (
+          {info.is_retweeted ? (
             <img
               src={retweetFilled}
               alt="Retweeted"

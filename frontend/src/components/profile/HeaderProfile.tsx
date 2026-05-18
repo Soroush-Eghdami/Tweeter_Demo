@@ -1,9 +1,9 @@
 import { useParams } from "react-router-dom";
 import Loading from "../loading/Loading";
-import useIsLoggedIn from "../../hooks/global-hooks/useIsLoggedIn";
 import type { followObjType, unfollowObjType } from "../../types/FollowTypes";
 
 interface HeaderProfileProps {
+  isLoggedIn: boolean;
   isMyProfile: boolean;
   avatarSrc: string;
   bannerSrc: string;
@@ -17,6 +17,7 @@ interface HeaderProfileProps {
 }
 
 const HeaderProfile: React.FC<HeaderProfileProps> = ({
+  isLoggedIn,
   isMyProfile,
   avatarSrc,
   bannerSrc,
@@ -29,7 +30,6 @@ const HeaderProfile: React.FC<HeaderProfileProps> = ({
   onBannerClick,
 }) => {
   const { id } = useParams();
-  const { isLoggedIn } = useIsLoggedIn();
 
   const followHandler = () => {
     if (id)
