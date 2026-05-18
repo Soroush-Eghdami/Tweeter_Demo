@@ -302,7 +302,7 @@ class PrivateTimelineView(APIView):
 
 
 class UserTweetsView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.AllowAny]
 
     @extend_schema(
         parameters=[
