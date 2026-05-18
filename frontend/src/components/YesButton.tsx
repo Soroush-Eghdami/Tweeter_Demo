@@ -8,6 +8,7 @@ interface WarningPopUpPropType {
   loadingHeight?: string;
   size?: string;
   padding?: string;
+  onClick?: () => void;               
 }
 
 const YesButton = ({
@@ -17,24 +18,27 @@ const YesButton = ({
   loadingHeight = "h-6.25",
   size = "size-9",
   padding = "p-4.5",
+  onClick,                          
 }: WarningPopUpPropType) => {
   const handleClick = () => {
+    if (isLoading) return;            
+    onClick?.();                      
     if (setIsOpenPopUp) setIsOpenPopUp(false);
   };
 
   return (
     <>
-      <button
-        onClick={handleClick}
-        disabled={isLoading}
-        className={`${padding} flex items-center justify-center bg-white rounded-[50%] cursor-pointer transition-all hover:scale-105 disabled:cursor-not-allowed disabled:bg-[#999] duration-200 ease-in-out`}
-      >
-        {isLoading ? (
-          <Loading width={loadingWidth} height={loadingHeight} />
-        ) : (
-          <img src={Yes} alt="yes-button" className={size} />
-        )}
-      </button>
+    <button
+      onClick={handleClick}
+      disabled={isLoading}
+      className={`${padding} flex items-center justify-center bg-white rounded-[50%] cursor-pointer transition-all hover:scale-105 disabled:cursor-not-allowed disabled:bg-[#999] duration-200 ease-in-out`}
+    >
+      {isLoading ? (
+        <Loading width={loadingWidth} height={loadingHeight} />
+      ) : (
+        <img src={Yes} alt="yes-button" className={size} />
+      )}
+    </button>
     </>
   );
 };

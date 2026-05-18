@@ -16,6 +16,7 @@ import {
   useUpdateBannerPicture,
   useUpdateProfilePicture,
 } from "../hooks/useUpdateProfile";
+import { useDeleteProfile } from "../hooks/useDeleteProfile";
 import type { EditProfileResponse } from "../types/FormTypes";
 import userProfile from "../assets/icons/profile-default.svg";
 
@@ -38,6 +39,8 @@ const EditProfile = () => {
   const [isProfileBannerOpen, setIsProfileBannerOpen] = useState(false);
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
 
+  const { mutate: deleteProfile, isPending: isDeleting } = useDeleteProfile();
+
   const handlePictureUploaded = (updatedUser: EditProfileResponse) => {
     setProfile((prev) => ({ ...prev, ...updatedUser }) as EditProfileResponse);
   };
@@ -56,8 +59,11 @@ const EditProfile = () => {
         isOpenPopUp={isOpenPopUp}
         setIsOpenPopUp={setIsOpenPopUp}
         title={"Do you want to Delete your profile?"}
-        description={"if you proceed yor profile will be lost!!"}
+        description={"if you proceed your profile will be lost!!"}
+        onConfirm={() => deleteProfile()} 
+        isLoading={isDeleting} 
       />
+
       <ProfilePictureEdit
         isOpen={isProfilePicOpen}
         setIsOpen={setIsProfilePicOpen}
