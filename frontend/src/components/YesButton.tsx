@@ -1,7 +1,7 @@
-import Yes from "../assets/icons/yes-check.svg";
 import Loading from "./loading/Loading";
+import Yes from "../assets/icons/yes-check.svg";
 
-interface WarningPopUpPropType {
+interface YesButtonPropType {
   setIsOpenPopUp?: (arg0: boolean) => void;
   isLoading?: boolean;
   loadingWidth?: string;
@@ -21,7 +21,7 @@ const YesButton = ({
   padding = "p-4.5",
   onClick,
   closeOnClick = true,   // default behavior unchanged
-}: WarningPopUpPropType) => {
+}: YesButtonPropType) => {
   const handleClick = () => {
     if (isLoading) return;
     onClick?.();
