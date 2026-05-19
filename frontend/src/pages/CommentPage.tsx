@@ -108,7 +108,7 @@ const CommentPage = () => {
     <>
       {/* Pinned Tweet */}
       <div className="flex gap-24 max-w-[92%] mx-auto min-h-[80dvh] my-16">
-        <div className="flex-3">
+        <div className="flex-3 min-w-0">
           {/* Pinned Tweet */}
           <TweetCard
             info={tweetDetail}
