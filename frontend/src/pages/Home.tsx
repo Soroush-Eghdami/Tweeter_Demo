@@ -138,7 +138,7 @@ const Home = () => {
         />
       )}
       <div className="relative flex gap-24 max-w-[92%] mx-auto min-h-[80dvh] my-16">
-        <div className="flex-3">
+        <div className="flex-3 min-w-0">
           <ForYouFollowing
             isSelected={isSelected}
             setIsSelected={setIsSelected}

@@ -31,7 +31,7 @@ const LeftBox: React.FC<LeftBoxProps> = ({
   onEditProfile,
 }) => {
   return (
-    <div className="bg-white/10 backdrop-filter-md h-fit flex-1 backdrop-filter backdrop-blur-[35px] backdrop-brightness-[0.6] rounded-2xl shadow-xl border-2 border-white p-7 space-y-4 min-w-0 overflow-hidden">
+    <div className="bg-white/10 backdrop-filter-md h-fit flex-1 min-w-0 backdrop-filter backdrop-blur-[35px] backdrop-brightness-[0.6] rounded-2xl shadow-xl border-2 border-white p-7 space-y-4 overflow-hidden">
       {/* Name */}
       <div className="flex items-center gap-2 text-xl font-bold text-gray-900 min-w-0">
         <img src={editUserIcon} alt="User" className="w-6 h-6 shrink-0" />

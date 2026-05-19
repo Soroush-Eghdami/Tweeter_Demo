@@ -41,7 +41,7 @@ const CommentCard = ({
           style={{ height: `${lineHeight}px` }}
         ></div>
       </div>
-      <div ref={tweetCardRef} className="w-full">
+      <div ref={tweetCardRef} className="w-full min-w-0">
         <TweetCard info={info} isLoggedIn={isLoggedIn} />
       </div>
     </div>
