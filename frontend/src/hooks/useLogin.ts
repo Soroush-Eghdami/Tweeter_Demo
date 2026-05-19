@@ -26,9 +26,15 @@ export const useLogin = () => {
       toast.success("User Logged in Successfully!");
       navigate("/");
     },
-    onError: (error) => {
-      console.log("Login failed:", error);
-      toast.error("Login Failed!");
+    onError: (error: any) => {
+      const errorMessage = error?.response?.data?.error;
+      if (
+        errorMessage === "No active account found with the given credentials"
+      ) {
+        toast.error("Invalid username or password.");
+      } else {
+        toast.error(errorMessage || "Login failed. Please try again.");
+      }
     },
   });
 };

@@ -8,10 +8,36 @@ import closeEye from "../../assets/icons/login/closed-eye.svg";
 interface PasswordInputPropsType {
   register: UseFormRegister<RegisterFormType | LoginFormType>;
   error?: FieldError;
+  isLoginPage?: boolean;
 }
 
-const PasswordInput = ({ register, error }: PasswordInputPropsType) => {
+const PasswordInput = ({
+  register,
+  error,
+  isLoginPage,
+}: PasswordInputPropsType) => {
   const [isOpenEye, setIsOpenEye] = useState(true);
+
+  const validationRules = !isLoginPage
+    ? {
+        required: "Password is required!",
+        minLength: {
+          value: 8,
+          message: "Password is too short",
+        },
+        validate: (value: string) => {
+          const hasNumber = /\d/;
+          const hasLower = /[a-z]/;
+          if (!hasNumber.test(value))
+            return "Password must contain at least one number";
+          if (!hasLower.test(value))
+            return "Password must contain at least one lowercase letter";
+          return true;
+        },
+      }
+    : {
+        required: "Password is required!",
+      };
 
   return (
     <div className="w-full">
@@ -27,24 +53,7 @@ const PasswordInput = ({ register, error }: PasswordInputPropsType) => {
       </div>
       <div className="relative">
         <input
-          {...register("password", {
-            required: "Password is required!",
-            minLength: {
-              value: 8,
-              message: "Password is too short",
-            },
-            validate: (value: string) => {
-              const hasNumber = /\d/;
-              const hasLower = /[a-z]/;
-
-              if (!hasNumber.test(value))
-                return "Password must contain at least one number";
-              if (!hasLower.test(value))
-                return "Password must contain at least one lowercase letter";
-
-              return true;
-            },
-          })}
+          {...register("password", validationRules)}
           type={isOpenEye ? "password" : "text"}
           name="password"
           id="password"
