@@ -1,5 +1,4 @@
 import { useState } from "react";
-import toast from "react-hot-toast";
 import YesButton from "../YesButton";
 import NoButton from "../NoButton";
 import OldPasswordInput from "../../components/editProfile/OldPasswordInput";
@@ -7,7 +6,7 @@ import password from "../../assets/icons/login/password.svg";
 import repeatPasswordIcon from "../../assets/icons/login/repeat-password.svg";
 import openEye from "../../assets/icons/login/opened-eye.svg";
 import closeEye from "../../assets/icons/login/closed-eye.svg";
-
+import { useChangePasswordForm } from "../../hooks/useChangePasswordForm";
 interface ChangePasswordPopUpPropType {
   isOpen: boolean;
   setIsOpen: (arg0: boolean) => void;
@@ -19,57 +18,30 @@ const ChangePasswordPopUp = ({
 }: ChangePasswordPopUpPropType) => {
   const [isOpenEyeLeft, setIsOpenEyeLeft] = useState(true);
   const [isOpenEyeRight, setIsOpenEyeRight] = useState(true);
-  const [oldPassword, setOldPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [repeatPassword, setRepeatPassword] = useState("");
-  const [repeatError, setRepeatError] = useState("");
-  const [oldPasswordError, setOldPasswordError] = useState(""); 
+    const {
+    register,
+    handleSubmit,
+    errors,
+    onSubmit,
+    isPending,
+  } = useChangePasswordForm({
+    setIsOpen,
+  });
 
-  const handleYesClick = () => {
-
-    if (!oldPassword) {
-      setOldPasswordError("Old password is required");
-      return;
-    }
-    setOldPasswordError("");
-    if (!newPassword || !repeatPassword) {
-      setRepeatError("Please fill both password fields");
-      return;
-    }
-    if (newPassword !== repeatPassword) {
-      setRepeatError("Password & repeatPassword must be the same!");
-      return;
-    }
-    if (oldPassword && newPassword && repeatPassword && oldPassword === newPassword && newPassword === repeatPassword )
-    {
-      toast.error("All 3 passwords cannot be the same!")
-    return;      
-    }
-
-    setRepeatError("");
-    setIsOpen(false);
-  };
-  const handleNewPasswordChange = (e) => {
-    setNewPassword(e.target.value);
-    setRepeatError("");
-  };
-
-  const handleRepeatPasswordChange = (e) => {
-    setRepeatPassword(e.target.value);
-    setRepeatError("");
-  };
-
+  
   return (
     <>
       <div
         className={`${isOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"} fixed z-40 w-dvw min-h-screen top-0 right-0 pt-35 backdrop-blur-md bg-black/70 transition-opacity duration-200`}
       >
         <div className="z-50 max-w-[50%] mx-auto pt-10 pb-7 px-14 rounded-2xl bg-[#1c1c1c] shadow-[0_0px_30px_rgba(0,0,0,0.4)]">
+          <form 
+          onSubmit={handleSubmit(onSubmit)}
+          className="flex flex-col gap-6">
           <div className="flex flex-col gap-6">
             <OldPasswordInput 
-            value={oldPassword} 
-            onChange={setOldPassword}
-            error={oldPasswordError}/>
+            register={register}
+            error={errors.oldPassword?.message}/>
             <div className="w-[70%]">
               <div className="flex flex-row items-center gap-1.5 pl-1 pb-1">
                 <img src={password} alt="New-Password" className="size-5.5" />
@@ -87,8 +59,21 @@ const ChangePasswordPopUp = ({
                   id="newPassword"
                   className="h-13 px-3 rounded-xl border-[#383838] bg-white/8 backdrop-filter-md backdrop-blur-[35px] backdrop-brightness-[1.5] placeholder:text-[14px] w-full focus:outline-none"
                   placeholder="********"
-                  value={newPassword}
-                  onChange={handleNewPasswordChange}
+                  {...register("newPassword", {
+                      required: "New password is required",
+                      minLength: {
+                        value: 8,
+                        message: "Password must be at least 8 characters long",
+                      },
+                      maxLength: {
+                        value: 64,
+                        message: "Password cannot exceed 64 characters",
+                      },
+                      pattern: {
+                        value: /^(?=.*\d).+$/,
+                        message: "Password must contain at least one number",
+                      },
+                    })}
                 />
                 {isOpenEyeLeft ? (
                   <img
@@ -105,6 +90,11 @@ const ChangePasswordPopUp = ({
                     className="absolute right-4.5 top-5 cursor-pointer"
                   />
                 )}
+                {errors.newPassword && (
+                <p className="pl-4 text-yellow-200 text-sm mt-1">
+                  {errors.newPassword.message}
+                </p>
+              )}
               </div>
             </div>
             <div className="w-[70%]">
@@ -129,14 +119,10 @@ const ChangePasswordPopUp = ({
                   id="repeatPassword"
                   className="h-13 px-3 rounded-xl border-[#383838] bg-white/8 backdrop-filter-md backdrop-blur-[35px] backdrop-brightness-[1.5] placeholder:text-[14px] w-full focus:outline-none"
                   placeholder="********"
-                  value={repeatPassword}
-                  onChange={handleRepeatPasswordChange}
+                  {...register("repeatPassword", {
+                  required: "Repeat password is required",
+                })}
                 />
-                {repeatError && (
-                  <p className="pl-4 text-yellow-200 text-sm mt-1">
-                    {repeatError}
-                  </p>
-                )}
                 {isOpenEyeRight ? (
                   <img
                     onClick={() => setIsOpenEyeRight((prev) => !prev)}
@@ -152,6 +138,11 @@ const ChangePasswordPopUp = ({
                     className="absolute right-4.5 top-5 cursor-pointer"
                   />
                 )}
+                {errors.repeatPassword && (
+                <p className="pl-4 text-yellow-200 text-sm mt-1">
+                  {errors.repeatPassword.message}
+                </p>
+              )}
               </div>
             </div>
           </div>
@@ -159,10 +150,14 @@ const ChangePasswordPopUp = ({
             <div>
               <NoButton setIsOpenPopUp={setIsOpen} />
             </div>
-            <div onClick={handleYesClick}>
-              <YesButton setIsOpenPopUp={() => {}} />
+            <div >
+              <YesButton
+              setIsOpenPopUp={() => {}}
+                disabled={isPending}
+                type="submit" />
             </div>
           </div>
+          </form>
         </div>
       </div>
     </>
