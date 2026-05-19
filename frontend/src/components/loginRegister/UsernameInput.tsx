@@ -6,27 +6,40 @@ interface UsernameInputProps<T extends HasUsername> {
   register: UseFormRegister<T>;
   error?: FieldError;
   isEditProfile?: boolean;
+  isLoginPage?: boolean;
 }
 
 const UsernameInput = <T extends HasUsername>({
   register,
   error,
   isEditProfile,
+  isLoginPage,
 }: UsernameInputProps<T>) => {
+  const validationRules = !isLoginPage
+    ? {
+        required: "Username is required!",
+        minLength: { value: 6, message: "Username is too short!" },
+        maxLength: { value: 40, message: "Username is too long!" },
+        validate: (value: string) =>
+          value.trim().length > 0 || "Username cannot be only spaces",
+      }
+    : {
+        required: "Username is required!",
+      };
+
   return (
     <div className={isEditProfile ? "" : "w-[70%]"}>
       <div className="flex flex-row items-center gap-1.5 pl-1 pb-1">
         <img src={username} alt="username" className="size-5.5" />
-        <label htmlFor="username" className="block text-left text-lg font-medium">
+        <label
+          htmlFor="username"
+          className="block text-left text-lg font-medium"
+        >
           Username
         </label>
       </div>
       <input
-        {...register("username" as FieldPath<T>, {
-          required: "Username is required!",
-          minLength: { value: 6, message: "Username is too short!" },
-          maxLength: { value: 40, message: "Username is too long!" },
-        })}
+        {...register("username" as FieldPath<T>, validationRules)}
         type="text"
         id="username"
         className={
@@ -36,7 +49,9 @@ const UsernameInput = <T extends HasUsername>({
         }
         placeholder="Enter your Username"
       />
-      {error && <p className="pl-4 text-yellow-200 text-sm mb-1">{error.message}</p>}
+      {error && (
+        <p className="pl-4 text-yellow-200 text-sm mb-1">{error.message}</p>
+      )}
     </div>
   );
 };

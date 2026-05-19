@@ -69,9 +69,9 @@ const EditProfile = () => {
         setIsOpenPopUp={setIsOpenPopUp}
         title={"Do you want to Delete your profile?"}
         description={"if you proceed your profile will be lost!!"}
-        onConfirm={handleDelete}        
+        onConfirm={handleDelete}
         isLoading={isDeleting}
-        closeOnYes={false}             
+        closeOnYes={false}
       />
 
       <ProfilePictureEdit
@@ -113,15 +113,15 @@ const EditProfile = () => {
         onSubmit={handleSubmit(onSubmit)}
         className="flex flex-col w-[48%] shadow-[0_0px_30px_rgba(0,0,0,0.4)] backdrop-filter-md backdrop-blur-[35px] backdrop-brightness-[0.65] mx-auto mt-10 rounded-3xl px-12 py-10 gap-4"
       >
-        <div className="flex items-center gap-6">
-          <div className="w-[50%]">
+        <div className="flex flex-wrap justify-start gap-6.25">
+          <div className="w-[48%]">
             <FirstNameInput
               register={register}
               error={errors.firstName}
               isEditProfile={true}
             />
           </div>
-          <div className="w-[50%]">
+          <div className="w-[48%]">
             <LastNameInput
               register={register}
               error={errors.lastName}
