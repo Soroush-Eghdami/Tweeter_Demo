@@ -37,7 +37,7 @@ const RightBox: React.FC<RightBoxProps> = ({
   const { tweet, retweet } = tweetRetweetList;
 
   return (
-    <div className="min-h-150 flex-4 md:col-span-2 backdrop-filter-blur-[35px] backdrop-brightness-[1] rounded-2xl border-white border-2">
+    <div className="min-h-150 flex-4 md:col-span-2 backdrop-filter-blur-[35px] backdrop-brightness-[1] rounded-2xl border-white border-2 min-w-0">
       <div className="px-6 pt-6 flex items-center justify-between">
         <div className="flex items-center gap-7">
           {/* Tweet Icon */}
@@ -93,7 +93,7 @@ const RightBox: React.FC<RightBoxProps> = ({
       <div className="overflow-hidden rounded-b-xl">
         <div
           ref={containerRef}
-          className="px-6 pb-2 space-y-5 max-h-150 overflow-y-auto 
+          className="px-6 pb-2 space-y-5 max-h-150 overflow-y-auto overflow-x-hidden
             [&::-webkit-scrollbar]:w-1.5
             [&::-webkit-scrollbar-track]:bg-white/10
             [&::-webkit-scrollbar-thumb]:bg-white/30

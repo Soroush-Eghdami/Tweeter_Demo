@@ -23,6 +23,21 @@ const Register = () => {
   const { mutate, isPending } = useRegister();
   const navigation = useNavigate();
 
+  // Form Validation
+  const firstNameValue = watch("firstName");
+  const lastNameValue = watch("lastName");
+  const usernameValue = watch("username");
+  const emailValue = watch("email");
+  const passwordValue = watch("password");
+  const repeatPasswordValue = watch("repeatPassword");
+  const isFormValid =
+    !!firstNameValue?.trim() &&
+    !!lastNameValue?.trim() &&
+    !!usernameValue?.trim() &&
+    !!emailValue?.trim() &&
+    !!passwordValue?.trim() &&
+    !!repeatPasswordValue?.trim();
+
   const onSubmit = (data: RegisterFormType) => {
     mutate(
       {
@@ -39,17 +54,33 @@ const Register = () => {
           navigation("/login");
           reset();
         },
-        onError: (errors) => {
-          toast.error("Registration Failed!");
-          console.log(errors);
+        onError: (error: unknown) => {
+          const axiosError = error as {
+            response?: { data?: { detail?: Record<string, string[]> } };
+          };
+          const detail = axiosError?.response?.data?.detail;
 
-          const currentValues = getValues();
-          reset({
-            ...currentValues,
-            username: "",
-            password: "",
-            repeatPassword: "",
-          });
+          if (detail && typeof detail === "object") {
+            const usernameError = detail.username?.[0];
+            const emailError = detail.email?.[0];
+
+            if (usernameError || emailError) {
+              // Keep the entered values but clear password fields
+              const currentValues = getValues();
+              reset({
+                ...currentValues,
+                password: "",
+                repeatPassword: "",
+              });
+
+              if (usernameError) toast.error("Username already taken.");
+              if (emailError) toast.error("Email already registered.");
+              return;
+            }
+          }
+
+          // Fallback for other errors
+          toast.error("Registration failed. Please try again.");
         },
       },
     );
@@ -99,8 +130,8 @@ const Register = () => {
 
             <button
               type="submit"
-              disabled={isPending}
-              className="w-[70%] rounded-xl font-bold px-16 py-3 bg-white text-black mt-12 cursor-pointer hover:bg-gray-200 disabled:cursor-not-allowed"
+              disabled={isPending || !isFormValid}
+              className="w-[70%] rounded-xl font-bold px-16 py-3 bg-white text-black mt-12 cursor-pointer hover:bg-gray-200 disabled:cursor-not-allowed disabled:bg-[#bbb]"
             >
               {isPending ? <Loading width="w-6" height="h-6" /> : "Register"}
             </button>

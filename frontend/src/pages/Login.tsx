@@ -10,11 +10,17 @@ const Login = () => {
   const {
     register,
     handleSubmit,
+    watch,
     reset,
     formState: { errors },
   } = useForm<LoginFormType>();
   const { mutate, isPending } = useLogin();
   const navigation = useNavigate();
+
+  // Form Validation
+  const usernameValue = watch("username");
+  const passwordValue = watch("password");
+  const isFormValid = !!usernameValue?.trim() && !!passwordValue?.trim();
 
   const onSubmit = (data: LoginFormType) => {
     mutate({
@@ -35,15 +41,23 @@ const Login = () => {
             Welcome!
           </p>
 
-          <UsernameInput register={register} error={errors.username} />
+          <UsernameInput
+            register={register}
+            error={errors.username}
+            isLoginPage={true}
+          />
           <div className="w-[70%]">
-            <PasswordInput register={register} error={errors.password} />
+            <PasswordInput
+              register={register}
+              error={errors.password}
+              isLoginPage={true}
+            />
           </div>
 
           <button
             type="submit"
-            disabled={isPending}
-            className="w-[70%] rounded-xl font-bold px-16 py-3 bg-white text-black mt-12 cursor-pointer hover:bg-gray-200 disabled:cursor-not-allowed"
+            disabled={isPending || !isFormValid}
+            className="w-[70%] rounded-xl font-bold px-16 py-3 bg-white text-black mt-12 cursor-pointer hover:bg-gray-200 disabled:cursor-not-allowed disabled:bg-[#bbb]"
           >
             {isPending ? <Loading width="w-6" height="h-6" /> : "Login"}
           </button>

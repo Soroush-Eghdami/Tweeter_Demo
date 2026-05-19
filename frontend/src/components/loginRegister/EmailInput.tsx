@@ -27,8 +27,11 @@ const EmailInput = <T extends HasEmail>({
           minLength: { value: 8, message: "Email is too short!" },
           pattern: {
             value: /^[^\s@]+@([^\s@.,]+\.)+[^\s@.,]{2,}$/,
-            message: "Please enter a valid email address (e.g., name@domain.com)",
+            message:
+              "Please enter a valid email address (e.g., name@domain.com)",
           },
+          validate: (value: string) =>
+            value.trim().length > 0 || "Email cannot be only spaces",
         })}
         type="email"
         id="email"
@@ -39,7 +42,9 @@ const EmailInput = <T extends HasEmail>({
         }
         placeholder="test@example.com"
       />
-      {error && <p className="pl-4 text-yellow-200 text-sm mb-1">{error.message}</p>}
+      {error && (
+        <p className="pl-4 text-yellow-200 text-sm mb-1">{error.message}</p>
+      )}
     </div>
   );
 };
