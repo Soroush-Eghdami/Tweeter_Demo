@@ -22,6 +22,22 @@ const changePasswordRequest = async (data: {
   return response.data;
 };
 
+let toastCount = 0;
+let toastResetTimer: ReturnType<typeof setTimeout> | null = null; 
+
+const limitedToastError = (message: string, limit: number = 3, intervalMs: number = 3000) => {
+  if (toastCount < limit) {
+    toast.error(message);
+    toastCount++;
+    if (!toastResetTimer) {
+      toastResetTimer = setTimeout(() => {
+        toastCount = 0;
+        toastResetTimer = null;
+      }, intervalMs);
+    }
+  }
+};
+
 export const useChangePasswordForm = ({
   setIsOpen,
 }: UseChangePasswordFormProps) => {
@@ -42,7 +58,7 @@ export const useChangePasswordForm = ({
       repeatPassword: "",
     },
     mode: "onSubmit",
-    reValidateMode: "onChange"
+    reValidateMode: "onSubmit"
   });
 
   const onSubmit = (data: ChangePasswordFormType) => {
@@ -82,16 +98,16 @@ export const useChangePasswordForm = ({
             errorMessage ===
             "You have used this password recently. Please choose a different one."
           ) {
-            toast.error(
+            limitedToastError(
               "You have used this password recently. Please choose a different one.",
             );
             return;
           }
           if (errorMessage === "Old password is incorrect.") {
-            toast.error("Old password is incorrect.");
+            limitedToastError("Old password is incorrect.");
             return;
           }
-          toast.error("Something went wrong");
+          limitedToastError("Something went wrong");
         },
       },
     );
