@@ -169,7 +169,7 @@ const ChangePasswordPopUp = ({
                     />
                   </div>
                   {isPending && (
-                    <div className="absolute inset-0 bg-white rounded-full flex items-center justify-center">
+                    <div className="absolute inset-0 bg-white rounded-full flex items-center justify-center cursor-not-allowed">
                       <Loading width="w-8" height="h-8" />
                     </div>
                   )}
