@@ -19,6 +19,8 @@ const ChangePasswordPopUp = ({
 }: ChangePasswordPopUpPropType) => {
   const [isOpenEyeLeft, setIsOpenEyeLeft] = useState(true);
   const [isOpenEyeRight, setIsOpenEyeRight] = useState(true);
+  const [isNumericWarning] = useState(false);
+
     const {
     register,
     handleSubmit,
@@ -73,6 +75,8 @@ const ChangePasswordPopUp = ({
                         value: /^(?=.*\d).+$/,
                         message: "Password must contain at least one number",
                       },
+                      validate: (value) =>
+                        !/^\d+$/.test(value) || "This password is entirely numeric.",
                     })}
                 />
                 {isOpenEyeLeft ? (
@@ -95,6 +99,11 @@ const ChangePasswordPopUp = ({
                   {errors.newPassword.message}
                 </p>
               )}
+              {isNumericWarning && (
+                  <p className="pl-4 text-yellow-200 text-sm mt-1">
+                    This password is entirely numeric.
+                  </p>
+                )}
               </div>
             </div>
             <div className="w-[70%]">

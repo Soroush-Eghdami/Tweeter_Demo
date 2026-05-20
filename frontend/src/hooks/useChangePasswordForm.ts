@@ -41,6 +41,8 @@ export const useChangePasswordForm = ({
       newPassword: "",
       repeatPassword: "",
     },
+    mode: "onSubmit",
+    reValidateMode: "onChange"
   });
 
   const onSubmit = (data: ChangePasswordFormType) => {
