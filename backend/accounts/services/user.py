@@ -37,10 +37,18 @@ class UserService:
     def change_password(user: User, old_password: str, new_password: str) -> None:
         if not user.check_password(old_password):
             raise ValueError("Old password is incorrect.")
-        password_history = PasswordHistory.objects.filter(user=user).order_by('-created_at')[:5]
+        if old_password == new_password:
+            raise ValueError("New password must be different from your current password.")
+    
+        password_history = PasswordHistory.objects.filter(
+            user=user
+        ).order_by('-created_at')[:5]
         for entry in password_history:
             if check_password(new_password, entry.password_hash):
-                raise ValueError("You have used this password recently. Please choose a different one.")
+                raise ValueError(
+                    "You have used this password recently. Please choose a different one."
+                )
+    
         with transaction.atomic():
             PasswordHistory.objects.create(user=user, password_hash=user.password)
             user.set_password(new_password)
