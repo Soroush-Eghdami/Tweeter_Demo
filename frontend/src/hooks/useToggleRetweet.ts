@@ -214,7 +214,13 @@ export const useRetweetMutation = (tweetId: number) => {
           ? "Failed to Retweet"
           : "Failed to UnRetweet";
 
-      toast.error(message);
+      toast.error(message, {
+        id: isOwnTweetError
+          ? "retweet-error"
+          : shouldRetweet
+            ? "retweet-error"
+            : "unretweet-error",
+      });
     },
   });
 };

@@ -18,8 +18,5 @@ const newUserInfo = async (userData: newUserInfoType) => {
 export const useRegister = () => {
   return useMutation({
     mutationFn: newUserInfo,
-    onError: (error) => {
-      console.error("Registration failed:", error);
-    },
   });
 };

@@ -15,7 +15,7 @@ import { useEditProfileForm } from "../hooks/global-hooks/useEditProfileForm";
 import {
   useUpdateBannerPicture,
   useUpdateProfilePicture,
-} from "../hooks/useUpdateProfile";
+} from "../hooks/useUpdateProfilePicBanner";
 import { useDeleteProfile } from "../hooks/useDeleteProfile";
 import type { EditProfileResponse } from "../types/FormTypes";
 import userProfile from "../assets/icons/profile-default.svg";

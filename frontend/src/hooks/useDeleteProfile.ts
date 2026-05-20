@@ -22,8 +22,9 @@ export const useDeleteProfile = () => {
       navigate("/", { replace: true });
     },
     onError: () => {
-      toast.error("Failed to delete profile. Please try again.");
-      // popup stays open because we no longer auto-close it
+      toast.error("Failed to delete profile. Please try again.", {
+        id: "delete-profile-error",
+      });
     },
   });
 };

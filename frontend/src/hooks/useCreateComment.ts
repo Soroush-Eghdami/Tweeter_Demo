@@ -36,7 +36,9 @@ export const useCreateComment = () => {
         queryKey: ["myProf"],
       });
 
-      toast.success("Comment posted successfully!");
+      toast.success("Comment posted successfully!", {
+        id: "create-comment-success",
+      });
     },
     onError: (error: AxiosError<{ detail?: Record<string, string[]> }>) => {
       // Convert the nested error object to a readable string
@@ -47,7 +49,7 @@ export const useCreateComment = () => {
           : undefined) ||
         error.message ||
         "Failed to post comment.";
-      toast.error(message);
+      toast.error(message, { id: "create-comment-error" });
     },
   });
 };

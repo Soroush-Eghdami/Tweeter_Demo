@@ -35,6 +35,8 @@ export const useEditProfileForm = ({ profile }: UseEditProfileFormProps) => {
   });
 
   const onSubmit = (data: EditProfileFormType) => {
+    if (isPending) return;
+
     const payload: Partial<{
       first_name: string;
       last_name: string;
@@ -52,7 +54,7 @@ export const useEditProfileForm = ({ profile }: UseEditProfileFormProps) => {
     if (dirtyFields.is_private) payload.is_public_user = !data.is_private;
 
     if (Object.keys(payload).length === 0) {
-      toast("No changes detected.");
+      toast("No changes detected.", { id: "no-changes-toast" });
       return;
     }
 
@@ -102,15 +104,20 @@ export const useEditProfileForm = ({ profile }: UseEditProfileFormProps) => {
               currentValues.username = profile!.username;
             if (fieldErrors.email) currentValues.email = profile!.email;
             reset(currentValues);
-            toast.error("That username or email is already taken.");
+            toast.error("That username or email is already taken.", {
+              id: "profile-error",
+            });
           } else {
             const firstError = Object.values(fieldErrors).flat().join(", ");
             toast.error(
               firstError || "Update failed. Please check your inputs.",
+              { id: "profile-error" },
             );
           }
         } else {
-          toast.error("Update failed. Please try again.");
+          toast.error("Update failed. Please try again.", {
+            id: "profile-error",
+          });
         }
       },
     });
