@@ -1,5 +1,4 @@
 import { useState } from "react";
-
 import oldPassword from "../../assets/icons/profile/open-lock.svg";
 import closeEye from "../../assets/icons/login/closed-eye.svg";
 import openEye from "../../assets/icons/login/opened-eye.svg";

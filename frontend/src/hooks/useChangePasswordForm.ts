@@ -13,8 +13,6 @@ interface UseChangePasswordFormProps {
   setIsOpen: (value: boolean) => void;
 }
 
-type FieldErrorRecord = Record<string, string[]>;
-
 const changePasswordRequest = async (data: {
   old_password: string;
   new_password: string;
@@ -24,7 +22,9 @@ const changePasswordRequest = async (data: {
   return response.data;
 };
 
-export const useChangePasswordForm = ({ setIsOpen }: UseChangePasswordFormProps) => {
+export const useChangePasswordForm = ({
+  setIsOpen,
+}: UseChangePasswordFormProps) => {
   const { mutate, isPending } = useMutation({
     mutationFn: changePasswordRequest,
   });
@@ -44,12 +44,6 @@ export const useChangePasswordForm = ({ setIsOpen }: UseChangePasswordFormProps)
   });
 
   const onSubmit = (data: ChangePasswordFormType) => {
-
-    if (data.oldPassword === data.newPassword) {
-      toast.error("All 3 passwords cannot be the same!");
-      return;
-    }
-
     if (data.newPassword !== data.repeatPassword) {
       setError("repeatPassword", {
         type: "manual",
@@ -75,36 +69,29 @@ export const useChangePasswordForm = ({ setIsOpen }: UseChangePasswordFormProps)
           const maybeAxiosError = error as {
             response?: {
               data?: {
-                detail?: FieldErrorRecord;
+                error?: string;
               };
             };
           };
-          const detail = maybeAxiosError?.response?.data?.detail;
 
-          if (detail?.old_password) {
-            setError("oldPassword", {
-              type: "server",
-              message: detail.old_password[0],
-            });
+          const errorMessage = maybeAxiosError?.response?.data?.error;
+
+          if (
+            errorMessage ===
+            "You have used this password recently. Please choose a different one."
+          ) {
+            toast.error(
+              "You have used this password recently. Please choose a different one.",
+            );
             return;
           }
-          if (detail?.new_password) {
-            setError("newPassword", {
-              type: "server",
-              message: detail.new_password[0],
-            });
+          if (errorMessage === "Old password is incorrect.") {
+            toast.error("Old password is incorrect.");
             return;
           }
-          if (detail?.confirm_new_password) {
-            setError("repeatPassword", {
-              type: "server",
-              message: detail.confirm_new_password[0],
-            });
-            return;
-          }
-          toast.error("Something went wrong...");
+          toast.error("Something went wrong");
         },
-      }
+      },
     );
   };
 

@@ -7,6 +7,7 @@ import repeatPasswordIcon from "../../assets/icons/login/repeat-password.svg";
 import openEye from "../../assets/icons/login/opened-eye.svg";
 import closeEye from "../../assets/icons/login/closed-eye.svg";
 import { useChangePasswordForm } from "../../hooks/useChangePasswordForm";
+import Loading from "../loading/Loading";
 interface ChangePasswordPopUpPropType {
   isOpen: boolean;
   setIsOpen: (arg0: boolean) => void;
@@ -27,7 +28,6 @@ const ChangePasswordPopUp = ({
   } = useChangePasswordForm({
     setIsOpen,
   });
-
   
   return (
     <>
@@ -146,17 +146,26 @@ const ChangePasswordPopUp = ({
               </div>
             </div>
           </div>
-          <div className="flex w-fit ml-auto gap-4 mt-12">
-            <div>
-              <NoButton setIsOpenPopUp={setIsOpen} />
-            </div>
-            <div >
-              <YesButton
-              setIsOpenPopUp={() => {}}
-                disabled={isPending}
-                type="submit" />
-            </div>
-          </div>
+              <div className="flex w-fit ml-auto gap-4 mt-12">
+                <div>
+                  <NoButton setIsOpenPopUp={setIsOpen} />
+                </div>
+
+                <div className="relative">
+                  <div className={isPending ? "opacity-0" : ""}>
+                    <YesButton
+                      setIsOpenPopUp={() => {}}
+                      disabled={isPending}
+                      type="submit"
+                    />
+                  </div>
+                  {isPending && (
+                    <div className="absolute inset-0 bg-white rounded-full flex items-center justify-center">
+                      <Loading width="w-8" height="h-8" />
+                    </div>
+                  )}
+                </div>
+              </div>
           </form>
         </div>
       </div>
