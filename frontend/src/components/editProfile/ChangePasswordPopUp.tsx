@@ -29,7 +29,7 @@ const ChangePasswordPopUp = ({
     setIsOpenEyeRight(true);
     setIsOpenEyeOld(true);
   }
-}, [isOpen]);
+  }, [isOpen]);
 
     const {
     register,
@@ -37,10 +37,17 @@ const ChangePasswordPopUp = ({
     errors,
     onSubmit,
     isPending,
+    reset,
   } = useChangePasswordForm({
     setIsOpen,
   });
-  
+
+  useEffect(() => {
+    if (isOpen) {
+      reset();
+    }
+  }, [isOpen, reset]);
+
   return (
     <>
       <div

@@ -129,5 +129,6 @@ export const useChangePasswordForm = ({
     errors,
     onSubmit,
     isPending,
+    reset,
   };
 };
