@@ -144,6 +144,39 @@ class UserProfileView(APIView):
         # Clear the authentication cookies so the browser doesn't keep a stale token
         return clear_token_cookies(response)
 
+class RemoveProfilePictureView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    
+    @extend_schema(
+        summary="Remove profile picture",
+        description="Delete the authenticated user's profile picture.",
+        request=None,
+        responses={
+            204: OpenApiResponse(description="Profile picture removed"),
+        },
+        tags=["profile"],
+    )
+    def delete(self, request: Request) -> Response:
+        UserService.remove_profile_picture(request.user)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class RemoveProfileBannerView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    
+    @extend_schema(
+        summary="Remove Profile Banner",
+        description="Delete the authenticated user's profile banner.",
+        request=None,
+        responses={
+            204: OpenApiResponse(description="Profile banner removed")
+        },
+        tags=["profile"]
+    )
+    def delete(self, request: Request) -> Response:
+        UserService.remove_profile_banner(request.user)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+        
 
 # =============================================================================
 # Follow / Unfollow
@@ -257,7 +290,7 @@ class SearchUsersView(APIView):
 
 
 # =============================================================================
-# Timelines (class‑based)
+# Timelines
 # =============================================================================
 class PublicTimelineView(APIView):
     permission_classes = [permissions.AllowAny]
@@ -300,6 +333,10 @@ class PrivateTimelineView(APIView):
         serializer = TweetSerializer(page, many=True, context={'request': request})
         return paginator.get_paginated_response(serializer.data)
 
+
+# =============================================================================
+# Profile Related Views
+# =============================================================================
 
 class UserTweetsView(APIView):
     permission_classes = [permissions.AllowAny]
@@ -586,6 +623,7 @@ __all__ = [
     # Timelines
     'PublicTimelineView',
     'PrivateTimelineView',
+    # Profile Related
     'UserTweetsView',
     'UserFollowersView',
     'UserFollowingView',
