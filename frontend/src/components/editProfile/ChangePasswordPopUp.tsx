@@ -188,12 +188,10 @@ const ChangePasswordPopUp = ({
                 )}
               </div>
             </div>
-
-            <div className="flex w-fit ml-145 gap-4 -mt-24">
+          </form>
+            <div className="flex w-fit ml-145 gap-4 -mt-18">
               <NoButton setIsOpenPopUp={setIsOpen} />
             </div>
-
-          </form>
         </div>
       </div>
     </>
