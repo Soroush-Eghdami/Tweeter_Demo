@@ -117,6 +117,13 @@ export const useChangePasswordForm = ({
             limitedToastError("Old password is incorrect.", "old-password-error");
             return;
           }
+          if (errorMessage === "New password must be different from your current password.") {
+            limitedToastError(
+              "New password must be different from your current password.",
+              "new-password-different-error"
+            );
+            return;
+          }
           limitedToastError("Something went wrong", "general-error");
         },
       },
