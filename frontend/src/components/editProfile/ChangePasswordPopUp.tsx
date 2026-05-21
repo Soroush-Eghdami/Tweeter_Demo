@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import YesButton from "../YesButton";
 import NoButton from "../NoButton";
 import OldPasswordInput from "../../components/editProfile/OldPasswordInput";
@@ -20,6 +20,16 @@ const ChangePasswordPopUp = ({
   const [isOpenEyeLeft, setIsOpenEyeLeft] = useState(true);
   const [isOpenEyeRight, setIsOpenEyeRight] = useState(true);
   const [isNumericWarning] = useState(false);
+  const [isOpenEyeOld, setIsOpenEyeOld] = useState(true);
+
+
+  useEffect(() => {
+  if (isOpen) {
+    setIsOpenEyeLeft(true);
+    setIsOpenEyeRight(true);
+    setIsOpenEyeOld(true);
+  }
+}, [isOpen]);
 
     const {
     register,
@@ -44,7 +54,9 @@ const ChangePasswordPopUp = ({
             <div className="flex flex-col gap-6">
               <OldPasswordInput 
               register={register}
-              error={errors.oldPassword?.message}/>
+              error={errors.oldPassword?.message}
+              isOpenEye={isOpenEyeOld}
+              setIsOpenEye={setIsOpenEyeOld}/>
               <div className="w-[70%]">
                 <div className="flex flex-row items-center gap-1.5 pl-1 pb-1">
                   <img src={password} alt="New-Password" className="size-5.5" />

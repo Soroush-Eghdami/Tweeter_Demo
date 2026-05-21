@@ -6,13 +6,16 @@ import openEye from "../../assets/icons/login/opened-eye.svg";
 interface OldPasswordInputProps {
   register: any;
   error?: string;
+  isOpenEye: boolean;
+  setIsOpenEye: (value: boolean) => void;
 }
 
 const OldPasswordInput = ({
   register,
   error,
+  isOpenEye,
+  setIsOpenEye,
 }: OldPasswordInputProps) => {
-  const [isOpenEye, setIsOpenEye] = useState(true);
 
   return (
     <div className="w-[70%]">
