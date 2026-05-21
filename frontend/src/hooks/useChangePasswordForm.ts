@@ -22,18 +22,28 @@ const changePasswordRequest = async (data: {
   return response.data;
 };
 
-let toastCount = 0;
-let toastResetTimer: ReturnType<typeof setTimeout> | null = null; 
 
-const limitedToastError = (message: string, limit: number = 3, intervalMs: number = 3000) => {
-  if (toastCount < limit) {
+const toastStateMap = new Map<string, { count: number; timer: ReturnType<typeof setTimeout> | null }>();
+
+const limitedToastError = (message: string, id?: string, limit: number = 3, intervalMs: number = 3000) => {
+  const key = id || message;
+  const state = toastStateMap.get(key);
+  const currentCount = state?.count || 0;
+
+  if (currentCount < limit) {
     toast.error(message);
-    toastCount++;
-    if (!toastResetTimer) {
-      toastResetTimer = setTimeout(() => {
-        toastCount = 0;
-        toastResetTimer = null;
+    
+    if (state) {
+      state.count += 1;
+      if (state.timer) clearTimeout(state.timer);
+      state.timer = setTimeout(() => {
+        toastStateMap.delete(key);
       }, intervalMs);
+    } else {
+      const timer = setTimeout(() => {
+        toastStateMap.delete(key);
+      }, intervalMs);
+      toastStateMap.set(key, { count: 1, timer });
     }
   }
 };
@@ -100,14 +110,14 @@ export const useChangePasswordForm = ({
           ) {
             limitedToastError(
               "You have used this password recently. Please choose a different one.",
-            );
+              "recent-password");
             return;
           }
           if (errorMessage === "Old password is incorrect.") {
-            limitedToastError("Old password is incorrect.");
+            limitedToastError("Old password is incorrect.", "old-password-error");
             return;
           }
-          limitedToastError("Something went wrong");
+          limitedToastError("Something went wrong", "general-error");
         },
       },
     );
