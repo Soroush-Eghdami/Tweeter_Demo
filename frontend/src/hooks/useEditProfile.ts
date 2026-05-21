@@ -18,8 +18,5 @@ const editProfile = async (userData: Partial<EditProfilePayload>) => {
 export const useEditProfile = () => {
   return useMutation({
     mutationFn: editProfile,
-    onError: (error) => {
-      console.error("Profile update failed:", error);
-    },
   });
 };

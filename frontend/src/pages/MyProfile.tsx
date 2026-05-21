@@ -12,7 +12,7 @@ import { useMyRetweetList, useMyTweetList } from "../hooks/useMyTweetRetweet";
 import {
   useUpdateBannerPicture,
   useUpdateProfilePicture,
-} from "../hooks/useUpdateProfile";
+} from "../hooks/useUpdateProfilePicBanner";
 import tweet from "../assets/icons/profile/tweet.svg";
 import tweetBlue from "../assets/icons/profile/peace_pigeon.svg";
 import avatar from "../assets/icons/profile-default.svg";

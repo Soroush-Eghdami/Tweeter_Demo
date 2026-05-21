@@ -11,15 +11,18 @@ type InfiniteTweets = {
 
 type Snapshot = [readonly unknown[], InfiniteTweets | undefined][];
 
-const likeTweet = (tweetId: number, signal?: AbortSignal) =>
-  api.post(`/tweets/${tweetId}/like/`, { signal }).then((res) => res.data);
-const unlikeTweet = (tweetId: number, signal?: AbortSignal) =>
-  api.post(`/tweets/${tweetId}/unlike/`, { signal }).then((res) => res.data);
+const likeTweet = async (tweetId: number, signal?: AbortSignal) => {
+  const response = await api.post(`/tweets/${tweetId}/like/`, { signal });
+  return response.data;
+};
+const unlikeTweet = async (tweetId: number, signal?: AbortSignal) => {
+  const response = await api.post(`/tweets/${tweetId}/unlike/`, { signal });
+  return response.data;
+};
 
 export const useLikeMutation = (tweetId: number) => {
   const queryClient = useQueryClient();
   const abortControllerRef = useRef<AbortController | null>(null);
-  const toastIdRef = useRef<string | null>(null);
 
   return useMutation({
     mutationFn: async (shouldLike: boolean) => {
@@ -181,7 +184,7 @@ export const useLikeMutation = (tweetId: number) => {
 
       // Show error toast
       toast.error(shouldLike ? "Failed to like" : "Failed to unlike", {
-        id: toastIdRef.current || undefined,
+        id: shouldLike ? "like-error" : "unlike-error",
       });
     },
   });

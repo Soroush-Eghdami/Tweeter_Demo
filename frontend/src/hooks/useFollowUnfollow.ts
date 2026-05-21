@@ -38,14 +38,14 @@ export const useFollow = () => {
       updateFollowInLists(queryClient, followee_id, true);
     },
 
-    onError: (err, _variables, context) => {
+    onError: (_, _variables, context) => {
       if (context?.prevUser) {
         queryClient.setQueryData(
           ["user", context.followee_id],
           context.prevUser,
         );
       }
-      console.log("Follow Failed:", err);
+      toast.error("Follow Failed!", { id: "follow-error" });
     },
   });
 };
@@ -81,14 +81,14 @@ export const useUnfollow = () => {
       updateFollowInLists(queryClient, followee_id, false);
     },
 
-    onError: (err, _variables, context) => {
+    onError: (_, _variables, context) => {
       if (context?.prevUser) {
         queryClient.setQueryData(
           ["user", context.followee_id],
           context.prevUser,
         );
       }
-      console.log("Unfollow Failed:", err);
+      toast.error("Unfollow Failed!", { id: "unfollow-error" });
     },
   });
 };
@@ -110,7 +110,7 @@ export const useRemoveFollower = (userId: string) => {
       toast.success("Follower Removed Successfully!");
     },
     onError: () => {
-      toast.error("Removing Follower Failed!");
+      toast.error("Removing Follower Failed!", { id: "remove-follower-error" });
     },
   });
 };

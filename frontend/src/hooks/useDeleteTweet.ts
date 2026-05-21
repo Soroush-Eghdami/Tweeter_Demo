@@ -14,10 +14,12 @@ export const useDeleteTweet = () => {
     mutationFn: deleteTweetFunc,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["myTweet"] });
-      toast.success("Tweet Deleted Successfully!");
+      toast.success("Tweet Deleted Successfully!", {
+        id: "delete-tweet-success",
+      });
     },
     onError: () => {
-      toast.error("Deleting Tweet Failed!");
+      toast.error("Deleting Tweet Failed!", { id: "delete-tweet-error" });
     },
   });
 };

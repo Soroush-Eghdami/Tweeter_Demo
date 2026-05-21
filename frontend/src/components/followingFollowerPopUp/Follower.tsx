@@ -7,12 +7,12 @@ import {
 } from "../../hooks/useFollowUnfollow";
 import Loading from "../loading/Loading";
 import type { FollowingFollowerPropsType } from "../../types/FollowingFollowerType";
-import userProfile from "../../assets/icons/profile-default.svg";
 import {
   followHandler,
   RemoveFollowerHandler,
   unfollowHandler,
 } from "../../utils/followUnfollowHandler";
+import userProfile from "../../assets/icons/profile-default.svg";
 import remove from "../../assets/icons/no-cross.svg";
 import removeRed from "../../assets/icons/no-cross-red.svg";
 

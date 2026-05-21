@@ -31,9 +31,11 @@ export const useLogin = () => {
       if (
         errorMessage === "No active account found with the given credentials"
       ) {
-        toast.error("Invalid username or password.");
+        toast.error("Invalid username or password.", { id: "login-error" });
       } else {
-        toast.error(errorMessage || "Login failed. Please try again.");
+        toast.error(errorMessage || "Login failed. Please try again.", {
+          id: "login-error",
+        });
       }
     },
   });

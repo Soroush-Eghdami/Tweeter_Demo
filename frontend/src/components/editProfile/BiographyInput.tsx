@@ -30,11 +30,7 @@ const BiographyInput = <T extends HasBio & FieldValues>({
         </label>
       </div>
       <textarea
-        {...(register("bio" as FieldPath<T>, validation),
-        {
-          validate: (value: string) =>
-            value.trim().length > 0 || "Bio cannot be only spaces",
-        })}
+        {...register("bio" as FieldPath<T>, validation)}
         id="bio"
         name="bio"
         placeholder="Enter your Bio ..."

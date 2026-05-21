@@ -20,9 +20,8 @@ export const useLogout = () => {
       queryClient.clear();
       navigate("/login");
     },
-    onError: (error) => {
-      console.log("Logout failed:", error);
-      toast.error("Logout failed");
+    onError: () => {
+      toast.error("Logout failed", { id: "logout-error" });
     },
   });
 };

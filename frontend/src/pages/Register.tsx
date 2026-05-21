@@ -73,14 +73,22 @@ const Register = () => {
                 repeatPassword: "",
               });
 
-              if (usernameError) toast.error("Username already taken.");
-              if (emailError) toast.error("Email already registered.");
+              if (usernameError)
+                toast.error("Username already taken.", {
+                  id: "register-error",
+                });
+              if (emailError)
+                toast.error("Email already registered.", {
+                  id: "register-error",
+                });
               return;
             }
           }
 
           // Fallback for other errors
-          toast.error("Registration failed. Please try again.");
+          toast.error("Registration failed. Please try again.", {
+            id: "register-error",
+          });
         },
       },
     );
