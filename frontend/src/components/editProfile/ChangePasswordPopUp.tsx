@@ -57,11 +57,6 @@ const ChangePasswordPopUp = ({
         className={`${isOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"} fixed z-40 w-dvw min-h-screen top-0 right-0 pt-35 backdrop-blur-md bg-black/70 transition-opacity duration-200`}
       >
         <div className="z-50 max-w-[50%] mx-auto pt-10 pb-7 px-14 rounded-2xl bg-[#1c1c1c] shadow-[0_0px_30px_rgba(0,0,0,0.4)]">
-          <form
-            id="change-password-form"
-            onSubmit={handleSubmit(onSubmit)}
-            className="flex flex-col gap-6"
-          >
             <div className="flex flex-col gap-6">
               <OldPasswordInput
                 register={register}
@@ -182,26 +177,24 @@ const ChangePasswordPopUp = ({
               </div>
             </div>
 
-            <div className="flex w-fit ml-auto gap-4 mt-12">
+            <div className="flex justify-end gap-4 mt-12">
+                <NoButton setIsOpenPopUp={() => setIsOpen(false)} />
               <div className="relative">
                 <div className={isPending ? "opacity-0" : ""}>
+                <div onClick={handleSubmit(onSubmit)}>
                   <YesButton
                     setIsOpenPopUp={() => {}}
                     disabled={isPending}
-                    type="submit"
                   />
+                </div>
                 </div>
                 {isPending && (
                   <div className="absolute inset-0 bg-white rounded-full flex items-center justify-center cursor-not-allowed">
-                    <Loading width="w-8" height="h-8" />
+                    <Loading width="w-8" height="h-8"/>
                   </div>
                 )}
               </div>
             </div>
-          </form>
-          <div className="flex w-fit ml-145 gap-4 -mt-18">
-            <NoButton setIsOpenPopUp={setIsOpen} />
-          </div>
         </div>
       </div>
     </>
