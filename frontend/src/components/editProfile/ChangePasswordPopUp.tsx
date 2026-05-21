@@ -34,6 +34,16 @@ const ChangePasswordPopUp = ({
     useChangePasswordForm({
       setIsOpen,
     });
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "unset";
+    }
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, [isOpen]);
 
   useEffect(() => {
     if (isOpen) {
@@ -189,9 +199,9 @@ const ChangePasswordPopUp = ({
               </div>
             </div>
           </form>
-            <div className="flex w-fit ml-145 gap-4 -mt-18">
-              <NoButton setIsOpenPopUp={setIsOpen} />
-            </div>
+          <div className="flex w-fit ml-145 gap-4 -mt-18">
+            <NoButton setIsOpenPopUp={setIsOpen} />
+          </div>
         </div>
       </div>
     </>
