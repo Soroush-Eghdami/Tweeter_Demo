@@ -25,7 +25,7 @@ const changePasswordRequest = async (data: {
 
 const toastStateMap = new Map<string, { count: number; timer: ReturnType<typeof setTimeout> | null }>();
 
-const limitedToastError = (message: string, id?: string, limit: number = 1, intervalMs: number = 3000) => {
+const limitedToastError = (message: string, id?: string, limit: number = 1, intervalMs: number = 4000) => {
   const key = id || message;
   const state = toastStateMap.get(key);
   const currentCount = state?.count || 0;
