@@ -25,7 +25,7 @@ const changePasswordRequest = async (data: {
 
 const toastStateMap = new Map<string, { count: number; timer: ReturnType<typeof setTimeout> | null }>();
 
-const limitedToastError = (message: string, id?: string, limit: number = 3, intervalMs: number = 3000) => {
+const limitedToastError = (message: string, id?: string, limit: number = 1, intervalMs: number = 3000) => {
   const key = id || message;
   const state = toastStateMap.get(key);
   const currentCount = state?.count || 0;
@@ -114,14 +114,13 @@ export const useChangePasswordForm = ({
             return;
           }
           if (errorMessage === "Old password is incorrect.") {
-            limitedToastError("Old password is incorrect.", "old-password-error");
+            limitedToastError("Old password is incorrect.", "recent-password");
             return;
           }
           if (errorMessage === "New password must be different from your current password.") {
             limitedToastError(
               "New password must be different from your current password.",
-              "new-password-different-error"
-            );
+              "new-password-different-error");
             return;
           }
           limitedToastError("Something went wrong", "general-error");
