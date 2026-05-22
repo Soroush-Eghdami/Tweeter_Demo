@@ -22,7 +22,6 @@ const changePasswordRequest = async (data: {
   return response.data;
 };
 
-
 const toastStateMap = new Map<string, { count: number; timer: ReturnType<typeof setTimeout> | null }>();
 
 const limitedToastError = (message: string, id?: string, limit: number = 1, intervalMs: number = 4000) => {
@@ -58,9 +57,9 @@ export const useChangePasswordForm = ({
   const {
     register,
     handleSubmit,
-    formState: { errors },
     setError,
     reset,
+    formState: { errors },
   } = useForm<ChangePasswordFormType>({
     defaultValues: {
       oldPassword: "",
@@ -93,7 +92,6 @@ export const useChangePasswordForm = ({
           setIsOpen(false);
         },
         onError: (error: unknown) => {
-          console.error(error);
           const maybeAxiosError = error as {
             response?: {
               data?: {
