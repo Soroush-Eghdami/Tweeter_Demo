@@ -11,13 +11,19 @@ import type { FollowingFollowerListType } from "../../types/FollowingFollowerTyp
 import user from "../../assets/icons/profile/follower-following-counter.svg";
 
 interface FollowingFollowerPropsType {
+  isUserProfile: boolean;
+  isPublic: boolean;
   userId: string;
+  myProfileId?: string;
   setIsUserListOpen: (arg0: boolean) => void;
   isUserListOpen: boolean;
 }
 
 const FollowingFollower = ({
+  isUserProfile,
+  isPublic,
   userId,
+  myProfileId,
   setIsUserListOpen,
   isUserListOpen,
 }: FollowingFollowerPropsType) => {
@@ -28,14 +34,18 @@ const FollowingFollower = ({
     hasNextPage: followingHasNextPage,
     isFetchingNextPage: followingIsFetchNextPage,
     isLoading: followingListLoading,
-  } = useFollowingList(userId, 5, { enabled: isUserListOpen && isFollowing });
+  } = useFollowingList(userId, 5, {
+    enabled: isPublic && isUserListOpen && isFollowing,
+  });
   const {
     data: followerData,
     fetchNextPage: followerFetchNextPage,
     hasNextPage: followerHasNextPage,
     isFetchingNextPage: followerIsFetchNextPage,
     isLoading: followerListLoading,
-  } = useFollowerList(userId, 5, { enabled: isUserListOpen && !isFollowing });
+  } = useFollowerList(userId, 5, {
+    enabled: isPublic && isUserListOpen && !isFollowing,
+  });
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const loadMoreRefFollowing = useRef<HTMLDivElement>(null);
   const loadMoreRefFollower = useRef<HTMLDivElement>(null);
@@ -164,7 +174,11 @@ const FollowingFollower = ({
                   </div>
                 )}
                 {/* Mapping Through Each Following */}
-                {!followingListLoading && followingList.length === 0 ? (
+                {!isPublic && !followingListLoading ? (
+                  <p className="text-center font-medium text-xl text-[#555] my-52">
+                    This Profile is Private.
+                  </p>
+                ) : !followingListLoading && followingList.length === 0 ? (
                   <p className="text-center font-medium text-lg text-[#555] my-52">
                     You haven't follow anyone yet.
                   </p>
@@ -174,6 +188,10 @@ const FollowingFollower = ({
                       <Following
                         key={following.id}
                         info={following}
+                        isMyProfile={
+                          following.followee.id === myProfileId ? true : false
+                        }
+                        isUserProfile={isUserProfile}
                         isLast={handleLast(index)}
                       />
                     ),
@@ -200,7 +218,11 @@ const FollowingFollower = ({
                   </div>
                 )}
                 {/* Mapping Through Each Follower */}
-                {!followerListLoading && followerList.length === 0 ? (
+                {!isPublic && !followerListLoading ? (
+                  <p className="text-center font-medium text-xl text-[#555] my-52">
+                    This Profile is Private.
+                  </p>
+                ) : !followerListLoading && followerList.length === 0 ? (
                   <p className="text-center font-medium text-lg text-[#555] my-52">
                     No one has follow you yet.
                   </p>
@@ -210,6 +232,10 @@ const FollowingFollower = ({
                       <Follower
                         key={follower.id}
                         info={follower}
+                        isMyProfile={
+                          follower.follower.id === myProfileId ? true : false
+                        }
+                        isUserProfile={isUserProfile}
                         isLast={handleLast(index)}
                       />
                     ),

@@ -17,7 +17,7 @@ export const commentInfo: commentInfoType[] = [
     likeNumber: "20",
     commentNumber: "10",
     retweetNumber: "8",
-    isPrivate: true
+    isPrivate: true,
   },
   {
     username: "Mmd",
@@ -27,7 +27,7 @@ export const commentInfo: commentInfoType[] = [
     likeNumber: "8",
     commentNumber: "5",
     retweetNumber: "23",
-    isPrivate: true
+    isPrivate: true,
   },
   {
     username: "Soroush",
@@ -37,7 +37,7 @@ export const commentInfo: commentInfoType[] = [
     likeNumber: "12",
     commentNumber: "45",
     retweetNumber: "96",
-    isPrivate: false
+    isPrivate: false,
   },
   {
     username: "Anna",
@@ -47,7 +47,7 @@ export const commentInfo: commentInfoType[] = [
     likeNumber: "45",
     commentNumber: "86",
     retweetNumber: "90",
-    isPrivate: true
+    isPrivate: true,
   },
   {
     username: "Peyman",
@@ -57,7 +57,7 @@ export const commentInfo: commentInfoType[] = [
     likeNumber: "50",
     commentNumber: "100",
     retweetNumber: "9",
-    isPrivate: true
+    isPrivate: true,
   },
   {
     username: "Navid",
@@ -67,6 +67,6 @@ export const commentInfo: commentInfoType[] = [
     likeNumber: "89",
     commentNumber: "150",
     retweetNumber: "44",
-    isPrivate: false
+    isPrivate: false,
   },
 ];

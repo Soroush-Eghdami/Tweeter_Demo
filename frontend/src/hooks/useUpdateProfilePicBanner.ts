@@ -17,9 +17,10 @@ export const useUpdateProfilePicture = () => {
       queryClient.invalidateQueries({ queryKey: ["myProf"] });
       toast.success("Profile Picture Updated Successfully!");
     },
-    onError: (error) => {
-      toast.error("Profile Picture Updating Failed!");
-      console.log("Updating Profile Picture Failed:", error);
+    onError: () => {
+      toast.error("Profile Picture Updating Failed!", {
+        id: "update-profile-error",
+      });
     },
   });
 };
@@ -39,9 +40,10 @@ export const useUpdateBannerPicture = () => {
       queryClient.invalidateQueries({ queryKey: ["myProf"] });
       toast.success("Banner Picture Updated Successfully!");
     },
-    onError: (error) => {
-      toast.error("Updating Banner Picture Failed!");
-      console.log("Updating Banner Picture Failed:", error);
+    onError: () => {
+      toast.error("Updating Banner Picture Failed!", {
+        id: "update-banner-error",
+      });
     },
   });
 };

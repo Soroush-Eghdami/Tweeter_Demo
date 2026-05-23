@@ -37,10 +37,18 @@ class UserService:
     def change_password(user: User, old_password: str, new_password: str) -> None:
         if not user.check_password(old_password):
             raise ValueError("Old password is incorrect.")
-        password_history = PasswordHistory.objects.filter(user=user).order_by('-created_at')[:5]
+        if old_password == new_password:
+            raise ValueError("New password must be different from your current password.")
+    
+        password_history = PasswordHistory.objects.filter(
+            user=user
+        ).order_by('-created_at')[:5]
         for entry in password_history:
             if check_password(new_password, entry.password_hash):
-                raise ValueError("You have used this password recently. Please choose a different one.")
+                raise ValueError(
+                    "You have used this password recently. Please choose a different one."
+                )
+    
         with transaction.atomic():
             PasswordHistory.objects.create(user=user, password_hash=user.password)
             user.set_password(new_password)
@@ -52,14 +60,40 @@ class UserService:
 
     @staticmethod
     def update_profile(user: User, **data: Any) -> User:
+        # Username validation (unchanged)
         if 'username' in data:
             username = data['username']
-            if User.objects.exclude(pk=user.pk).filter(username=username).exists():
-                raise ValueError("Username already taken.")
-            if ' ' in username:
-                raise ValueError("Username cannot contain spaces.")
+            if isinstance(username, str) and username.strip() == '':
+                del data['username']   # ignore empty username (can't clear it)
+            else:
+                if User.objects.exclude(pk=user.pk).filter(username=username).exists():
+                    raise ValueError("Username already taken.")
+                if ' ' in username:
+                    raise ValueError("Username cannot contain spaces.")
+    
+        # Fields that are file uploads – never clear them via empty strings
+        FILE_FIELDS = {'profile_picture', 'profile_banner'}
+        # Fields that can be cleared by sending an empty string
+        CLEARABLE_FIELDS = {'bio'}
+    
         for field, value in data.items():
-            setattr(user, field, value)
+            if field in FILE_FIELDS:
+                # For file fields, ignore empty strings and None (no change)
+                if value is None or (isinstance(value, str) and value.strip() == ''):
+                    continue
+                setattr(user, field, value)
+            elif field in CLEARABLE_FIELDS:
+                # For clearable fields, empty string means "clear it"
+                if isinstance(value, str):
+                    setattr(user, field, value.strip())
+                else:
+                    setattr(user, field, value)
+            else:
+                # For other text fields, ignore empty strings (preserve existing)
+                if isinstance(value, str) and value.strip() == '':
+                    continue
+                setattr(user, field, value)
+    
         user.save()
         return user
 
@@ -87,3 +121,14 @@ class UserService:
         deleted, _ = Follower.objects.filter(follower=follower, followee=followee).delete()
         if not deleted:
             raise ValueError("You are not following this user.")
+        
+    @staticmethod
+    def remove_follower(followee: User, follower_id: str) -> None:
+        """Remove a follower by their ID. Raises ValueError if they are not a follower."""
+        if not follower_id or not follower_id.strip():
+            raise ValueError("follower_id is required")
+        from accounts.selectors import get_user_by_id
+        follower = get_user_by_id(follower_id)
+        deleted, _ = Follower.objects.filter(follower=follower, followee=followee).delete()
+        if not deleted:
+            raise ValueError("This user does not follow you.")

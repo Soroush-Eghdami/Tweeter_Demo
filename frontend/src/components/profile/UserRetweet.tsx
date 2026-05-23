@@ -1,17 +1,18 @@
 import TweetCard from "../TweetCard";
-import type { userRetweetInfoType } from "../../contents/userRetweetInfo";
+import type { TweetCardInfoType } from "../../types/TweetTypes";
 
 interface UserRetweetPropsType {
-  info: userRetweetInfoType;
+  info: TweetCardInfoType;
+  isLoggedIn: boolean;
 }
 
-const UserRetweet = ({ info }: UserRetweetPropsType) => {
+const UserRetweet = ({ info, isLoggedIn }: UserRetweetPropsType) => {
   if (!info) return null;
 
   return (
     <>
       <div className="w-full">
-        <TweetCard info={info} defaultRetweeted={true} />
+        <TweetCard info={info} isLoggedIn={isLoggedIn} />
       </div>
     </>
   );

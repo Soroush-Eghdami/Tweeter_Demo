@@ -1,6 +1,9 @@
-import { useState } from "react";
+import { useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import type { tweetInfoType } from "../contents/tweetInfo";
+import { useLikeMutation } from "../hooks/useToggleLike";
+import { useRetweetMutation } from "../hooks/useToggleRetweet";
+import { joinedDate } from "../utils/joinedDate";
+import type { TweetCardInfoType } from "../types/TweetTypes";
 import profilePicture from "../assets/icons/profile-default.svg";
 import like from "../assets/icons/heart.svg";
 import likeFilled from "../assets/icons/filled-heart.svg";
@@ -12,19 +15,58 @@ import pin from "../assets/icons/pin.svg";
 
 interface TweetCardPropsType {
   isPinned?: boolean;
-  info: tweetInfoType;
-  defaultRetweeted?: boolean;
+  info: TweetCardInfoType;
+  isLoggedIn?: boolean;
 }
 
-const TweetCard = ({ isPinned, info , defaultRetweeted = false}: TweetCardPropsType) => {
-  const [liked, setLiked] = useState(false);
-  const [retweeted, setRetweeted] = useState(defaultRetweeted);
+const TweetCard = ({ isPinned, info, isLoggedIn }: TweetCardPropsType) => {
+  const likeMutation = useLikeMutation(info.id);
+  const retweetMutation = useRetweetMutation(info.id);
+  const formattedJoinDate = joinedDate(info.created_at);
   const navigation = useNavigate();
+  const lastLikeClick = useRef(0);
+  const lastRetweetClick = useRef(0);
+
+  const handleLikeClick = () => {
+    const now = Date.now();
+    if (now - lastLikeClick.current < 300) return; // 300ms
+    lastLikeClick.current = now;
+    likeMutation.mutate(!info.is_liked);
+  };
+
+  const handleRetweetClick = () => {
+    const now = Date.now();
+    if (now - lastRetweetClick.current < 300) return;
+    lastRetweetClick.current = now;
+    retweetMutation.mutate(!info.is_retweeted);
+  };
+
+  // Double Click for like and unlike
+  const handleCardDoubleClick = (e: React.MouseEvent) => {
+    // Don't trigger if double-click originated from a button or link
+    let target = e.target as HTMLElement;
+    while (target && target !== e.currentTarget) {
+      if (
+        target.tagName === "BUTTON" ||
+        target.tagName === "A" ||
+        target.closest("button")
+      ) {
+        return;
+      }
+      target = target.parentElement as HTMLElement;
+    }
+    if (isLoggedIn) {
+      handleLikeClick();
+    }
+  };
 
   if (!info) return null;
 
   return (
-    <div className="relative border-2 border-white h-fit px-12 py-8 mb-7 rounded-3xl">
+    <div
+      className="relative border-2 border-white h-fit px-12 py-8 mb-7 rounded-3xl overflow-hidden"
+      onDoubleClick={handleCardDoubleClick}
+    >
       {isPinned && (
         <div className="absolute top-10 right-10 size-6">
           <img src={pin} alt="Pin" />
@@ -32,23 +74,34 @@ const TweetCard = ({ isPinned, info , defaultRetweeted = false}: TweetCardPropsT
       )}
       {/* Tweet Info */}
       <div className="flex items-center gap-3.5 mb-8">
-        <img src={profilePicture} alt="User-Profile" />
+        <img
+          src={info.user?.profile_picture || profilePicture}
+          alt="User-Profile"
+          className="rounded-full w-14 h-14"
+          onError={(e) => {
+            const target = e.target as HTMLImageElement;
+            target.onerror = null; // prevent infinite loop
+            target.src = profilePicture;
+          }}
+        />
         <h2
           className="font-semibold text-xl cursor-pointer hover:text-[#ddd] hover:underline"
-          onClick={() => navigation("/profile")}
+          onClick={() => navigation(`/profile/${info.user?.id}`)}
         >
-          {info.username}
+          {info.user?.username}
         </h2>
-        <h5 className="text-md text-[#ddd]">{info.createdAt}</h5>
+        <h5 className="text-md text-[#ddd]">{formattedJoinDate}</h5>
       </div>
-      <p className="font-medium mb-9 pl-12">{info.description}</p>
+      <p className="font-medium mb-9 pl-12 wrap-break-words">{info.content}</p>
       <div className="flex items-center gap-9 pl-6">
         {/* Like Button */}
-        <div
-          className="flex items-center gap-2.5 cursor-pointer"
-          onClick={() => setLiked((prev) => !prev)}
+        <button
+          type="button"
+          disabled={!isLoggedIn}
+          className="flex items-center gap-2.5 cursor-pointer disabled:cursor-not-allowed"
+          onClick={handleLikeClick}
         >
-          {liked ? (
+          {info.is_liked ? (
             <img
               src={likeFilled}
               alt="Liked"
@@ -61,12 +114,12 @@ const TweetCard = ({ isPinned, info , defaultRetweeted = false}: TweetCardPropsT
               className="size-10 hover:scale-105 transition-all duration-150 ease-in-out"
             />
           )}
-          <p className="text-[#ddd] text-sm">{info.likeNumber}</p>
-        </div>
+          <p className="text-[#ddd] text-sm">{info.like_count}</p>
+        </button>
         {/* Comment Button */}
         <div
           className="flex items-center gap-2.5 cursor-pointer"
-          onClick={() => navigation("/comment")}
+          onClick={() => navigation(`/comment/${info.id}`)}
         >
           {isPinned ? (
             <img
@@ -79,17 +132,19 @@ const TweetCard = ({ isPinned, info , defaultRetweeted = false}: TweetCardPropsT
               src={comment}
               alt="Comment"
               className="size-9 hover:scale-105 transition-all duration-150 ease-in-out"
-              onClick={() => navigation("/comment")}
+              onClick={() => navigation(`/comment/${info.id}`)}
             />
           )}
-          <p className="text-[#ddd] text-sm">{info.commentNumber}</p>
+          <p className="text-[#ddd] text-sm">{info.replies_count}</p>
         </div>
         {/* Retweet Button */}
-        <div
-          className="flex items-center gap-2.5 cursor-pointer"
-          onClick={() => setRetweeted((prev) => !prev)}
+        <button
+          type="button"
+          disabled={!isLoggedIn}
+          className="flex items-center gap-2.5 cursor-pointer disabled:cursor-not-allowed"
+          onClick={handleRetweetClick}
         >
-          {retweeted ? (
+          {info.is_retweeted ? (
             <img
               src={retweetFilled}
               alt="Retweeted"
@@ -102,8 +157,8 @@ const TweetCard = ({ isPinned, info , defaultRetweeted = false}: TweetCardPropsT
               className="size-8.5 hover:scale-105 transition-all duration-150 ease-in-out"
             />
           )}
-          <p className="text-[#ddd] text-sm">{info.retweetNumber}</p>
-        </div>
+          <p className="text-[#ddd] text-sm">{info.retweet_count}</p>
+        </button>
       </div>
     </div>
   );

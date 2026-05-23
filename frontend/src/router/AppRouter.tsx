@@ -36,7 +36,7 @@ const routes: RouteObject[] = [
         path: "profile/:id",
         element: <UserProfile />,
       },
-      { path: "comment", element: <CommentPage /> },
+      { path: "comment/:id", element: <CommentPage /> },
     ],
   },
 

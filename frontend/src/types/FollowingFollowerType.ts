@@ -4,6 +4,8 @@ interface FollowerType {
   email: string;
   is_public: boolean;
   profile_picture: string;
+  is_following: boolean;
+  is_following_you: boolean;
 }
 
 interface FolloweeType {
@@ -12,6 +14,8 @@ interface FolloweeType {
   email: string;
   is_public: boolean;
   profile_picture: string;
+  is_following: boolean;
+  is_following_you: boolean;
 }
 
 export interface FollowingFollowerListType {
@@ -23,4 +27,6 @@ export interface FollowingFollowerListType {
 export interface FollowingFollowerPropsType {
   info: FollowingFollowerListType;
   isLast: boolean;
+  isMyProfile: boolean;
+  isUserProfile: boolean;
 }

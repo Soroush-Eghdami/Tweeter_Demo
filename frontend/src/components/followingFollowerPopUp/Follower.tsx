@@ -1,21 +1,40 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useFollow, useUnfollow } from "../../hooks/useFollowUnfollow";
+import {
+  useFollow,
+  useRemoveFollower,
+  useUnfollow,
+} from "../../hooks/useFollowUnfollow";
 import Loading from "../loading/Loading";
 import type { FollowingFollowerPropsType } from "../../types/FollowingFollowerType";
-import userProfile from "../../assets/icons/profile-default.svg";
 import {
   followHandler,
+  RemoveFollowerHandler,
   unfollowHandler,
 } from "../../utils/followUnfollowHandler";
+import userProfile from "../../assets/icons/profile-default.svg";
+import remove from "../../assets/icons/no-cross.svg";
+import removeRed from "../../assets/icons/no-cross-red.svg";
 
-const Follower = ({ info, isLast }: FollowingFollowerPropsType) => {
+const Follower = ({
+  info,
+  isLast,
+  isMyProfile,
+  isUserProfile,
+}: FollowingFollowerPropsType) => {
   const { mutate: follow, isPending: isFollowPending } = useFollow();
   const { mutate: unfollow, isPending: isUnfollowPending } = useUnfollow();
-  const [isFollowed, setIsFollowed] = useState(true);
+  const { mutate: removeFollower, isPending: isRemoveFollowerPending } =
+    useRemoveFollower(info?.followee.id);
+  const [isFollowed, setIsFollowed] = useState(info.follower.is_following);
+  const [hover, setHover] = useState(false);
   const navigation = useNavigate();
 
   const userId = info.follower.id;
+
+  useEffect(() => {
+    setIsFollowed(info.follower.is_following);
+  }, [info.follower.is_following]);
 
   return (
     <>
@@ -25,7 +44,7 @@ const Follower = ({ info, isLast }: FollowingFollowerPropsType) => {
             {/* Profile Picture */}
             {info.follower.profile_picture ? (
               <img
-                src={`http://127.0.0.1:8000${info.follower.profile_picture}`}
+                src={info.follower.profile_picture}
                 alt="profile-picture"
                 className="size-22 rounded-[50%]"
               />
@@ -47,37 +66,91 @@ const Follower = ({ info, isLast }: FollowingFollowerPropsType) => {
             </div>
           </div>
           {/* Follow / Unfollow Button */}
-          <div className="ml-auto my-auto mr-18">
-            {isFollowed ? (
-              <button
-                className={`text-xl px-12 py-3 rounded-3xl text-white border-2 border-white hover:bg-[#333] disabled:cursor-not-allowed disabled:hover:bg-[#1c1c1c]/90 transition-colors cursor-pointer duration-300`}
-                disabled={isUnfollowPending}
-                onClick={() => unfollowHandler(unfollow, userId, setIsFollowed)}
-              >
-                {isUnfollowPending ? (
-                  <div className="w-19.5">
-                    <Loading width="w-7" height="h-7" />
-                  </div>
+          {!isMyProfile && (
+            <div className="flex items-center gap-7 ml-auto my-auto mr-18">
+              {/* Follow Back Button */}
+              {isUserProfile ? (
+                !isFollowed ? (
+                  <button
+                    className="text-xl font-semibold px-12 py-3 rounded-3xl bg-white text-black hover:bg-[#ccc] disabled:cursor-not-allowed disabled:hover:bg-white transition-colors cursor-pointer duration-300"
+                    disabled={isFollowPending}
+                    onClick={() => followHandler(follow, userId, setIsFollowed)}
+                  >
+                    {isFollowPending ? (
+                      <div className="w-26.75">
+                        <Loading width="w-7" height="h-7" />
+                      </div>
+                    ) : (
+                      "Follow"
+                    )}
+                  </button>
                 ) : (
-                  "Unfollow"
-                )}
-              </button>
-            ) : (
-              <button
-                className={`text-xl font-semibold px-12 py-3 rounded-3xl bg-white text-black hover:bg-[#ccc] disabled:cursor-not-allowed disabled:hover:bg-white transition-colors cursor-pointer duration-300`}
-                disabled={isFollowPending}
-                onClick={() => followHandler(follow, userId, setIsFollowed)}
-              >
-                {isFollowPending ? (
-                  <div className="w-14.75">
-                    <Loading width="w-7" height="h-7" />
-                  </div>
-                ) : (
-                  "Follow"
-                )}
-              </button>
-            )}
-          </div>
+                  <button
+                    className={`text-xl px-12 py-3 rounded-3xl text-white border-2 border-white hover:bg-[#333] disabled:cursor-not-allowed disabled:hover:bg-[#1c1c1c]/90 transition-colors cursor-pointer duration-300`}
+                    disabled={isUnfollowPending}
+                    onClick={() =>
+                      unfollowHandler(unfollow, userId, setIsFollowed)
+                    }
+                  >
+                    {isUnfollowPending ? (
+                      <div className="w-19.75">
+                        <Loading width="w-7" height="h-7" />
+                      </div>
+                    ) : (
+                      "Unfollow"
+                    )}
+                  </button>
+                )
+              ) : (
+                !isFollowed && (
+                  <button
+                    className="text-xl font-semibold px-8 py-3 rounded-3xl bg-white text-black hover:bg-[#ccc] disabled:cursor-not-allowed disabled:hover:bg-white transition-colors cursor-pointer duration-300"
+                    disabled={isFollowPending}
+                    onClick={() => followHandler(follow, userId, setIsFollowed)}
+                  >
+                    {isFollowPending ? (
+                      <div className="w-26.75">
+                        <Loading width="w-7" height="h-7" />
+                      </div>
+                    ) : (
+                      "Follow Back"
+                    )}
+                  </button>
+                )
+              )}
+
+              {/* Remove Button */}
+              {!isUserProfile && (
+                <button
+                  className={`p-4 rounded-full border-2 border-white hover:border-[#ff575b] disabled:cursor-not-allowed disabled:hover:border-white transition-colors cursor-pointer duration-100`}
+                  disabled={isRemoveFollowerPending}
+                  onMouseEnter={() => setHover(true)}
+                  onMouseLeave={() => setHover(false)}
+                  onClick={() => RemoveFollowerHandler(removeFollower, userId)}
+                >
+                  {isRemoveFollowerPending ? (
+                    <Loading width="w-5" height="h-5" />
+                  ) : (
+                    <div>
+                      {!hover ? (
+                        <img
+                          src={remove}
+                          alt="Remove-Follower"
+                          className="size-5"
+                        />
+                      ) : (
+                        <img
+                          src={removeRed}
+                          alt="Remove-Follower"
+                          className="size-5"
+                        />
+                      )}
+                    </div>
+                  )}
+                </button>
+              )}
+            </div>
+          )}
         </div>
         {/* Line */}
         {!isLast && (

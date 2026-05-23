@@ -24,6 +24,7 @@ export const useFollowingList = (
     queryKey: ["following", userId, size],
     queryFn: ({ pageParam }) => getFollowingList({ pageParam }, userId, size),
     initialPageParam: 1,
+    refetchOnWindowFocus: false,
 
     getNextPageParam: (lastPage) => {
       if (!lastPage.next) return undefined;
@@ -58,6 +59,7 @@ export const useFollowerList = (
     queryKey: ["follower", userId, size],
     queryFn: ({ pageParam }) => getFollowerList({ pageParam }, userId, size),
     initialPageParam: 1,
+    refetchOnWindowFocus: false,
 
     getNextPageParam: (lastPage) => {
       if (!lastPage.next) return undefined;

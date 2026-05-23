@@ -5,28 +5,65 @@ from rest_framework import serializers
 from drf_spectacular.utils import extend_schema_field, OpenApiTypes
 from accounts.models import Follower
 from accounts.selectors import is_following
+from accounts.selectors.user import (
+    is_following_you,
+    get_followers_count,
+    get_following_count,
+    get_tweets_count,
+    get_retweets_made_count,
+)
 
 User = get_user_model()
 
 
 # =====================================================================
-# User Output Serializers
+# Absolute URL for Image Fields
 # =====================================================================
 
+class AbsoluteURLImageField(serializers.ImageField):
+    """Returns absolute URLs for image fields when request context is available."""
+    def to_representation(self, value):
+        url = super().to_representation(value)
+        if url and self.context.get('request'):
+            return self.context['request'].build_absolute_uri(url)
+        return url
+
+
+
+# =====================================================================
+# User Output Serializers
+# =====================================================================
 class UserLiteOutputSerializer(serializers.ModelSerializer):
-    """Lightweight user representation for nested use (e.g., in Follower)."""
-    is_public = serializers.ReadOnlyField()
+    profile_picture = AbsoluteURLImageField(read_only=True)
+    is_following = serializers.SerializerMethodField()
+    is_following_you = serializers.SerializerMethodField()
 
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'custom_id', 'is_public', 'profile_picture']
+        fields = ['id', 'username', 'email', 'custom_id', 'profile_picture', 'is_following', 'is_following_you']
         read_only_fields = fields
 
+    @extend_schema_field(OpenApiTypes.BOOL)
+    def get_is_following(self, obj):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            return is_following(request.user, obj)
+        return False
+
+    @extend_schema_field(OpenApiTypes.BOOL)
+    def get_is_following_you(self, obj):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            return is_following_you(request.user, obj)
+        return False
 
 class UserOutputSerializer(serializers.ModelSerializer):
     """Full user output serializer for detail/list views."""
     is_following = serializers.SerializerMethodField()
-    is_public = serializers.ReadOnlyField()
+    is_following_you = serializers.SerializerMethodField()
+    # is_public = serializers.ReadOnlyField()
+    profile_picture = AbsoluteURLImageField(read_only=True)
+    profile_banner = AbsoluteURLImageField(read_only=True)
     followers_count = serializers.SerializerMethodField()
     following_count = serializers.SerializerMethodField()
     tweets_count = serializers.SerializerMethodField()
@@ -37,18 +74,27 @@ class UserOutputSerializer(serializers.ModelSerializer):
         model = User
         fields = [
             'id', 'username', 'email', 'first_name', 'last_name', 'custom_id',
-            'bio', 'is_public_user', 'is_public', 'is_following',
+            'bio', 'is_public_user', 'is_following', 'is_following_you',
             'profile_picture', 'profile_banner', 'date_joined',
             'followers_count', 'following_count', 'tweets_count', 'likes_received', 'retweets_made'
         ]
         read_only_fields = fields
-
+        
+    
+    @extend_schema_field(OpenApiTypes.BOOL)
     def get_is_following(self, obj: User) -> bool:
         request = self.context.get('request')
         if request:
             return is_following(request.user, obj)
         return False
 
+    @extend_schema_field(OpenApiTypes.BOOL)
+    def get_is_following_you(self, obj: User) -> bool:
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            return is_following_you(request.user, obj)
+        return False
+    
     def get_followers_count(self, obj: User) -> int:
         from accounts.selectors.user import get_followers_count
         return get_followers_count(obj)
@@ -68,6 +114,58 @@ class UserOutputSerializer(serializers.ModelSerializer):
     def get_retweets_made(self, obj: User) -> int:
         from accounts.selectors.user import get_retweets_made_count
         return get_retweets_made_count(obj)
+
+
+
+class PrivateUserOutputSerializer(serializers.ModelSerializer):
+    """
+    Minimal user profile visible to non-followers when the account is private.
+    """
+    is_following = serializers.SerializerMethodField()
+    is_following_you = serializers.SerializerMethodField()
+    profile_picture = AbsoluteURLImageField(read_only=True)
+    profile_banner = AbsoluteURLImageField(read_only=True)
+    followers_count = serializers.SerializerMethodField()
+    following_count = serializers.SerializerMethodField()
+    tweets_count = serializers.SerializerMethodField()
+
+    class Meta:
+        model = User
+        fields = [
+            'id', 'username', 'first_name', 'last_name', 'custom_id',
+            'bio', 'is_public_user',
+            'profile_picture', 'profile_banner',
+            'followers_count', 'following_count', 'tweets_count',
+            'is_following', 'is_following_you',
+        ]
+        read_only_fields = fields
+
+    @extend_schema_field(OpenApiTypes.BOOL)
+    def get_is_following(self, obj):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            return is_following(request.user, obj)
+        return False
+
+    @extend_schema_field(OpenApiTypes.BOOL)
+    def get_is_following_you(self, obj):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            return is_following_you(request.user, obj)
+        return False
+
+    def get_followers_count(self, obj):
+        return get_followers_count(obj)
+
+    def get_following_count(self, obj):
+        return get_following_count(obj)
+
+    def get_tweets_count(self, obj):
+        return get_tweets_count(obj)
+    
+    def get_retweets_made_count(self, obj):
+        return get_retweets_made_count(obj)
+    
 
 
 # =====================================================================
@@ -133,6 +231,10 @@ class UnfollowInputSerializer(serializers.Serializer):
     """Input serializer for unfollowing a user."""
     followee_id = serializers.CharField(required=True, write_only=True)
 
+
+class RemoveFollowerInputSerializer(serializers.Serializer):
+    """Input serializer for removing a follower."""
+    follower_id = serializers.CharField(required=True, write_only=True)
 
 # =====================================================================
 # Follower Serializers
