@@ -1,10 +1,9 @@
 import { useEffect, useState } from "react";
+import type { FieldErrors, UseFormRegister } from "react-hook-form";
 import password from "../../assets/icons/login/password.svg";
 import repeatPasswordIcon from "../../assets/icons/login/repeat-password.svg";
 import openEye from "../../assets/icons/login/opened-eye.svg";
 import closeEye from "../../assets/icons/login/closed-eye.svg";
-import type { FieldErrors, UseFormRegister } from "react-hook-form";
-
 
 interface NewPasswordInputsProps {
   register: UseFormRegister<any>;
@@ -36,24 +35,25 @@ const NewPasswordInputs = ({ register, errors, isOpen }: NewPasswordInputsProps)
           <input
             type={isOpenEyeLeft ? "password" : "text"}
             id="newPassword"
+            name="newPassword"
             className="h-13 px-3 rounded-xl border-[#383838] bg-white/8 backdrop-filter-md backdrop-blur-[35px] backdrop-brightness-[1.5] placeholder:text-[14px] w-full focus:outline-none"
             placeholder="********"
             {...register("newPassword", {
-              required: "New password is required",
+              required: "New password is required!",
               minLength: {
                 value: 8,
-                message: "Password must be at least 8 characters long",
+                message: "New password is too short!",
               },
               maxLength: {
                 value: 64,
-                message: "Password cannot exceed 64 characters",
+                message: "New password is too long!",
               },
               pattern: {
                 value: /^(?=.*\d).+$/,
-                message: "Password must contain at least one number",
+                message: "Password must contain at least one number!",
               },
               validate: (value) =>
-                !/^\d+$/.test(value) || "This password is entirely numeric.",
+                !/^\d+$/.test(value) || "This password is entirely numeric!",
             })}
           />
           {isOpenEyeLeft ? (
@@ -90,10 +90,11 @@ const NewPasswordInputs = ({ register, errors, isOpen }: NewPasswordInputsProps)
           <input
             type={isOpenEyeRight ? "password" : "text"}
             id="repeatPassword"
+            name="repeatPassword"
             className="h-13 px-3 rounded-xl border-[#383838] bg-white/8 backdrop-filter-md backdrop-blur-[35px] backdrop-brightness-[1.5] placeholder:text-[14px] w-full focus:outline-none"
             placeholder="********"
             {...register("repeatPassword", {
-              required: "Repeat password is required",
+              required: "Repeat password is required!",
             })}
           />
           {isOpenEyeRight ? (
