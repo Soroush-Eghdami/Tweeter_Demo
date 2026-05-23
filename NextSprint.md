@@ -1,6 +1,6 @@
 ## Backend :
 
-- [ ] Implement the API endpoint for Deleting Profile Picture and Banner
+- [x] Implement the API endpoint for Deleting Profile Picture and Banner
 - [ ] User Blocking functionality (With visibility enforcement)
 - [ ] Pinning/Unpinnig a Tweet
 - [ ] Tweet Search functionality (Using Hastags)
