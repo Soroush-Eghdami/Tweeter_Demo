@@ -10,8 +10,6 @@ interface YesButtonPropType {
   padding?: string;
   onClick?: () => void;
   closeOnClick?: boolean;   // new prop – defaults to true
-  type?: "button" | "submit";
-  disabled?: boolean;
 }
 
 const YesButton = ({
