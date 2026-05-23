@@ -8,6 +8,8 @@ urlpatterns = [
     path('users/<uuid:id>/', views.UserDetailView.as_view(), name='user-detail'),
     path('profile/', views.UserProfileView.as_view(), name='user-profile'),
     path('profile/change-password/', views.PasswordChangeView.as_view(), name='password-change'),
+    path('profile/picture/', views.RemoveProfilePictureView.as_view(), name="Remove-Profile-picture"),
+    path('profile/banner/', views.RemoveProfileBannerView.as_view(), name="Remove-Profile-banner"),
 
     # Follow/Unfollow
     path('follow/', views.FollowUserView.as_view(), name='follow-user'),

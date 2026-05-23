@@ -9,8 +9,10 @@ from accounts.models import User, Follower, PasswordHistory
 logger = logging.getLogger(__name__)
 
 class UserService:
-    """Service class for user-related business logic."""
 
+# =============================================
+# Authentications
+# =============================================
     @staticmethod
     def generate_custom_id() -> str:
         """Generate a unique 6-character custom ID."""
@@ -58,6 +60,9 @@ class UserService:
     def delete_account(user: User) -> None:
         user.delete()
 
+# =============================================
+# User Profile
+# =============================================
     @staticmethod
     def update_profile(user: User, **data: Any) -> User:
         # Username validation (unchanged)
@@ -98,6 +103,21 @@ class UserService:
         return user
 
     @staticmethod
+    def remove_profile_picture(user: User) -> None:
+        user.profile_picture.delete(save=False)
+        user.profile_picture = None
+        user.save(update_fields=['profile_picture'])
+        
+    @staticmethod
+    def remove_profile_banner(user: User) -> None:
+        user.profile_banner.delete(save=False)
+        user.profile_banner = None
+        user.save(update_fields=['profile_banner'])
+
+# =============================================
+# Follow/Unfollow
+# =============================================
+    @staticmethod
     def follow_create(follower: User, followee_id: str) -> Follower:
         """Follow a user by their ID. Returns the Follower object or raises ValueError."""
         if not followee_id or not followee_id.strip():
@@ -132,3 +152,4 @@ class UserService:
         deleted, _ = Follower.objects.filter(follower=follower, followee=followee).delete()
         if not deleted:
             raise ValueError("This user does not follow you.")
+        
