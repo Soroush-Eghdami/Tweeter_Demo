@@ -92,7 +92,7 @@ const TweetCard = ({ isPinned, info, isLoggedIn }: TweetCardPropsType) => {
         </h2>
         <h5 className="text-md text-[#ddd]">{formattedJoinDate}</h5>
       </div>
-      <p className="font-medium mb-9 pl-12 wrap-break-words">{info.content}</p>
+      <p className="font-medium mb-9 pl-12 break-words">{info.content}</p>
       <div className="flex items-center gap-9 pl-6">
         {/* Like Button */}
         <button
