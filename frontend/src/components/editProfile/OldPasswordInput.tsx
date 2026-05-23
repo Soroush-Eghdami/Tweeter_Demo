@@ -33,10 +33,11 @@ const OldPasswordInput = ({
         <input
           type={isOpenEye ? "password" : "text"}
           id="oldPassword"
+          name="oldPassword"
           placeholder="********"
           className="h-13 px-3 rounded-xl border-[#383838] bg-white/8 backdrop-filter-md backdrop-blur-[35px] backdrop-brightness-[1.5] placeholder:text-[14px] w-full focus:outline-none"
           {...register("oldPassword", {
-            required: "Old password is required",
+            required: "Old password is required!",
           })}
         />
 
