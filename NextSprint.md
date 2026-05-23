@@ -1,12 +1,12 @@
 ## Backend :
 
 - [ ] Implement the API endpoint for Deleting Profile Picture and Banner
-- [ ] User Blocking functionality
+- [ ] User Blocking functionality (With visibility enforcement)
 - [ ] Pinning/Unpinnig a Tweet
-- [ ] Tweet Search functionality
+- [ ] Tweet Search functionality (Using Hastags)
 - [x] Password validator handle in the backend (validator.py in accounts app)
 - [ ] Updating resopnses to reply (making a new view maybe)
-- [ ]
+- [ ] Notification (model, auto creation, list/read endpoints)
 
 ## Frontend :
 
