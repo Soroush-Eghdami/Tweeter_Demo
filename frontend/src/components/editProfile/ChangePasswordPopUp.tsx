@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import YesButton from "../YesButton";
 import NoButton from "../NoButton";
-import OldPasswordInput from "../../components/editProfile/OldPasswordInput";
-import { useChangePasswordForm } from "../../hooks/useChangePasswordForm";
 import Loading from "../loading/Loading";
 import NewPasswordInputs from "./NewPasswordInputs";
+import OldPasswordInput from "../../components/editProfile/OldPasswordInput";
+import { useChangePasswordForm } from "../../hooks/useChangePasswordForm";
+
 interface ChangePasswordPopUpPropType {
   isOpen: boolean;
   setIsOpen: (arg0: boolean) => void;
