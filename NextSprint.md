@@ -12,8 +12,11 @@
 
 - [ ] Image as a tweet
 - [ ] Follow/Unfollow toggle timeout
-- [ ] Check user is login functionality
+- [ ] Check user is login functionality (authontication)
 - [ ] Improve disable buttons when user is not logged in (show message on mouseOn)
 - [ ] Clear extra api calls in each page
 - [ ] Write test for front
 - [ ] Improve Error handling
+- [ ] Double check value limit for each input
+- [ ] Fix Navigating to comment page and should roll back twice bug
+- [ ] Reuse RepeatPassword component in change password pop up instead of make a new one
