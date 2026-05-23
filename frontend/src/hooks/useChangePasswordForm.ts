@@ -59,6 +59,7 @@ export const useChangePasswordForm = ({
     handleSubmit,
     setError,
     reset,
+    watch,
     formState: { errors },
   } = useForm<ChangePasswordFormType>({
     defaultValues: {
@@ -134,5 +135,6 @@ export const useChangePasswordForm = ({
     onSubmit,
     isPending,
     reset,
+    watch,
   };
 };

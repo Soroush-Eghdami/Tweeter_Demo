@@ -1,24 +1,23 @@
 import { useEffect, useState } from "react";
 import type { FieldErrors, UseFormRegister } from "react-hook-form";
+import type { ChangePasswordFormType } from "../../hooks/useChangePasswordForm";
 import password from "../../assets/icons/login/password.svg";
 import repeatPasswordIcon from "../../assets/icons/login/repeat-password.svg";
 import openEye from "../../assets/icons/login/opened-eye.svg";
 import closeEye from "../../assets/icons/login/closed-eye.svg";
 
 interface NewPasswordInputsProps {
-  register: UseFormRegister<any>;
+  register: UseFormRegister<ChangePasswordFormType>;
   errors: FieldErrors;
   isOpen: boolean;
 }
 
 const NewPasswordInputs = ({ register, errors, isOpen }: NewPasswordInputsProps) => {
   const [isOpenEyeLeft, setIsOpenEyeLeft] = useState(true);
-  const [isOpenEyeRight, setIsOpenEyeRight] = useState(true);
 
   useEffect(() => {
     if (isOpen) {
       setIsOpenEyeLeft(true);
-      setIsOpenEyeRight(true);
     }
   }, [isOpen]);
 
@@ -74,47 +73,6 @@ const NewPasswordInputs = ({ register, errors, isOpen }: NewPasswordInputsProps)
           {errors.newPassword && (
             <p className="pl-4 text-yellow-200 text-sm mt-1">
               {errors.newPassword.message as string}
-            </p>
-          )}
-        </div>
-      </div>
-
-      <div className="w-[70%]">
-        <div className="flex flex-row items-center gap-1.5 pl-1 pb-1">
-          <img src={repeatPasswordIcon} alt="repeat password" className="size-4.5" />
-          <label htmlFor="repeatPassword" className="block text-left text-xl font-medium">
-            Repeat password
-          </label>
-        </div>
-        <div className="relative">
-          <input
-            type={isOpenEyeRight ? "password" : "text"}
-            id="repeatPassword"
-            name="repeatPassword"
-            className="h-13 px-3 rounded-xl border-[#383838] bg-white/8 backdrop-filter-md backdrop-blur-[35px] backdrop-brightness-[1.5] placeholder:text-[14px] w-full focus:outline-none"
-            placeholder="********"
-            {...register("repeatPassword", {
-              required: "Repeat password is required!",
-            })}
-          />
-          {isOpenEyeRight ? (
-            <img
-              onClick={() => setIsOpenEyeRight((prev) => !prev)}
-              src={closeEye}
-              alt="close-eye"
-              className="absolute right-4.5 top-4.5 cursor-pointer"
-            />
-          ) : (
-            <img
-              onClick={() => setIsOpenEyeRight((prev) => !prev)}
-              src={openEye}
-              alt="open-eye"
-              className="absolute right-4.5 top-5 cursor-pointer"
-            />
-          )}
-          {errors.repeatPassword && (
-            <p className="pl-4 text-yellow-200 text-sm mt-1">
-              {errors.repeatPassword.message as string}
             </p>
           )}
         </div>

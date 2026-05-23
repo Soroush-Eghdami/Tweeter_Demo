@@ -1,9 +1,11 @@
+import type { UseFormRegister } from "react-hook-form";
+import type { ChangePasswordFormType } from "../../hooks/useChangePasswordForm";
 import oldPassword from "../../assets/icons/profile/open-lock.svg";
 import closeEye from "../../assets/icons/login/closed-eye.svg";
 import openEye from "../../assets/icons/login/opened-eye.svg";
 
 interface OldPasswordInputProps {
-  register: any;
+  register: UseFormRegister<ChangePasswordFormType>;
   error?: string;
   isOpenEye: boolean;
   setIsOpenEye: (value: boolean) => void;
