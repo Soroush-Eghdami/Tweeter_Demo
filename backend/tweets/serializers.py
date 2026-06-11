@@ -6,6 +6,7 @@ from accounts.serializers import UserLiteOutputSerializer
 from .services.engagement import TweetEngagementService
 from .services.visibility import TweetVisibilityService
 from tweets.selectors import get_reply_count, is_retweeted_by
+from core.validators import validate_safe_file, ALLOWED_MEDIA_EXTENSIONS
 
 User = get_user_model()
 
@@ -76,9 +77,13 @@ class TweetSerializer(serializers.ModelSerializer):
 
 class CreateTweetSerializer(serializers.ModelSerializer):
     # Explicit fields to control what Swagger UI shows
-    media = serializers.FileField(required=False, allow_null=True, help_text="Optional image or video")
     parent_tweet = serializers.IntegerField(required=False, allow_null=True, help_text="ID of the tweet you are replying to")
-
+    media = serializers.FileField(
+        required = False,
+        allow_null = True,
+        help_text = "Optional Image or Video",
+        validators = [validate_safe_file(ALLOWED_MEDIA_EXTENSIONS)]
+    )
     class Meta:
         model = Tweet
         fields = ['content', 'media', 'parent_tweet']

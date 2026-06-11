@@ -12,7 +12,7 @@ from accounts.selectors.user import (
     get_tweets_count,
     get_retweets_made_count,
 )
-
+from core.validators import validate_safe_file, ALLOWED_IMAGE_EXTENSIONS
 User = get_user_model()
 
 
@@ -173,8 +173,18 @@ class PrivateUserOutputSerializer(serializers.ModelSerializer):
 # =====================================================================
 
 class UserUpdateInputSerializer(serializers.ModelSerializer):
-    profile_picture = serializers.ImageField(required=False, allow_null=True, help_text="Optional profile picture")
-    profile_banner = serializers.ImageField(required=False, allow_null=True, help_text="Optional profile banner")
+    profile_picture = serializers.ImageField(
+        required = False,
+        allow_null = True,
+        help_text = "Optional profile picture",
+        validators = [validate_safe_file(ALLOWED_IMAGE_EXTENSIONS)]
+    )
+    profile_banner = serializers.ImageField(
+        required = False,
+        allow_null = True,
+        help_text = "Optional profile banner",
+        validators = [validate_safe_file(ALLOWED_IMAGE_EXTENSIONS)]
+    )
 
     class Meta:
         model = User
