@@ -1,3 +1,6 @@
+import re
+from this import s
+
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
 from drf_spectacular.utils import extend_schema_field, OpenApiTypes
@@ -6,7 +9,7 @@ from accounts.serializers import UserLiteOutputSerializer
 from .services.engagement import TweetEngagementService
 from .services.visibility import TweetVisibilityService
 from tweets.selectors import get_reply_count, is_retweeted_by
-from core.validators import validate_safe_file, ALLOWED_MEDIA_EXTENSIONS
+from core.validators import validate_safe_file, validate_no_html, ALLOWED_MEDIA_EXTENSIONS
 
 User = get_user_model()
 
@@ -78,6 +81,11 @@ class TweetSerializer(serializers.ModelSerializer):
 class CreateTweetSerializer(serializers.ModelSerializer):
     # Explicit fields to control what Swagger UI shows
     parent_tweet = serializers.IntegerField(required=False, allow_null=True, help_text="ID of the tweet you are replying to")
+    content = serializers.CharField(
+        required = True,
+        help_text = "The content of the tweet (no HTML Allowed)",
+        validators = [validate_no_html],
+    )
     media = serializers.FileField(
         required = False,
         allow_null = True,

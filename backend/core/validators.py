@@ -1,8 +1,10 @@
 import os
 from django.core.exceptions import ValidationError
+import re
 
 ALLOWED_IMAGE_EXTENSIONS = {'jpg', 'jpeg', 'png', 'gif', 'webp'}
 ALLOWED_MEDIA_EXTENSIONS = ALLOWED_IMAGE_EXTENSIONS | {'mp4', 'mov', 'avi', 'webm'}
+HTML_TAG_PATTERN = re.compile(r'<\s*/?\s*\w+[^>]*>', re.IGNORECASE)
 
 
 def validate_safe_file(allowed_extensions=None):
@@ -32,3 +34,8 @@ def validate_safe_file(allowed_extensions=None):
             )
 
     return validator
+
+def validate_no_html(value: str) -> None:
+    """Reject content that contains HTML tags."""
+    if HTML_TAG_PATTERN.search(value):
+        raise ValidationError("HTML tags are not allowed in tweet content.")
