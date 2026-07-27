@@ -5,10 +5,6 @@ ENV PYTHONUNBUFFERED=1
 
 WORKDIR /app
 
-# Replace default Alpine repositories with a working Iranian mirror (Alpine v3.23)
-RUN echo "https://mirror.arvancloud.ir/alpine/v3.23/main" > /etc/apk/repositories \
-    && echo "https://mirror.arvancloud.ir/alpine/v3.23/community" >> /etc/apk/repositories
-
 # Install system dependencies
 RUN apk update && apk add --no-cache \
     curl \
@@ -30,13 +26,8 @@ RUN apk update && apk add --no-cache \
 # Copy requirements first (for better caching)
 COPY requirements.txt /app/
 
-# Use a reliable Iranian PyPI mirror
-# CHANGE THIS LINE TO A WORKING MIRROR
-# ARG PYPI_MIRROR=https://mirror-pypi.runflare.com/simple
-
 # Install Python dependencies
-# RUN pip install --no-cache-dir -i ${PYPI_MIRROR} -r requirements.txt
-RUN pip install --no-cache-dir -r requirements.txt 
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the rest of the project
 COPY . /app/
