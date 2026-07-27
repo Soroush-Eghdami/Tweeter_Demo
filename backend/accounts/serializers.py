@@ -57,6 +57,12 @@ class UserLiteOutputSerializer(serializers.ModelSerializer):
             return is_following_you(request.user, obj)
         return False
 
+class RegisterOutputSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'bio']
+        read_only_fields = fields
+
 class UserOutputSerializer(serializers.ModelSerializer):
     """Full user output serializer for detail/list views."""
     is_following = serializers.SerializerMethodField()

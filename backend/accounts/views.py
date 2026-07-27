@@ -13,7 +13,7 @@ from accounts.serializers import (
     UserOutputSerializer, UserUpdateInputSerializer, FollowerOutputSerializer,
     RegisterInputSerializer, LogoutInputSerializer, PasswordChangeInputSerializer,
     FollowInputSerializer, UnfollowInputSerializer, RemoveFollowerInputSerializer,
-    PrivateUserOutputSerializer,
+    PrivateUserOutputSerializer, RegisterOutputSerializer
 )
 from accounts.services import UserService
 from accounts.auth_utils import set_token_cookies, clear_token_cookies, set_access_token_cookie, set_refresh_token_cookie
@@ -404,14 +404,14 @@ class RegisterView(APIView):
         description="Create a new user account. No authentication required.",
         tags=["authentication"],
         request=RegisterInputSerializer,
-        responses={201: UserOutputSerializer},
+        responses={201: RegisterOutputSerializer},
     )
     def post(self, request: Request) -> Response:
         serializer = RegisterInputSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         data = cast(dict[str, Any], serializer.validated_data)
         user = UserService.create_user(**data)
-        output = UserOutputSerializer(user, context={'request': request})
+        output = RegisterOutputSerializer(user, context={'request': request})
         return Response(output.data, status=status.HTTP_201_CREATED)
 
 
