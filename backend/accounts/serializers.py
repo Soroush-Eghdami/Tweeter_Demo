@@ -33,7 +33,7 @@ class AbsoluteURLImageField(serializers.ImageField):
 # =====================================================================
 # User Output Serializers
 # =====================================================================
-class UserLiteOutputSerializer(serializers.ModelSerializer):
+class UserSummaryOutputSerializer(serializers.ModelSerializer):
     profile_picture = AbsoluteURLImageField(read_only=True)
     is_following = serializers.SerializerMethodField()
     is_following_you = serializers.SerializerMethodField()
@@ -63,7 +63,7 @@ class RegisterOutputSerializer(serializers.ModelSerializer):
         fields = ['id', 'username', 'email', 'first_name', 'last_name', 'bio']
         read_only_fields = fields
 
-class UserOutputSerializer(serializers.ModelSerializer):
+class UserProfileOutputSerializer(serializers.ModelSerializer):
     """Full user output serializer for detail/list views."""
     is_following = serializers.SerializerMethodField()
     is_following_you = serializers.SerializerMethodField()
@@ -123,7 +123,7 @@ class UserOutputSerializer(serializers.ModelSerializer):
 
 
 
-class PrivateUserOutputSerializer(serializers.ModelSerializer):
+class LockedProfileOutputSerializer(serializers.ModelSerializer):
     """
     Minimal user profile visible to non-followers when the account is private.
     """
@@ -178,7 +178,7 @@ class PrivateUserOutputSerializer(serializers.ModelSerializer):
 # User Input Serializers
 # =====================================================================
 
-class UserUpdateInputSerializer(serializers.ModelSerializer):
+class ProfileUpdateInputSerializer(serializers.ModelSerializer):
     profile_picture = serializers.ImageField(
         required = False,
         allow_null = True,
@@ -258,8 +258,8 @@ class RemoveFollowerInputSerializer(serializers.Serializer):
 
 class FollowerOutputSerializer(serializers.ModelSerializer):
     """Follower relationship output serializer."""
-    follower = UserLiteOutputSerializer(read_only=True)
-    followee = UserLiteOutputSerializer(read_only=True)
+    follower = UserSummaryOutputSerializer(read_only=True)
+    followee = UserSummaryOutputSerializer(read_only=True)
 
     class Meta:
         model = Follower

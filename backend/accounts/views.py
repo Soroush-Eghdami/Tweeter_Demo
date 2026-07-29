@@ -10,10 +10,10 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from drf_spectacular.utils import extend_schema, OpenApiResponse, OpenApiParameter
 from core.pagination import TweeterPagination
 from accounts.serializers import (
-    UserOutputSerializer, UserUpdateInputSerializer, FollowerOutputSerializer,
+    UserProfileOutputSerializer, ProfileUpdateInputSerializer, FollowerOutputSerializer,
     RegisterInputSerializer, LogoutInputSerializer, PasswordChangeInputSerializer,
     FollowInputSerializer, UnfollowInputSerializer, RemoveFollowerInputSerializer,
-    PrivateUserOutputSerializer, RegisterOutputSerializer
+    LockedProfileOutputSerializer, RegisterOutputSerializer
 )
 from accounts.services import UserService
 from accounts.auth_utils import set_token_cookies, clear_token_cookies, set_access_token_cookie, set_refresh_token_cookie
@@ -47,13 +47,13 @@ class UserListView(APIView):
         summary="List all users",
         description="Returns a paginated list of all users.",
         tags=["users"],
-        responses={200: UserOutputSerializer(many=True)},
+        responses={200: UserProfileOutputSerializer(many=True)},
     )
     def get(self, request: Request) -> Response:
         queryset = get_all_users()
         paginator = TweeterPagination()
         page = paginator.paginate_queryset(queryset, request)
-        serializer = UserOutputSerializer(page, many=True, context={'request': request})
+        serializer = UserProfileOutputSerializer(page, many=True, context={'request': request})
         return paginator.get_paginated_response(serializer.data)
 
 
@@ -67,14 +67,14 @@ class UserDetailView(APIView):
         summary="Get user details",
         description="Retrieve a user's profile. Private profiles return limited information unless the requester is a follower.",
         tags=["users"],
-        responses={200: UserOutputSerializer},
+        responses={200: UserProfileOutputSerializer},
     )
     def get(self, request: Request, id: str) -> Response:
         user = get_user_by_id(id)
         if is_user_visible_to(user, request.user):
-            serializer = UserOutputSerializer(user, context={'request': request})
+            serializer = UserProfileOutputSerializer(user, context={'request': request})
         else:
-            serializer = PrivateUserOutputSerializer(user, context={'request': request})
+            serializer = LockedProfileOutputSerializer(user, context={'request': request})
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
@@ -89,10 +89,10 @@ class UserProfileView(APIView):
         summary="Get own profile",
         description="Returns the authenticated user's profile.",
         tags=["profile"],
-        responses={200: UserOutputSerializer},
+        responses={200: UserProfileOutputSerializer},
     )
     def get(self, request: Request) -> Response:
-        serializer = UserOutputSerializer(request.user, context={'request': request})
+        serializer = UserProfileOutputSerializer(request.user, context={'request': request})
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     @extend_schema(
@@ -121,15 +121,15 @@ class UserProfileView(APIView):
             },
         }
     },
-    responses={200: UserOutputSerializer},
+    responses={200: UserProfileOutputSerializer},
     tags=["profile"],
     )
     def patch(self, request: Request) -> Response:
-        input_ser = UserUpdateInputSerializer(data=request.data, partial=True, context={'request': request})
+        input_ser = ProfileUpdateInputSerializer(data=request.data, partial=True, context={'request': request})
         input_ser.is_valid(raise_exception=True)
         data = cast(dict[str, Any], input_ser.validated_data)
         updated_user = UserService.update_profile(request.user, **data)
-        output_ser = UserOutputSerializer(updated_user, context={'request': request})
+        output_ser = UserProfileOutputSerializer(updated_user, context={'request': request})
         return Response(output_ser.data, status=status.HTTP_200_OK)
 
     @extend_schema(
@@ -244,7 +244,7 @@ class SearchUsersView(APIView):
         summary="Search users",
         description="Search for users by username, first name, or last name.",
         tags=["search"],
-        responses={200: UserOutputSerializer(many=True)},
+        responses={200: UserProfileOutputSerializer(many=True)},
     )
     def get(self, request: Request) -> Response:
         query = request.GET.get('q', '')
@@ -252,7 +252,7 @@ class SearchUsersView(APIView):
             results = search_users(query)
         except ValueError as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-        serializer = UserOutputSerializer(results, many=True, context={'request': request})
+        serializer = UserProfileOutputSerializer(results, many=True, context={'request': request})
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
