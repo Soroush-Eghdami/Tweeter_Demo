@@ -9,9 +9,9 @@ from core.pagination import TweeterPagination
 
 from .models import Tweet
 from .serializers import (
-    TweetSerializer,
-    CreateTweetSerializer,
-    ReTweetSerializer,
+    TweetOutputSerializer,
+    CreateTweetInputSerializer,
+    ReTweetOutputSerializer,
 )
 from .services.engagement import TweetEngagementService
 from .services.visibility import TweetVisibilityService
@@ -38,14 +38,14 @@ class TweetListView(APIView):
             OpenApiParameter(name='page', type=int, location=OpenApiParameter.QUERY, description='Page number'),
             OpenApiParameter(name='page_size', type=int, location=OpenApiParameter.QUERY, description='Items per page'),
         ],
-        responses={200: TweetSerializer(many=True)},
+        responses={200: TweetOutputSerializer(many=True)},
         tags=["tweets"],
     )
     def get(self, request):
         queryset = get_visible_tweets(request.user)
         paginator = TweeterPagination()
         page = paginator.paginate_queryset(queryset, request)
-        serializer = TweetSerializer(page, many=True, context={'request': request})
+        serializer = TweetOutputSerializer(page, many=True, context={'request': request})
         return paginator.get_paginated_response(serializer.data)
 
     @extend_schema(
@@ -74,13 +74,13 @@ class TweetListView(APIView):
             }
         },
         responses={
-            201: TweetSerializer,
+            201: TweetOutputSerializer,
             400: OpenApiResponse(description="Invalid input"),
         },
         tags=["tweets"],
     )
     def post(self, request):
-        input_serializer = CreateTweetSerializer(data=request.data, context={'request': request})
+        input_serializer = CreateTweetInputSerializer(data=request.data, context={'request': request})
         input_serializer.is_valid(raise_exception=True)
 
         try:
@@ -91,7 +91,7 @@ class TweetListView(APIView):
         except ValueError as e:
             raise serializers.ValidationError({"error": str(e)})
 
-        output_serializer = TweetSerializer(tweet, context={'request': request})
+        output_serializer = TweetOutputSerializer(tweet, context={'request': request})
         return Response(output_serializer.data, status=status.HTTP_201_CREATED)
 
 class TweetDetailView(APIView):
@@ -108,7 +108,7 @@ class TweetDetailView(APIView):
     )
     def get(self, request, pk):
         tweet = get_tweet_detail(pk=pk, user=request.user)
-        serializer = TweetSerializer(tweet, context={'request': request})
+        serializer = TweetOutputSerializer(tweet, context={'request': request})
         return Response(serializer.data)
 
     @extend_schema(
@@ -144,7 +144,7 @@ class TweetRepliesView(APIView):
             OpenApiParameter(name='page', type=int, location=OpenApiParameter.QUERY, description='Page number'),
             OpenApiParameter(name='page_size', type=int, location=OpenApiParameter.QUERY, description='Items per page'),
         ],
-        responses={200: TweetSerializer(many=True)},
+        responses={200: TweetOutputSerializer(many=True)},
         tags=["tweets"],
     )
     def get(self, request, pk):
@@ -156,7 +156,7 @@ class TweetRepliesView(APIView):
         replies = get_replies_queryset(parent_tweet, request.user)
         paginator = TweeterPagination()
         page = paginator.paginate_queryset(replies, request)
-        serializer = TweetSerializer(page, many=True, context={'request': request})
+        serializer = TweetOutputSerializer(page, many=True, context={'request': request})
         return paginator.get_paginated_response(serializer.data)
 
 
@@ -173,7 +173,7 @@ class RetweetView(APIView):
         description="Retweet a tweet. The original tweet must be visible to the authenticated user.",
         request=None,
         responses={
-            201: ReTweetSerializer,
+            201: ReTweetOutputSerializer,
             200: OpenApiResponse(description='Already retweeted'),
             400: OpenApiResponse(description='Cannot retweet own tweet'),
             403: OpenApiResponse(description='Tweet not accessible'),
@@ -192,7 +192,7 @@ class RetweetView(APIView):
         except ValueError as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-        serializer = ReTweetSerializer(retweet)
+        serializer = ReTweetOutputSerializer(retweet)
         if created:
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         else:

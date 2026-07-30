@@ -17,7 +17,7 @@ User = get_user_model()
 # Tweet Output Serializers
 # =====================================================================
 
-class TweetSerializer(serializers.ModelSerializer):
+class TweetOutputSerializer(serializers.ModelSerializer):
     """Full tweet output serializer with engagement counts and metadata."""
     user = UserSummaryOutputSerializer(read_only=True)
     retweet_count = serializers.SerializerMethodField()
@@ -78,7 +78,7 @@ class TweetSerializer(serializers.ModelSerializer):
 # Tweet Input Serializers
 # =====================================================================
 
-class CreateTweetSerializer(serializers.ModelSerializer):
+class CreateTweetInputSerializer(serializers.ModelSerializer):
     # Explicit fields to control what Swagger UI shows
     parent_tweet = serializers.IntegerField(required=False, allow_null=True, help_text="ID of the tweet you are replying to")
     content = serializers.CharField(
@@ -118,10 +118,10 @@ class CreateTweetSerializer(serializers.ModelSerializer):
 # ReTweet Serializers
 # =====================================================================
 
-class ReTweetSerializer(serializers.ModelSerializer):
+class ReTweetOutputSerializer(serializers.ModelSerializer):
     """ReTweet output serializer."""
     user = UserSummaryOutputSerializer(read_only=True)
-    original_tweet = TweetSerializer(read_only=True)
+    original_tweet = TweetOutputSerializer(read_only=True)
 
     class Meta:
         model = ReTweet
