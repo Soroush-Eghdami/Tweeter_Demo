@@ -1,5 +1,4 @@
 import re
-from this import s
 
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
@@ -9,7 +8,7 @@ from accounts.serializers import UserSummaryOutputSerializer
 from .services.engagement import TweetEngagementService
 from .services.visibility import TweetVisibilityService
 from tweets.selectors import get_reply_count, is_retweeted_by
-from core.validators import validate_safe_file, validate_no_html, ALLOWED_MEDIA_EXTENSIONS
+from core.validators import validate_safe_file, validate_no_html, ALLOWED_MEDIA_EXTENSIONS, MAX_VIDEO_UPLOAD_SIZE
 
 User = get_user_model()
 
@@ -90,7 +89,7 @@ class CreateTweetInputSerializer(serializers.ModelSerializer):
         required = False,
         allow_null = True,
         help_text = "Optional Image or Video",
-        validators = [validate_safe_file(ALLOWED_MEDIA_EXTENSIONS)]
+        validators = [validate_safe_file(ALLOWED_MEDIA_EXTENSIONS, max_size=MAX_VIDEO_UPLOAD_SIZE)]
     )
     class Meta:
         model = Tweet
